@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Barcode Search</title>
+</head>
+<body>
+    <h1>Debug Barcode Search</h1>
+    <div id="output"></div>
+    
+    <script>
+        async function debugSearch() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h2>Running diagnostics...</h2>';
+            
+            try {
+                // Step 1: Add a test product with barcode2
+                output.innerHTML += '<h3>Step 1: Adding test product...</h3>';
+                const testProduct = {
+                    id: Date.now(),
+                    name: "Debug Test Product",
+                    category: "Test",
+                    price: 1.99,
+                    stock: 10,
+                    lowStockThreshold: 5,
+                    taxable: true,
+                    barcode: "1111111111",
+                    barcode2: "04257207521",
+                    productId: "1111111111"
+                };
+                
+                const addResponse = await fetch('/api/inventory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': 'dev-secret'
+                    },
+                    body: JSON.stringify([testProduct])
+                });
+                
+                if (addResponse.ok) {
+                    output.innerHTML += '<p>✅ Test product added successfully</p>';
+                } else {
+                    throw new Error('Failed to add test product');
+                }
+                
+                // Step 2: Verify the product was saved
+                output.innerHTML += '<h3>Step 2: Verifying product in database...</h3>';
+                const getResponse = await fetch('/api/inventory', {
+                    headers: { 'x-api-key': 'dev-secret' }
+                });
+                const inventory = await getResponse.json();
+                
+                output.innerHTML += `<p>Total products in database: ${inventory.length}</p>`;
+                
+                const testProductInDb = inventory.find(item => item.barcode2 === '04257207521');
+                if (testProductInDb) {
+                    output.innerHTML += `<p>✅ Found test product: ${JSON.stringify(testProductInDb, null, 2)}</p>`;
+                } else {
+                    output.innerHTML += '<p>❌ Test product not found in database</p>';
+                }
+                
+                // Step 3: Test the search logic manually
+                output.innerHTML += '<h3>Step 3: Testing search logic...</h3>';
+                
+                const searchTerm = '04257207521';
+                const foundItems = inventory.filter(item => {
+                    const barcodeFields = [
+                        'barcode', 'barcode2', 'barcode3', 'altBarcode', 'alternateBarcode',
+                        'upc', 'ean', 'gtin', 'isbn', 'sku', 'productCode'
+                    ];
+                    
+                    return barcodeFields.some(field => {
+                        const value = item[field];
+                        return value && value.toString().includes(searchTerm);
+                    });
+                });
+                
+                output.innerHTML += `<p>Search results for "${searchTerm}": ${foundItems.length} items found</p>`;
+                if (foundItems.length > 0) {
+                    output.innerHTML += `<pre>${JSON.stringify(foundItems, null, 2)}</pre>`;
+                }
+                
+                // Step 4: Check if POS page can access the data
+                output.innerHTML += '<h3>Step 4: Ready for POS testing</h3>';
+                output.innerHTML += '<p>Now go to <a href="/pos" target="_blank">POS Page</a> and search for "04257207521"</p>';
+                
+            } catch (error) {
+                output.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+                console.error('Debug error:', error);
+            }
+        }
+        
+        // Run the debug automatically
+        debugSearch();
+    </script>
+</body>
+</html>

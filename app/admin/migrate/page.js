@@ -1,9 +1,20 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../lib/auth";
 
 export default function Page() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [status, setStatus] = useState("Idle");
   const [busy, setBusy] = useState(false);
+
+  // Redirect to POS if not logged in
+  useEffect(() => {
+    if (!user) {
+      router.push('/pos');
+    }
+  }, [user, router]);
 
   const handleImport = async () => {
     setBusy(true);

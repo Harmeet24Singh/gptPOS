@@ -1,4 +1,9 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "./lib/auth";
 import {
   Container,
   Title,
@@ -8,6 +13,20 @@ import {
 } from "./styles/homeStyles";
 
 export default function Home() {
+  const auth = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If not logged in, redirect to POS
+    if (!auth || !auth.user) {
+      router.push("/pos");
+    }
+  }, [auth, router]);
+
+  // If not authenticated, don't show anything while redirecting
+  if (!auth || !auth.user) {
+    return null;
+  }
   return (
     <Container>
       <Title>Convenience Store Inventory Management</Title>

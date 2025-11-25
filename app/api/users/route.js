@@ -36,12 +36,19 @@ export async function GET(req) {
 
 export async function POST(req) {
   try {
-    const key = req.headers && typeof req.headers.get === "function" ? req.headers.get("x-api-key") : null;
-    const API_KEY = process.env.API_KEY || "dev-secret";
-    if (key !== API_KEY) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
     const body = await req.json();
-    await mongo.upsertUser(body);
+    
+    // Handle both single user and batch operations
+    if (Array.isArray(body)) {
+      // Batch operation - replace all users
+      console.log('API: Batch updating', body.length, 'users');
+      await mongo.replaceAllUsers(body);
+    } else {
+      // Single user operation
+      console.log('API: Upserting user:', body.username || body.id);
+      await mongo.upsertUser(body);
+    }
+    
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("POST /api/users error", err);

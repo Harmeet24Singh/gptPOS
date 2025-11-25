@@ -52,34 +52,51 @@ export default function Navigation() {
   return (
     <Nav>
       <NavContainer>
-        <Link href="/">
-          <Logo>Store Inventory</Logo>
+        <Link href={auth && auth.user ? "/" : "/pos?newSale=true"}>
+          <Logo>Store POS</Logo>
         </Link>
         <NavLinks>
-          <NavLink>
-            <Link href="/">Home</Link>
-          </NavLink>
-          <NavLink>
-            <Link href="/pos">POS</Link>
-          </NavLink>
-          <NavLink>
-            <Link href="/inventory">Inventory</Link>
-          </NavLink>
-          <NavLink>
-            <Link href="/categories">Categories</Link>
-          </NavLink>
-          <NavLink>
-            <Link href="/users">Users</Link>
-          </NavLink>
-          <NavLink>
-            <Link href="/inventory/add">Add Item</Link>
-          </NavLink>
-          <NavLink>
-            <Link href="/transactions">Transactions</Link>
-          </NavLink>
-          <NavLink>
-            <Link href="/reports">Reports</Link>
-          </NavLink>
+          {auth && auth.user ? (
+            <>
+              <NavLink>
+                <Link href="/">Home</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/pos?newSale=true">POS</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/inventory">Inventory</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/categories">Categories</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/users">Users</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/inventory/add">Add Item</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/transactions">Transactions</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/till-count">💰 Till Count</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/reports">Reports</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/credit">Credit Sales</Link>
+              </NavLink>
+              <NavLink>
+                <Link href="/credit-management">Credit Management</Link>
+              </NavLink>
+            </>
+          ) : (
+            <NavLink>
+              <Link href="/pos?newSale=true">POS</Link>
+            </NavLink>
+          )}
         </NavLinks>
 
         <div>

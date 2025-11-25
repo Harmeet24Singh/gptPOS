@@ -18,16 +18,18 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const login = (username) => {
-    // Try server first, fall back to localStorage
+  const login = (username, password) => {
+    // Try server first with proper username/password validation
     return (async () => {
       try {
         const res = await fetch("/api/users");
         if (res.ok) {
           const list = await res.json();
-          const found = list.find(
-            (u) => u.username.toLowerCase() === username.toLowerCase()
-          );
+          const found = list.find((u) => {
+            const userMatch = (u.username || u.id || '').toLowerCase() === username.toLowerCase();
+            const passMatch = (u.password || u.pwd || '') === password;
+            return userMatch && passMatch;
+          });
           if (found) {
             localStorage.setItem("currentUser", JSON.stringify(found));
             setUser(found);
@@ -40,9 +42,11 @@ export function AuthProvider({ children }) {
 
       // Fallback to localStorage users (legacy)
       const saved = JSON.parse(localStorage.getItem("users") || "[]");
-      const found = saved.find(
-        (u) => u.username.toLowerCase() === username.toLowerCase()
-      );
+      const found = saved.find((u) => {
+        const userMatch = (u.username || u.id || '').toLowerCase() === username.toLowerCase();
+        const passMatch = (u.password || u.pwd || '') === password;
+        return userMatch && passMatch;
+      });
       if (found) {
         localStorage.setItem("currentUser", JSON.stringify(found));
         setUser(found);

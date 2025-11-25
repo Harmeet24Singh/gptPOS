@@ -2,6 +2,7 @@ import StyledComponentsRegistry from "./lib/registry";
 import Navigation from "./components/Navigation";
 import { GlobalStyle } from "./styles/globalStyles";
 import { AuthProvider } from "./lib/auth";
+import ReduxProvider from "./lib/ReduxProvider";
 
 export const metadata = {
   title: "Convenience Store Inventory",
@@ -14,10 +15,12 @@ export default function RootLayout({ children }) {
       <body>
         <StyledComponentsRegistry>
           <GlobalStyle />
-          <AuthProvider>
-            <Navigation />
-            <main>{children}</main>
-          </AuthProvider>
+          <ReduxProvider>
+            <AuthProvider>
+              <Navigation />
+              <main>{children}</main>
+            </AuthProvider>
+          </ReduxProvider>
         </StyledComponentsRegistry>
       </body>
     </html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Add Item Barcode Search</title>
+</head>
+<body>
+    <h1>Test Add Item Dual Barcode Search</h1>
+    <div id="results"></div>
+    
+    <button onclick="setupTestProducts()">Setup Test Products</button>
+    <button onclick="testAddItemPage()">Test Add Item Page</button>
+    
+    <script>
+        async function setupTestProducts() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Setting up test products...</h3>';
+            
+            try {
+                // Create test products with both barcode fields
+                const testProducts = [
+                    {
+                        id: Date.now(),
+                        name: "Test Product A - Primary Barcode",
+                        category: "Test",
+                        price: 5.99,
+                        stock: 10,
+                        lowStockThreshold: 3,
+                        taxable: true,
+                        barcode: "06190000013",
+                        barcode2: "",
+                        productId: "06190000013"
+                    },
+                    {
+                        id: Date.now() + 1,
+                        name: "Test Product B - Secondary Barcode",
+                        category: "Test",
+                        price: 7.49,
+                        stock: 15,
+                        lowStockThreshold: 5,
+                        taxable: true,
+                        barcode: "1234567890",
+                        barcode2: "04257207521",
+                        productId: "1234567890"
+                    }
+                ];
+                
+                for (const product of testProducts) {
+                    const response = await fetch('/api/inventory', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': 'dev-secret'
+                        },
+                        body: JSON.stringify([product])
+                    });
+                    
+                    if (response.ok) {
+                        results.innerHTML += `<p>✅ Added: ${product.name}</p>`;
+                    } else {
+                        results.innerHTML += `<p>❌ Failed to add: ${product.name}</p>`;
+                    }
+                }
+                
+                results.innerHTML += '<h3>Test products ready!</h3>';
+                results.innerHTML += '<p><strong>Test scenarios:</strong></p>';
+                results.innerHTML += '<ul>';
+                results.innerHTML += '<li>Search for <code>06190000013</code> - should find "Test Product A" via primary barcode</li>';
+                results.innerHTML += '<li>Search for <code>04257207521</code> - should find "Test Product B" via secondary barcode</li>';
+                results.innerHTML += '<li>Search for <code>1234567890</code> - should find "Test Product B" via primary barcode</li>';
+                results.innerHTML += '</ul>';
+                
+            } catch (error) {
+                results.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+                console.error('Setup error:', error);
+            }
+        }
+        
+        function testAddItemPage() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<h3>Testing Instructions:</h3>';
+            results.innerHTML += '<ol>';
+            results.innerHTML += '<li>Go to <a href="/inventory/add" target="_blank">Add Item Page</a></li>';
+            results.innerHTML += '<li>Open browser console (F12)</li>';
+            results.innerHTML += '<li>Type <code>06190000013</code> in the "Product ID / Barcode" field</li>';
+            results.innerHTML += '<li>Wait for auto-detection message</li>';
+            results.innerHTML += '<li>Try <code>04257207521</code> in the "Secondary Barcode" field</li>';
+            results.innerHTML += '<li>Check console for detailed search logs</li>';
+            results.innerHTML += '</ol>';
+        }
+    </script>
+</body>
+</html>

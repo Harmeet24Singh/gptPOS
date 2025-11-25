@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../lib/auth";
 import {
   Container,
   Title,
@@ -12,7 +14,16 @@ import {
 } from "../../styles/inventoryStyles";
 
 export default function LowStockPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [lowStockItems, setLowStockItems] = useState([]);
+
+  // Redirect to POS if not logged in
+  useEffect(() => {
+    if (!user) {
+      router.push('/pos');
+    }
+  }, [user, router]);
 
   useEffect(() => {
     const load = async () => {

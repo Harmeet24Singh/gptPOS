@@ -1,12 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../lib/auth";
 import { Container, Title, Card, CardGrid } from "../styles/homeStyles";
 import { Table } from "../styles/inventoryStyles";
 
 export default function ReportsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [inventory, setInventory] = useState([]);
   const [transactions, setTransactions] = useState([]);
+
+  // Redirect to POS if not logged in
+  useEffect(() => {
+    if (!user) {
+      router.push('/pos');
+    }
+  }, [user, router]);
   const [stats, setStats] = useState({
     totalItems: 0,
     totalValue: 0,

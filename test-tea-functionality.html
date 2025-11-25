@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tea Category Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        .test-steps { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🍵 Tea Category Functionality Test</h1>
+    <p>Testing if Tea category works the same as Western Union</p>
+    
+    <div class="test-steps">
+        <h3>Test Steps:</h3>
+        <ol>
+            <li>Enter an amount (e.g., "5.25") in the search box</li>
+            <li>Click the Tea 🍵 category button</li>
+            <li>Should add "Tea $5.25" to cart</li>
+            <li>Price should be $5.25</li>
+            <li>Should be taxable</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h3>Automated Tests</h3>
+        <button onclick="testTeaCategoryExists()">1. Test Tea Category Exists</button>
+        <button onclick="testTeaFunctionality()">2. Test Tea Functionality</button>
+        <button onclick="compareTeaVsWesternUnion()">3. Compare Tea vs Western Union</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = new Date().toLocaleTimeString() + ': ' + message;
+            resultsDiv.appendChild(div);
+        }
+
+        function testTeaCategoryExists() {
+            log('🔍 Testing if Tea category exists...', 'info');
+            
+            const posWindow = window.open('/pos', '_blank');
+            
+            setTimeout(() => {
+                try {
+                    // Look for Tea category button
+                    const teaCategory = posWindow.document.querySelector('[data-category="Tea"]');
+                    
+                    if (teaCategory) {
+                        log('✅ SUCCESS: Tea category button found!', 'success');
+                        log('   Tea button text: ' + teaCategory.textContent.trim(), 'info');
+                        
+                        // Check icon and description
+                        const icon = teaCategory.innerHTML.includes('🍵');
+                        const description = teaCategory.innerHTML.includes('Type amount & click to add');
+                        
+                        if (icon) log('   ✅ Tea icon (🍵) found', 'success');
+                        else log('   ❌ Tea icon not found', 'error');
+                        
+                        if (description) log('   ✅ Correct description found', 'success');
+                        else log('   ❌ Correct description not found', 'error');
+                        
+                    } else {
+                        log('❌ FAILED: Tea category button not found', 'error');
+                    }
+                    
+                    posWindow.close();
+                } catch (error) {
+                    log(`❌ ERROR: ${error.message}`, 'error');
+                    posWindow.close();
+                }
+            }, 3000);
+        }
+
+        function testTeaFunctionality() {
+            log('🧪 Testing Tea functionality...', 'info');
+            
+            const posWindow = window.open('/pos', '_blank');
+            
+            setTimeout(() => {
+                try {
+                    // Find search input and Tea category
+                    const searchInput = posWindow.document.querySelector('input[placeholder*="Search products"]');
+                    const teaCategory = posWindow.document.querySelector('[data-category="Tea"]');
+                    
+                    if (searchInput && teaCategory) {
+                        log('   Found search input and Tea category', 'info');
+                        
+                        // Monitor console for cart additions
+                        const originalConsoleLog = posWindow.console.log;
+                        let cartLogs = [];
+                        
+                        posWindow.console.log = function(...args) {
+                            const logMessage = args.join(' ');
+                            cartLogs.push(logMessage);
+                            originalConsoleLog.apply(this, args);
+                        };
+                        
+                        // Test: Enter amount and click Tea
+                        const testAmount = '4.75';
+                        searchInput.value = testAmount;
+                        searchInput.dispatchEvent(new posWindow.Event('input', { bubbles: true }));
+                        
+                        log(`   Entered test amount: $${testAmount}`, 'info');
+                        log('   Clicking Tea category...', 'info');
+                        
+                        teaCategory.click();
+                        
+                        setTimeout(() => {
+                            // Check for success logs
+                            const addedLogs = cartLogs.filter(log => 
+                                log.includes('Tea $4.75') || 
+                                log.includes('Added') ||
+                                log.includes('cart')
+                            );
+                            
+                            if (addedLogs.length > 0) {
+                                log('✅ SUCCESS: Tea item added to cart!', 'success');
+                                addedLogs.forEach(addLog => {
+                                    log('   📝 ' + addLog, 'info');
+                                });
+                            } else {
+                                log('❌ FAILED: No cart addition logs detected', 'error');
+                            }
+                            
+                            // Check if search input was cleared
+                            if (searchInput.value === '') {
+                                log('   ✅ Search input cleared after adding', 'success');
+                            } else {
+                                log('   ⚠️ Search input not cleared', 'error');
+                            }
+                            
+                            posWindow.console.log = originalConsoleLog;
+                            posWindow.close();
+                        }, 2000);
+                        
+                    } else {
+                        log('❌ FAILED: Could not find search input or Tea category', 'error');
+                        posWindow.close();
+                    }
+                } catch (error) {
+                    log(`❌ ERROR: ${error.message}`, 'error');
+                    posWindow.close();
+                }
+            }, 3000);
+        }
+
+        function compareTeaVsWesternUnion() {
+            log('⚖️ Comparing Tea vs Western Union functionality...', 'info');
+            
+            const posWindow = window.open('/pos', '_blank');
+            
+            setTimeout(() => {
+                try {
+                    const searchInput = posWindow.document.querySelector('input[placeholder*="Search products"]');
+                    const teaCategory = posWindow.document.querySelector('[data-category="Tea"]');
+                    const westernUnionCategory = posWindow.document.querySelector('[data-category="WesternUnion"]');
+                    
+                    if (searchInput && teaCategory && westernUnionCategory) {
+                        log('   Found all required elements', 'info');
+                        
+                        // Compare styling
+                        const teaStyle = posWindow.getComputedStyle(teaCategory);
+                        const wuStyle = posWindow.getComputedStyle(westernUnionCategory);
+                        
+                        log('📊 Visual Comparison:', 'info');
+                        log(`   Tea color: ${teaStyle.backgroundColor}`, 'info');
+                        log(`   Western Union color: ${wuStyle.backgroundColor}`, 'info');
+                        
+                        // Check descriptions
+                        const teaDesc = teaCategory.textContent.includes('Type amount & click to add');
+                        const wuDesc = westernUnionCategory.textContent.includes('Type amount & click to add');
+                        
+                        if (teaDesc && wuDesc) {
+                            log('   ✅ Both have same description format', 'success');
+                        } else {
+                            log('   ❌ Description formats differ', 'error');
+                        }
+                        
+                        log('✅ Comparison completed', 'success');
+                        
+                    } else {
+                        log('❌ FAILED: Could not find required elements for comparison', 'error');
+                    }
+                    
+                    posWindow.close();
+                } catch (error) {
+                    log(`❌ ERROR: ${error.message}`, 'error');
+                    posWindow.close();
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

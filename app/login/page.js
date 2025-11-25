@@ -26,46 +26,38 @@ const Button = styled.button`
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 1rem;
+  
+  &:hover {
+    background: #2980b9;
+  }
+  
+  &:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+  }
+`;
+
+const InputField = styled.input`
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  }
 `;
 
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
-  const [users, setUsers] = useState([]);
-  const [selected, setSelected] = useState("");
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/users");
-        if (res.ok) {
-          const list = await res.json();
-          if (mounted && Array.isArray(list) && list.length > 0) {
-            setUsers(list);
-            setSelected(list[0].username);
-            return;
-          }
-        }
-      } catch (e) {
-        // ignore and fallback
-      }
-
-      // fallback to localStorage if server not available or empty
-      try {
-        const saved = JSON.parse(localStorage.getItem("users") || "[]");
-        if (mounted) {
-          setUsers(saved);
-          if (saved.length > 0) setSelected(saved[0].username);
-        }
-      } catch (e) {
-        console.error("Failed to read users from localStorage", e);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (auth && auth.user) {
@@ -74,48 +66,131 @@ export default function LoginPage() {
     }
   }, [auth, router]);
 
-  const handleLogin = async () => {
-    if (!selected) return;
-    const ok = await auth.login(selected);
-    if (ok) router.push("/");
-    else alert("Login failed");
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter both username and password");
+      return;
+    }
+
+    // Try to authenticate with username and password using new auth API
+    try {
+      const authRes = await fetch("/api/auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (authRes.ok) {
+        const { user } = await authRes.json();
+        if (user) {
+          // Store user and redirect
+          localStorage.setItem("currentUser", JSON.stringify(user));
+          const ok = await auth.login(user.username || user.id, password);
+          if (ok) {
+            router.push("/");
+            return;
+          }
+        }
+      } else {
+        const errorData = await authRes.json();
+        console.error("Auth API error:", errorData.error);
+      }
+    } catch (e) {
+      console.error("Authentication request failed:", e);
+    }
+
+    // Fallback: Try direct authentication with username and password
+    try {
+      const ok = await auth.login(username, password);
+      if (ok) {
+        router.push("/");
+        return;
+      }
+    } catch (e) {
+      console.error("Fallback authentication failed:", e);
+    }
+
+    setError("Invalid username or password");
   };
 
   return (
     <Container>
       <Card>
-        <h2>Login (no password)</h2>
-        {users.length === 0 ? (
-          <div>
-            <p>
-              No users available. Please create a user first in{" "}
-              <Link href="/users">Users</Link>.
-            </p>
-          </div>
-        ) : (
-          <div>
-            <label style={{ display: "block", marginBottom: 8 }}>
-              Select user
+        <h2>Login</h2>
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600" }}>
+              Username
             </label>
-            <select
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
-              style={{ width: "100%", padding: "0.6rem", marginBottom: "1rem" }}
-            >
-              {users.map((u) => (
-                <option key={u.id} value={u.username}>
-                  {u.username} ({u.role})
-                </option>
-              ))}
-            </select>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button onClick={handleLogin}>Login</Button>
-              <Link href="/users">
-                <button style={{ padding: "0.6rem 1rem" }}>Manage Users</button>
-              </Link>
-            </div>
+            <InputField
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+            />
           </div>
-        )}
+          
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600" }}>
+              Password
+            </label>
+            <InputField
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+            />
+          </div>
+
+          {error && (
+            <div style={{
+              background: "#f8d7da",
+              color: "#721c24",
+              padding: "0.75rem",
+              borderRadius: "4px",
+              marginBottom: "1rem",
+              border: "1px solid #f5c6cb"
+            }}>
+              {error}
+            </div>
+          )}
+          
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <Button type="submit">Login</Button>
+            <Link href="/users">
+              <button type="button" style={{ 
+                padding: "0.6rem 1rem", 
+                background: "#6c757d",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer"
+              }}>
+                Manage Users
+              </button>
+            </Link>
+          </div>
+        </form>
+        
+        <div style={{ 
+          marginTop: "2rem", 
+          padding: "1rem", 
+          background: "#e9ecef", 
+          borderRadius: "4px",
+          fontSize: "0.9rem"
+        }}>
+          <strong>Default Users:</strong>
+          <ul style={{ margin: "0.5rem 0", paddingLeft: "1.5rem" }}>
+            <li>admin / admin123 (Admin)</li>
+            <li>cashier1 / cashier123 (Cashier)</li>
+            <li>manager1 / manager123 (Manager)</li>
+          </ul>
+        </div>
       </Card>
     </Container>
   );

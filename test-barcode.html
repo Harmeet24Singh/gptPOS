@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Barcode Search</title>
+</head>
+<body>
+    <h1>Test Barcode Search: 04257207521</h1>
+    
+    <div id="results"></div>
+    
+    <button onclick="testInventoryAPI()">Test Inventory API</button>
+    <button onclick="addTestProduct()">Add Test Product</button>
+    <button onclick="testSearch()">Test Search Function</button>
+    
+    <script>
+        async function testInventoryAPI() {
+            try {
+                const response = await fetch('/api/inventory', {
+                    headers: { 'x-api-key': 'dev-secret' }
+                });
+                const data = await response.json();
+                
+                console.log('=== INVENTORY API DATA ===');
+                console.log('Total items:', data.length);
+                console.log('All items:', data);
+                
+                // Look for items with barcode containing 04257207521
+                const foundItems = data.filter(item => {
+                    const itemStr = JSON.stringify(item);
+                    return itemStr.includes('04257207521');
+                });
+                
+                console.log('Items with 04257207521:', foundItems);
+                
+                document.getElementById('results').innerHTML = 
+                    `<h3>API Results:</h3>
+                     <p>Total items: ${data.length}</p>
+                     <p>Items with 04257207521: ${foundItems.length}</p>
+                     <pre>${JSON.stringify(foundItems, null, 2)}</pre>`;
+                
+            } catch (error) {
+                console.error('API Error:', error);
+                document.getElementById('results').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function addTestProduct() {
+            try {
+                const testProduct = {
+                    id: Date.now(),
+                    name: "Test Product with Barcode2",
+                    category: "Test",
+                    price: 1.99,
+                    stock: 10,
+                    lowStockThreshold: 5,
+                    taxable: true,
+                    barcode: "1234567890",
+                    barcode2: "04257207521",
+                    productId: "1234567890"
+                };
+                
+                const response = await fetch('/api/inventory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': 'dev-secret'
+                    },
+                    body: JSON.stringify([testProduct])
+                });
+                
+                if (response.ok) {
+                    console.log('Test product added successfully!');
+                    document.getElementById('results').innerHTML += '<p>✅ Test product added!</p>';
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('Add Error:', error);
+                document.getElementById('results').innerHTML += `<p>❌ Add Error: ${error.message}</p>`;
+            }
+        }
+        
+        function testSearch() {
+            // This would test the search function from the POS page
+            console.log('Testing search function for 04257207521');
+            document.getElementById('results').innerHTML += '<p>Check console for search test results</p>';
+        }
+    </script>
+</body>
+</html>

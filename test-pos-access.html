@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>POS Access Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .user-info { background: #f0f8ff; }
+        .pos-access { background: #f0fff0; }
+        .error { background: #ffe4e1; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>POS Access Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Different User Roles</h3>
+        <button onclick="testLogin('admin', 'admin123')">Test Admin Access</button>
+        <button onclick="testLogin('cashier1', 'cashier123')">Test Cashier Access</button>
+        <button onclick="testLogin('manager1', 'manager123')">Test Manager Access</button>
+        <button onclick="clearUser()">Logout</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="test-section user-info">
+        <h3>Current User Info</h3>
+        <div id="userInfo">Not logged in</div>
+    </div>
+
+    <div class="test-section pos-access">
+        <h3>POS Access Test</h3>
+        <button onclick="testPOSAccess()">Test POS Page Access</button>
+        <div id="posResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>User Permissions Check</h3>
+        <button onclick="checkPermissions()">Check Current User Permissions</button>
+        <div id="permissionsResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Database Users Check</h3>
+        <button onclick="fetchAllUsers()">Fetch All Users from Database</button>
+        <div id="usersResult" class="result"></div>
+    </div>
+
+    <script>
+        // Update user info on page load
+        updateUserInfo();
+
+        async function testLogin(username, password) {
+            try {
+                const response = await fetch('/api/users');
+                const users = await response.json();
+                
+                const user = users.find(u => 
+                    u.username.toLowerCase() === username.toLowerCase() && 
+                    u.password === password
+                );
+                
+                if (user) {
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    document.getElementById('loginResult').innerHTML = 
+                        `<span style="color: green;">✓ Successfully logged in as ${user.username} (${user.role})</span>`;
+                    updateUserInfo();
+                } else {
+                    document.getElementById('loginResult').innerHTML = 
+                        `<span style="color: red;">✗ Login failed for ${username}</span>`;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = 
+                    `<span style="color: red;">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        function clearUser() {
+            localStorage.removeItem('currentUser');
+            document.getElementById('loginResult').innerHTML = 
+                `<span style="color: blue;">ℹ Logged out successfully</span>`;
+            updateUserInfo();
+        }
+
+        function updateUserInfo() {
+            try {
+                const stored = localStorage.getItem('currentUser');
+                if (stored) {
+                    const user = JSON.parse(stored);
+                    document.getElementById('userInfo').innerHTML = `
+                        <strong>Username:</strong> ${user.username}<br>
+                        <strong>Role:</strong> ${user.role}<br>
+                        <strong>Email:</strong> ${user.email}<br>
+                        <strong>Active:</strong> ${user.active ? 'Yes' : 'No'}
+                    `;
+                } else {
+                    document.getElementById('userInfo').innerHTML = 'Not logged in';
+                }
+            } catch (error) {
+                document.getElementById('userInfo').innerHTML = 'Error reading user data';
+            }
+        }
+
+        async function testPOSAccess() {
+            try {
+                const response = await fetch('/pos');
+                if (response.ok) {
+                    document.getElementById('posResult').innerHTML = 
+                        `<span style="color: green;">✓ POS page accessible (Status: ${response.status})</span>`;
+                } else {
+                    document.getElementById('posResult').innerHTML = 
+                        `<span style="color: red;">✗ POS access denied (Status: ${response.status})</span>`;
+                }
+            } catch (error) {
+                document.getElementById('posResult').innerHTML = 
+                    `<span style="color: red;">✗ Error accessing POS: ${error.message}</span>`;
+            }
+        }
+
+        function checkPermissions() {
+            try {
+                const stored = localStorage.getItem('currentUser');
+                if (stored) {
+                    const user = JSON.parse(stored);
+                    const permissions = user.permissions || {};
+                    
+                    document.getElementById('permissionsResult').innerHTML = `
+                        <strong>User Permissions for ${user.username} (${user.role}):</strong><br>
+                        • Manage Users: ${permissions.manageUsers ? 'Yes' : 'No'}<br>
+                        • Manage Inventory: ${permissions.manageInventory ? 'Yes' : 'No'}<br>
+                        • Manage Reports: ${permissions.manageReports ? 'Yes' : 'No'}<br>
+                        • Access POS: ${permissions.managePOS ? 'Yes' : 'No'}<br>
+                    `;
+                } else {
+                    document.getElementById('permissionsResult').innerHTML = 
+                        '<span style="color: orange;">No user logged in to check permissions</span>';
+                }
+            } catch (error) {
+                document.getElementById('permissionsResult').innerHTML = 
+                    `<span style="color: red;">Error checking permissions: ${error.message}</span>`;
+            }
+        }
+
+        async function fetchAllUsers() {
+            try {
+                const response = await fetch('/api/users');
+                const users = await response.json();
+                
+                document.getElementById('usersResult').innerHTML = `
+                    <strong>Users in Database (${users.length} total):</strong><br>
+                    <pre>${JSON.stringify(users, null, 2)}</pre>
+                `;
+                console.log('Database Users:', users);
+            } catch (error) {
+                document.getElementById('usersResult').innerHTML = 
+                    `<span style="color: red;">Error fetching users: ${error.message}</span>`;
+                console.error('Error fetching users:', error);
+            }
+        }
+    </script>
+</body>
+</html>

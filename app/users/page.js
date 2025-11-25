@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import styled from "styled-components";
 import { useAuth } from "../lib/auth";
 
@@ -110,11 +111,20 @@ const Actions = styled.div`
 `;
 
 export default function UsersPage() {
+  const router = useRouter();
   const auth = useAuth();
   const [users, setUsers] = useState([]);
+
+  // Redirect to POS if not logged in
+  useEffect(() => {
+    if (!auth.user) {
+      router.push('/pos');
+    }
+  }, [auth.user, router]);
   const [newUser, setNewUser] = useState({
     username: "",
     email: "",
+    password: "",
     role: "Cashier",
     active: true,
     permissions: {
@@ -127,39 +137,85 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("users");
-    if (saved) {
-      setUsers(JSON.parse(saved));
-    } else {
-      // default admin user with full permissions
-      const defaultUsers = [
-        {
-          id: 1,
-          username: "admin",
-          email: "admin@example.com",
-          role: "Admin",
-          active: true,
-          permissions: {
-            manageUsers: true,
-            manageInventory: true,
-            manageReports: true,
-            managePOS: true,
-          },
-        },
-      ];
-      setUsers(defaultUsers);
-      localStorage.setItem("users", JSON.stringify(defaultUsers));
-    }
+    // Load users directly from MongoDB database
+    const loadUsers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const apiUsers = await response.json();
+          console.log('Users: Loaded from MongoDB ✅', apiUsers.length, 'users');
+          setUsers(apiUsers);
+        } else {
+          console.error('Users: Failed to load from database');
+          setUsers([]);
+        }
+      } catch (error) {
+        console.error('Users: Database connection failed:', error);
+        setUsers([]);
+      }
+    };
+    
+    loadUsers();
   }, []);
 
-  const saveUsers = (list) => {
-    setUsers(list);
-    localStorage.setItem("users", JSON.stringify(list));
+  const saveUser = async (user) => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(user)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save user ${user.username || user.id}`);
+      }
+      
+      console.log('User saved to MongoDB ✅');
+      return true;
+    } catch (error) {
+      console.error('Failed to save user to database:', error);
+      alert(`Failed to save user to database: ${error.message}`);
+      return false;
+    }
   };
 
-  const handleAdd = () => {
-    if (!newUser.username.trim() || !newUser.email.trim()) {
-      alert("Username and email are required");
+  const deleteUser = async (userId) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete user');
+      }
+      
+      console.log('User deleted from MongoDB ✅');
+      return true;
+    } catch (error) {
+      console.error('Failed to delete user from database:', error);
+      throw error; // Re-throw to be handled by handleDelete
+    }
+  };
+
+  const refreshUsers = async () => {
+    try {
+      const response = await fetch('/api/users');
+      if (response.ok) {
+        const apiUsers = await response.json();
+        setUsers(apiUsers);
+        console.log('Users refreshed from MongoDB ✅');
+      }
+    } catch (error) {
+      console.error('Failed to refresh users:', error);
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!newUser.username.trim() || !newUser.email.trim() || (!editingUser && !newUser.password.trim())) {
+      alert("Username, email, and password are required");
       return;
     }
 
@@ -210,44 +266,70 @@ export default function UsersPage() {
         );
         return;
       }
-
-      const updated = users.map((u) =>
-        u.id === editingUser.id ? { ...u, ...newUser } : u
-      );
-      saveUsers(updated);
-      // If admin edited their own account, refresh currentUser in auth by re-login
-      if (editingUser && auth && auth.user && editingUser.id === auth.user.id) {
-        auth.login(newUser.username);
+      
+      // Prevent changing admin role for super admin (admin user)
+      if (editingUser.id === 'admin' && newUser.role !== 'Admin' && newUser.role !== 'admin') {
+        alert(
+          "⚠️ The 'admin' user must maintain Admin role.\n\nThis is a super role protection to ensure system access is maintained."
+        );
+        return;
       }
-      setEditingUser(null);
-      setNewUser({
-        username: "",
-        email: "",
-        role: "Cashier",
-        active: true,
-        permissions: {
-          manageUsers: false,
-          manageInventory: false,
-          manageReports: false,
-          managePOS: true,
-        },
-      });
+
+      // Update existing user directly in MongoDB
+      const userToUpdate = { 
+        ...editingUser, 
+        ...newUser,
+        id: editingUser.id // Ensure ID is preserved
+      };
+      
+      const success = await saveUser(userToUpdate);
+      if (success) {
+        await refreshUsers(); // Refresh from database
+        
+        // If admin edited their own account, refresh currentUser in auth
+        if (editingUser.id === auth.user.id) {
+          auth.login(newUser.username || newUser.id, newUser.password);
+        }
+        
+        setEditingUser(null);
+        setNewUser({
+          username: "",
+          email: "",
+          password: "",
+          role: "Cashier",
+          active: true,
+          permissions: {
+            manageUsers: false,
+            manageInventory: false,
+            manageReports: false,
+            managePOS: true,
+          },
+        });
+      }
     } else {
-      const user = { id: Date.now(), ...newUser };
-      const updated = [...users, user];
-      saveUsers(updated);
-      setNewUser({
-        username: "",
-        email: "",
-        role: "Cashier",
-        active: true,
-        permissions: {
-          manageUsers: false,
-          manageInventory: false,
-          manageReports: false,
-          managePOS: true,
-        },
-      });
+      // Create new user directly in MongoDB
+      const user = { 
+        id: newUser.username, // Use username as ID for MongoDB
+        ...newUser 
+      };
+      
+      const success = await saveUser(user);
+      if (success) {
+        await refreshUsers(); // Refresh from database
+        setNewUser({
+          username: "",
+          email: "",
+          password: "",
+          role: "Cashier",
+          active: true,
+          permissions: {
+            manageUsers: false,
+            manageInventory: false,
+            manageReports: false,
+            managePOS: true,
+          },
+        });
+      }
     }
   };
 
@@ -256,6 +338,7 @@ export default function UsersPage() {
     setNewUser({
       username: user.username || "",
       email: user.email || "",
+      password: "", // Leave empty for existing users - only set when changing password
       role: user.role || "Cashier",
       active: user.active !== false,
       permissions: user.permissions || {
@@ -268,10 +351,31 @@ export default function UsersPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = (userToDelete) => {
-    if (!confirm(`Delete user ${userToDelete.username}?`)) return;
-    const updated = users.filter((u) => u.id !== userToDelete.id);
-    saveUsers(updated);
+  const handleDelete = async (userToDelete) => {
+    // Prevent deletion of admin users (super role protection)
+    if (userToDelete.role === 'Admin' || userToDelete.role === 'admin' || userToDelete.id === 'admin') {
+      alert('⚠️ Admin users cannot be deleted.\n\nAdmins have super role protection and are essential for system management.');
+      return;
+    }
+    
+    if (!confirm(`Delete user ${userToDelete.username || userToDelete.id}?\n\nThis action cannot be undone.`)) return;
+    
+    try {
+      // Delete user directly from MongoDB
+      const success = await deleteUser(userToDelete.id || userToDelete.username);
+      if (success) {
+        await refreshUsers(); // Refresh from database
+      }
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      
+      // Check if it's an admin protection error
+      if (error.message && error.message.includes('Admin users cannot be deleted')) {
+        alert('⚠️ ' + error.message);
+      } else {
+        alert('Failed to delete user from database');
+      }
+    }
   };
 
   const cancelEdit = () => {
@@ -279,6 +383,7 @@ export default function UsersPage() {
     setNewUser({
       username: "",
       email: "",
+      password: "",
       role: "Cashier",
       active: true,
       permissions: {
@@ -327,6 +432,19 @@ export default function UsersPage() {
         <h3>
           {editingUser ? `Edit User: ${editingUser.username}` : "Add New User"}
         </h3>
+        {editingUser && (editingUser.role === 'Admin' || editingUser.role === 'admin' || editingUser.id === 'admin') && (
+          <div style={{
+            background: "#fff3cd",
+            border: "1px solid #ffeaa7",
+            borderRadius: "4px",
+            padding: "0.75rem",
+            marginBottom: "1rem",
+            fontSize: "0.9rem"
+          }}>
+            <strong>🛡️ Admin User Protection:</strong> This is an admin user with super role privileges. 
+            Admin users cannot be deleted and must maintain administrative access to ensure system security.
+          </div>
+        )}
         <FormRow>
           <InputGroup>
             <label>Username *</label>
@@ -343,6 +461,17 @@ export default function UsersPage() {
               value={newUser.email}
               onChange={(e) =>
                 setNewUser({ ...newUser, email: e.target.value })
+              }
+            />
+          </InputGroup>
+          <InputGroup>
+            <label>Password {!editingUser ? '*' : '(leave empty to keep current)'}</label>
+            <input
+              type="password"
+              value={newUser.password}
+              placeholder={editingUser ? "Enter new password to change" : "Enter password"}
+              onChange={(e) =>
+                setNewUser({ ...newUser, password: e.target.value })
               }
             />
           </InputGroup>
@@ -462,22 +591,39 @@ export default function UsersPage() {
             <Card key={user.id}>
               <div style={{ fontWeight: 700 }}>
                 {user.username}{" "}
-                {user.role === "Admin" && (
+                {(user.role === "Admin" || user.role === "admin") && (
                   <span
                     style={{
                       color: "#27ae60",
                       fontSize: "0.85rem",
                       marginLeft: "0.5rem",
+                      background: "#d4edda",
+                      padding: "0.2rem 0.4rem",
+                      borderRadius: "3px",
+                      border: "1px solid #c3e6cb"
                     }}
+                    title="Super Role - Cannot be deleted"
                   >
-                    Admin
+                    🛡️ ADMIN
                   </span>
                 )}
               </div>
               <div style={{ color: "#7f8c8d", fontSize: "0.9rem" }}>
                 {user.email}
               </div>
-              <div style={{ marginTop: "0.5rem" }}>Role: {user.role}</div>
+              <div style={{ marginTop: "0.5rem" }}>
+                Role: {user.role}
+                {(user.role === "Admin" || user.role === "admin") && (
+                  <span style={{ 
+                    color: "#27ae60", 
+                    fontSize: "0.8rem", 
+                    marginLeft: "0.5rem",
+                    fontWeight: "600"
+                  }}>
+                    (Super Role)
+                  </span>
+                )}
+              </div>
               <div>Active: {user.active ? "Yes" : "No"}</div>
               <div style={{ marginTop: "0.5rem" }}>
                 <strong>Permissions:</strong>
@@ -498,12 +644,26 @@ export default function UsersPage() {
               </div>
               <Actions>
                 <Button onClick={() => handleEdit(user)}>Edit</Button>
-                <Button
-                  onClick={() => handleDelete(user)}
-                  style={{ background: "#e74c3c" }}
-                >
-                  Delete
-                </Button>
+                {(user.role === 'Admin' || user.role === 'admin' || user.id === 'admin') ? (
+                  <Button
+                    style={{ 
+                      background: "#95a5a6", 
+                      cursor: "not-allowed",
+                      opacity: 0.6 
+                    }}
+                    disabled
+                    title="Admin users cannot be deleted - Super Role Protection"
+                  >
+                    🛡️ Protected
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => handleDelete(user)}
+                    style={{ background: "#e74c3c" }}
+                  >
+                    Delete
+                  </Button>
+                )}
               </Actions>
             </Card>
           ))}

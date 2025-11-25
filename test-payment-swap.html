@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Swap Button Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .step {
+            background: rgba(46, 204, 113, 0.2);
+            border-left: 4px solid #2ecc71;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .expected {
+            background: rgba(52, 152, 219, 0.2);
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+        }
+        
+        .nav-button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+            background: linear-gradient(135deg, #2980b9, #21618c);
+        }
+        
+        .feature-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .feature-list li {
+            margin: 10px 0;
+            padding-left: 10px;
+        }
+        
+        .highlight {
+            background: rgba(241, 196, 15, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🔄 Payment Swap Button Test</h1>
+            <p><strong>Feature:</strong> Swap cash and card payment amounts with a single click</p>
+            <p><em>Test the new swap functionality between cash and card payments</em></p>
+        </div>
+
+        <div class="navigation">
+            <a href="http://localhost:3000/pos" class="nav-button">
+                🏪 Go to POS System
+            </a>
+            <a href="http://localhost:3000/test-cash-first-payment.html" class="nav-button">
+                💰 Cash-First Test
+            </a>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Test Scenarios</h2>
+            
+            <h3>Scenario 1: Basic Swap Functionality</h3>
+            <div class="step">
+                <strong>Step 1:</strong> Go to POS and add some items to cart (e.g., search for "coke" and add to cart)
+            </div>
+            <div class="step">
+                <strong>Step 2:</strong> Notice cash field is auto-filled with total (cash-first behavior)
+            </div>
+            <div class="step">
+                <strong>Step 3:</strong> Manually change card to some amount (e.g., $10.00)
+            </div>
+            <div class="step">
+                <strong>Step 4:</strong> Click the <span class="highlight">⇅ swap button</span> between cash and card fields
+            </div>
+            <div class="expected">
+                <strong>Expected:</strong> Cash and card amounts should instantly swap positions
+            </div>
+
+            <h3>Scenario 2: Swap with Auto-Fill Enabled</h3>
+            <div class="step">
+                <strong>Step 1:</strong> Ensure "Auto-fill other payment" is checked
+            </div>
+            <div class="step">
+                <strong>Step 2:</strong> Set cash to $15.00 and card to $5.00 for a $20 total
+            </div>
+            <div class="step">
+                <strong>Step 3:</strong> Click the swap button
+            </div>
+            <div class="expected">
+                <strong>Expected:</strong> Amounts swap AND auto-fill still works correctly
+            </div>
+
+            <h3>Scenario 3: Credit Sale Mode</h3>
+            <div class="step">
+                <strong>Step 1:</strong> Enable "Credit Sale Mode" checkbox
+            </div>
+            <div class="step">
+                <strong>Step 2:</strong> Look at the swap button
+            </div>
+            <div class="expected">
+                <strong>Expected:</strong> Swap button should be <span class="highlight">disabled and grayed out</span> in credit mode
+            </div>
+
+            <h3>Scenario 4: Swap with Different Amounts</h3>
+            <div class="step">
+                <strong>Step 1:</strong> Set cash to $25.75 and card to $0.00
+            </div>
+            <div class="step">
+                <strong>Step 2:</strong> Click swap button
+            </div>
+            <div class="step">
+                <strong>Step 3:</strong> Set cash to $12.50 and card to $8.25
+            </div>
+            <div class="step">
+                <strong>Step 4:</strong> Click swap button again
+            </div>
+            <div class="expected">
+                <strong>Expected:</strong> Each swap should correctly exchange the exact amounts
+            </div>
+        </div>
+
+        <div class="feature-list">
+            <h2>✨ Swap Button Features</h2>
+            <ul>
+                <li>🎯 <strong>Instant Swap:</strong> One-click exchange of cash and card amounts</li>
+                <li>🎨 <strong>Visual Feedback:</strong> Animated rotation on hover with color transitions</li>
+                <li>🚫 <strong>Smart Disabling:</strong> Automatically disabled in credit sale mode</li>
+                <li>🔄 <strong>Auto-Fill Compatible:</strong> Works seamlessly with existing auto-fill logic</li>
+                <li>💡 <strong>Tooltip Help:</strong> Hover to see helpful tooltip text</li>
+                <li>📱 <strong>Responsive Design:</strong> Centered between payment fields for easy access</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Implementation Details</h2>
+            
+            <h3>Button Design:</h3>
+            <div class="step">
+                • <strong>Icon:</strong> ⇅ (vertical double arrow for swap indication)
+            </div>
+            <div class="step">
+                • <strong>Position:</strong> Centered between cash and card input fields
+            </div>
+            <div class="step">
+                • <strong>Shape:</strong> Circular button with gradient background
+            </div>
+            <div class="step">
+                • <strong>Animation:</strong> 180° rotation on hover with scale effect
+            </div>
+
+            <h3>Functionality:</h3>
+            <div class="expected">
+                • Swaps current values of cashAmount and cardAmount states
+            </div>
+            <div class="expected">
+                • Updates lastEdited state to reflect which field now has the primary value
+            </div>
+            <div class="expected">
+                • Disabled in credit sale mode to prevent conflicts
+            </div>
+            <div class="expected">
+                • Maintains all existing validation and auto-fill behavior
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 Interactive Testing Guide</h2>
+            
+            <div class="step">
+                <strong>Quick Test:</strong> 
+                <ol>
+                    <li>Add item(s) to cart → Cash auto-fills with total</li>
+                    <li>Type amount in card field → Cash adjusts (if auto-fill on)</li>
+                    <li>Click swap button → Amounts exchange instantly</li>
+                    <li>Verify math still works correctly</li>
+                    <li>Try processing payment → Should work normally</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="http://localhost:3000/pos" class="nav-button">
+                🧪 Start Testing Now
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity to the test page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click tracking for navigation
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href && href.startsWith('http://localhost:3000')) {
+                        // Add visual feedback
+                        this.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            window.open(href, '_blank');
+                            this.style.transform = 'scale(1)';
+                        }, 150);
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Add hover effects to test sections
+            document.querySelectorAll('.test-section').forEach(section => {
+                section.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                });
+                section.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

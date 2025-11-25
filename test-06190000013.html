@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Barcode 06190000013</title>
+</head>
+<body>
+    <h1>Testing Barcode: 06190000013</h1>
+    <div id="results"></div>
+    
+    <button onclick="addTestProduct()">Add Test Product</button>
+    <button onclick="checkInventory()">Check Inventory</button>
+    <button onclick="testSearch()">Test Search Logic</button>
+    
+    <script>
+        async function addTestProduct() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<h3>Adding test product with barcode "06190000013"...</h3>';
+            
+            try {
+                const testProduct = {
+                    id: Date.now(),
+                    name: "Test Product 06190000013",
+                    category: "Test Category",
+                    price: 4.99,
+                    stock: 15,
+                    lowStockThreshold: 5,
+                    taxable: true,
+                    barcode: "06190000013",
+                    barcode2: "",
+                    productId: "06190000013"
+                };
+                
+                const response = await fetch('/api/inventory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': 'dev-secret'
+                    },
+                    body: JSON.stringify([testProduct])
+                });
+                
+                if (response.ok) {
+                    results.innerHTML += '<p>✅ Test product added successfully!</p>';
+                    console.log('Test product added:', testProduct);
+                } else {
+                    const errorText = await response.text();
+                    results.innerHTML += `<p>❌ Failed to add product: ${errorText}</p>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+                console.error('Add product error:', error);
+            }
+        }
+        
+        async function checkInventory() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<h3>Checking inventory for barcode "06190000013"...</h3>';
+            
+            try {
+                const response = await fetch('/api/inventory', {
+                    headers: { 'x-api-key': 'dev-secret' }
+                });
+                const inventory = await response.json();
+                
+                console.log('Full inventory:', inventory);
+                results.innerHTML += `<p>Total inventory items: ${inventory.length}</p>`;
+                
+                // Look for our specific barcode
+                const foundItems = inventory.filter(item => {
+                    return (item.barcode && item.barcode.includes('06190000013')) ||
+                           (item.barcode2 && item.barcode2.includes('06190000013')) ||
+                           (item.productId && item.productId.includes('06190000013')) ||
+                           (item.id && item.id.toString().includes('06190000013'));
+                });
+                
+                results.innerHTML += `<p>Items with barcode "06190000013": ${foundItems.length}</p>`;
+                if (foundItems.length > 0) {
+                    results.innerHTML += `<pre>${JSON.stringify(foundItems, null, 2)}</pre>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<p>❌ Error checking inventory: ${error.message}</p>`;
+                console.error('Check inventory error:', error);
+            }
+        }
+        
+        function testSearch() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<h3>Testing search function...</h3>';
+            results.innerHTML += '<p>Go to <a href="/pos" target="_blank">POS Page</a> and search for "06190000013"</p>';
+            results.innerHTML += '<p>Open browser console (F12) to see detailed search debug info</p>';
+        }
+        
+        // Auto-run tests
+        setTimeout(() => {
+            addTestProduct().then(() => {
+                setTimeout(checkInventory, 1000);
+            });
+        }, 500);
+    </script>
+</body>
+</html>

@@ -49,9 +49,9 @@ export const ProductsPanel = styled.div`
 
   .products-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
-    max-height: 60vh;
+    max-height: calc(3 * (120px + 1rem) - 1rem);
     overflow-y: auto;
     padding-right: 0.5rem;
   }
@@ -60,15 +60,15 @@ export const ProductsPanel = styled.div`
 export const CheckoutPanel = styled.div`
   background: ${colors.card};
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 0.75rem;
   box-shadow: 0 6px 20px rgba(36, 55, 70, 0.06);
   display: flex;
   flex-direction: column;
 
   h2 {
     color: ${colors.primary};
-    margin-bottom: 0.75rem;
-    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
     font-weight: 600;
   }
 
@@ -76,12 +76,12 @@ export const CheckoutPanel = styled.div`
     flex: 1 1 auto;
     max-height: 52vh;
     overflow-y: auto;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
 
   .checkout-summary {
     margin-top: auto;
-    padding-top: 1rem;
+    padding-top: 0.5rem;
     border-top: 1px solid rgba(36, 55, 70, 0.06);
     position: sticky;
     bottom: 0;
@@ -104,6 +104,8 @@ export const ProductItem = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  height: 120px;
+  justify-content: space-between;
 
   &:hover {
     transform: translateY(-6px);
@@ -139,9 +141,9 @@ export const ProductItem = styled.div`
 export const CartItem = styled.div`
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-items: center;
-  padding: 0.9rem 0.6rem;
+  padding: 0.6rem 0.4rem;
   border-bottom: 1px solid rgba(36, 55, 70, 0.04);
 
   &:last-child {
@@ -154,38 +156,40 @@ export const CartItem = styled.div`
 
     h4 {
       color: ${colors.primary};
-      margin: 0 0 4px 0;
-      font-size: 0.95rem;
+      margin: 0 0 2px 0;
+      font-size: 0.85rem;
       font-weight: 600;
     }
 
     p {
       color: ${colors.muted};
       margin: 0;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
     }
   }
 
   .quantity-controls {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.3rem;
 
     button {
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
       border: none;
       background: ${colors.primary};
       color: white;
       cursor: pointer;
       font-weight: 700;
+      font-size: 0.8rem;
     }
 
     span {
-      min-width: 28px;
+      min-width: 24px;
       text-align: center;
       font-weight: 700;
+      font-size: 0.85rem;
     }
   }
 
@@ -254,42 +258,43 @@ export const Button = styled.button`
 
 export const Total = styled.div`
   background: linear-gradient(180deg, #ffffff, #fbfdff);
-  padding: 0.85rem;
-  border-radius: 8px;
-  margin-bottom: 0.75rem;
+  padding: 0.6rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
 
   div {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.25rem;
     color: #243746;
+    font-size: 0.9rem;
   }
 
   .final-total {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 800;
     color: ${colors.accent};
     border-top: 1px dashed rgba(36, 55, 70, 0.06);
-    padding-top: 0.5rem;
-    margin-top: 0.45rem;
+    padding-top: 0.35rem;
+    margin-top: 0.3rem;
   }
 `;
 
 export const CheckoutButton = styled.button`
   background: ${colors.accent};
   color: white;
-  padding: 0.9rem;
+  padding: 0.7rem;
   border: none;
-  border-radius: 10px;
-  font-size: 1.05rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
   width: 100%;
 
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 30px rgba(39, 174, 96, 0.12);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(39, 174, 96, 0.12);
   }
   &:disabled {
     opacity: 0.6;

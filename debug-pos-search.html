@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug POS Barcode2 Search</title>
+</head>
+<body>
+    <h1>Debug POS Barcode2 Search Issue</h1>
+    <div id="results"></div>
+    
+    <button onclick="runFullTest()">Run Complete Test</button>
+    <button onclick="testPOSSearch()">Test POS Search Function</button>
+    
+    <script>
+        async function runFullTest() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>Running comprehensive barcode2 test...</h2>';
+            
+            try {
+                // Step 1: Add a test product with barcode2
+                results.innerHTML += '<h3>Step 1: Adding test product with barcode2...</h3>';
+                const testProduct = {
+                    id: Date.now(),
+                    name: "Barcode2 Test Product",
+                    category: "Test",
+                    price: 9.99,
+                    stock: 20,
+                    lowStockThreshold: 5,
+                    taxable: true,
+                    barcode: "1111111111",
+                    barcode2: "04257207521",
+                    productId: "1111111111"
+                };
+                
+                const addResponse = await fetch('/api/inventory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': 'dev-secret'
+                    },
+                    body: JSON.stringify([testProduct])
+                });
+                
+                if (addResponse.ok) {
+                    results.innerHTML += '<p>✅ Test product added successfully!</p>';
+                } else {
+                    throw new Error('Failed to add test product');
+                }
+                
+                // Step 2: Verify the product was saved correctly
+                results.innerHTML += '<h3>Step 2: Verifying product in database...</h3>';
+                const getResponse = await fetch('/api/inventory', {
+                    headers: { 'x-api-key': 'dev-secret' }
+                });
+                const inventory = await getResponse.json();
+                
+                const savedProduct = inventory.find(item => item.barcode2 === '04257207521');
+                if (savedProduct) {
+                    results.innerHTML += `<p>✅ Product saved correctly with barcode2: ${JSON.stringify(savedProduct)}</p>`;
+                } else {
+                    results.innerHTML += '<p>❌ Product not found with barcode2 in database!</p>';
+                    results.innerHTML += `<p>All products: ${JSON.stringify(inventory.slice(0, 3), null, 2)}</p>`;
+                }
+                
+                // Step 3: Test the search function manually
+                results.innerHTML += '<h3>Step 3: Testing search logic manually...</h3>';
+                const searchTerm = '04257207521';
+                
+                // Simulate the same logic as in getFilteredInventory
+                const foundItems = inventory.filter(item => {
+                    const barcodeFields = [
+                        'barcode', 'barcode2', 'barcode3', 'altBarcode', 'alternateBarcode',
+                        'upc', 'ean', 'gtin', 'isbn', 'sku', 'productCode'
+                    ];
+                    
+                    return barcodeFields.some(field => {
+                        const value = item[field];
+                        return value && value.toString().includes(searchTerm);
+                    });
+                });
+                
+                results.innerHTML += `<p>Manual search found: ${foundItems.length} items</p>`;
+                if (foundItems.length > 0) {
+                    results.innerHTML += `<pre>${JSON.stringify(foundItems, null, 2)}</pre>`;
+                }
+                
+                // Step 4: Test name search
+                const nameSearchResults = inventory.filter(item => 
+                    item.name.toLowerCase().includes('barcode2 test product')
+                );
+                results.innerHTML += `<p>Name search found: ${nameSearchResults.length} items</p>`;
+                
+            } catch (error) {
+                results.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+                console.error('Test error:', error);
+            }
+        }
+        
+        function testPOSSearch() {
+            const results = document.getElementById('results');
+            results.innerHTML += '<h3>Testing POS Search...</h3>';
+            results.innerHTML += '<p>Go to <a href="/pos" target="_blank">POS Page</a> and search for "04257207521"</p>';
+            results.innerHTML += '<p>Open console (F12) to see debug output</p>';
+            results.innerHTML += '<p>The search should show detailed debugging info if the search function is working</p>';
+        }
+        
+        // Run test automatically
+        setTimeout(runFullTest, 500);
+    </script>
+</body>
+</html>

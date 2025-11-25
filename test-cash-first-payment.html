@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash-First Payment Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        .test-steps { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>💰 Cash-First Payment Test</h1>
+    <p>Testing that cash is filled first instead of card in new sales</p>
+    
+    <div class="test-steps">
+        <h3>Expected Behavior:</h3>
+        <ol>
+            <li>Add items to cart</li>
+            <li>Total should appear in <strong>Cash</strong> field (not Card)</li>
+            <li>Card field should be $0.00</li>
+            <li>When editing cash, remainder goes to card</li>
+            <li>When editing card, remainder goes to cash</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h3>Automated Tests</h3>
+        <button onclick="testCashFirstDefault()">1. Test Cash-First Default</button>
+        <button onclick="testCashCardInteraction()">2. Test Cash-Card Interaction</button>
+        <button onclick="testMultipleItems()">3. Test Multiple Items</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = new Date().toLocaleTimeString() + ': ' + message;
+            resultsDiv.appendChild(div);
+        }
+
+        function testCashFirstDefault() {
+            log('💰 Testing cash-first default behavior...', 'info');
+            
+            const posWindow = window.open('/pos', '_blank');
+            
+            setTimeout(() => {
+                try {
+                    // First, add an item to cart
+                    log('   Adding test item to cart...', 'info');
+                    
+                    // Look for a product to add (try clicking first available product)
+                    const products = posWindow.document.querySelectorAll('[data-testid="product-item"], .product-item, .inventory-item');
+                    
+                    if (products.length > 0) {
+                        log('   Found products, adding first one...', 'info');
+                        products[0].click();
+                        
+                        setTimeout(() => {
+                            // Check payment fields
+                            const cashInput = posWindow.document.querySelector('#cash-amount, input[name="cash"], input[placeholder*="cash" i]');
+                            const cardInput = posWindow.document.querySelector('#card-amount, input[name="card"], input[placeholder*="card" i]');
+                            
+                            if (cashInput && cardInput) {
+                                const cashValue = parseFloat(cashInput.value) || 0;
+                                const cardValue = parseFloat(cardInput.value) || 0;
+                                
+                                log('   Payment field values:', 'info');
+                                log(`   Cash: $${cashValue.toFixed(2)}`, 'info');
+                                log(`   Card: $${cardValue.toFixed(2)}`, 'info');
+                                
+                                if (cashValue > 0 && cardValue === 0) {
+                                    log('✅ SUCCESS: Cash filled first, card is $0.00', 'success');
+                                } else if (cashValue === 0 && cardValue > 0) {
+                                    log('❌ FAILED: Card filled first (old behavior)', 'error');
+                                } else if (cashValue > 0 && cardValue > 0) {
+                                    log('⚠️ PARTIAL: Both cash and card have amounts', 'error');
+                                } else {
+                                    log('❓ UNCLEAR: Both fields are $0.00', 'info');
+                                }
+                            } else {
+                                log('❌ FAILED: Could not find cash/card input fields', 'error');
+                            }
+                            
+                            posWindow.close();
+                        }, 2000);
+                    } else {
+                        log('❌ FAILED: No products found to add to cart', 'error');
+                        posWindow.close();
+                    }
+                } catch (error) {
+                    log(`❌ ERROR: ${error.message}`, 'error');
+                    posWindow.close();
+                }
+            }, 3000);
+        }
+
+        function testCashCardInteraction() {
+            log('🔄 Testing cash-card interaction...', 'info');
+            
+            const posWindow = window.open('/pos', '_blank');
+            
+            setTimeout(() => {
+                try {
+                    // Add item first
+                    const products = posWindow.document.querySelectorAll('[data-testid="product-item"], .product-item, .inventory-item');
+                    
+                    if (products.length > 0) {
+                        products[0].click();
+                        
+                        setTimeout(() => {
+                            const cashInput = posWindow.document.querySelector('#cash-amount, input[name="cash"], input[placeholder*="cash" i]');
+                            const cardInput = posWindow.document.querySelector('#card-amount, input[name="card"], input[placeholder*="card" i]');
+                            
+                            if (cashInput && cardInput) {
+                                const originalTotal = parseFloat(cashInput.value) || 0;
+                                log(`   Original total in cash: $${originalTotal.toFixed(2)}`, 'info');
+                                
+                                // Test 1: Modify cash, check if remainder goes to card
+                                const partialCash = originalTotal / 2;
+                                cashInput.value = partialCash.toFixed(2);
+                                cashInput.dispatchEvent(new posWindow.Event('input', { bubbles: true }));
+                                cashInput.dispatchEvent(new posWindow.Event('change', { bubbles: true }));
+                                
+                                setTimeout(() => {
+                                    const newCardValue = parseFloat(cardInput.value) || 0;
+                                    const expectedCard = originalTotal - partialCash;
+                                    
+                                    log(`   Modified cash to: $${partialCash.toFixed(2)}`, 'info');
+                                    log(`   Card should be: $${expectedCard.toFixed(2)}`, 'info');
+                                    log(`   Card actually is: $${newCardValue.toFixed(2)}`, 'info');
+                                    
+                                    if (Math.abs(newCardValue - expectedCard) < 0.01) {
+                                        log('✅ SUCCESS: Remainder correctly moved to card', 'success');
+                                    } else {
+                                        log('❌ FAILED: Remainder not correctly calculated', 'error');
+                                    }
+                                    
+                                    posWindow.close();
+                                }, 1000);
+                            } else {
+                                log('❌ FAILED: Could not find payment inputs', 'error');
+                                posWindow.close();
+                            }
+                        }, 2000);
+                    } else {
+                        log('❌ FAILED: No products found', 'error');
+                        posWindow.close();
+                    }
+                } catch (error) {
+                    log(`❌ ERROR: ${error.message}`, 'error');
+                    posWindow.close();
+                }
+            }, 3000);
+        }
+
+        function testMultipleItems() {
+            log('📦 Testing multiple items cash-first behavior...', 'info');
+            
+            const posWindow = window.open('/pos', '_blank');
+            
+            setTimeout(() => {
+                try {
+                    const products = posWindow.document.querySelectorAll('[data-testid="product-item"], .product-item, .inventory-item');
+                    
+                    if (products.length >= 2) {
+                        log('   Adding first item...', 'info');
+                        products[0].click();
+                        
+                        setTimeout(() => {
+                            log('   Adding second item...', 'info');
+                            products[1].click();
+                            
+                            setTimeout(() => {
+                                const cashInput = posWindow.document.querySelector('#cash-amount, input[name="cash"], input[placeholder*="cash" i]');
+                                const cardInput = posWindow.document.querySelector('#card-amount, input[name="card"], input[placeholder*="card" i]');
+                                
+                                if (cashInput && cardInput) {
+                                    const cashValue = parseFloat(cashInput.value) || 0;
+                                    const cardValue = parseFloat(cardInput.value) || 0;
+                                    
+                                    log(`   Final cash amount: $${cashValue.toFixed(2)}`, 'info');
+                                    log(`   Final card amount: $${cardValue.toFixed(2)}`, 'info');
+                                    
+                                    if (cashValue > 0 && cardValue === 0) {
+                                        log('✅ SUCCESS: Multiple items default to cash payment', 'success');
+                                    } else {
+                                        log('❌ FAILED: Multiple items not defaulting to cash', 'error');
+                                    }
+                                } else {
+                                    log('❌ FAILED: Could not find payment inputs', 'error');
+                                }
+                                
+                                posWindow.close();
+                            }, 2000);
+                        }, 1500);
+                    } else {
+                        log('❌ FAILED: Need at least 2 products for this test', 'error');
+                        posWindow.close();
+                    }
+                } catch (error) {
+                    log(`❌ ERROR: ${error.message}`, 'error');
+                    posWindow.close();
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

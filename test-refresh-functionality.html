@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Refresh Functionality</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>POS Refresh Functionality Test</h1>
+    <p>Testing the debug refresh button and barcode2 search functionality</p>
+    
+    <div class="test">
+        <h3>Test 1: Check if refresh button exists</h3>
+        <button onclick="testRefreshButtonExists()">Run Test</button>
+        <div id="test1-result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Test 2: Test refresh functionality</h3>
+        <button onclick="testRefreshFunctionality()">Run Test</button>
+        <div id="test2-result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Test 3: Test barcode2 search after refresh</h3>
+        <button onclick="testBarcode2Search()">Run Test</button>
+        <div id="test3-result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Test 4: Complete workflow test</h3>
+        <button onclick="testCompleteWorkflow()">Run Test</button>
+        <div id="test4-result"></div>
+    </div>
+
+    <script>
+        function log(testId, message, type = 'info') {
+            const resultDiv = document.getElementById(testId + '-result');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            resultDiv.appendChild(div);
+        }
+
+        function testRefreshButtonExists() {
+            log('test1', 'Testing if refresh button exists...', 'info');
+            
+            try {
+                // Open POS page in new window to test
+                const posWindow = window.open('http://localhost:3000/pos', '_blank');
+                
+                setTimeout(() => {
+                    try {
+                        const refreshButton = posWindow.document.querySelector('button[title*="Force refresh inventory"]');
+                        if (refreshButton) {
+                            log('test1', '✅ SUCCESS: Refresh button found!', 'success');
+                            log('test1', 'Button text: ' + refreshButton.textContent, 'info');
+                        } else {
+                            log('test1', '❌ FAILED: Refresh button not found', 'error');
+                        }
+                        posWindow.close();
+                    } catch (error) {
+                        log('test1', '❌ ERROR: ' + error.message, 'error');
+                        posWindow.close();
+                    }
+                }, 3000);
+            } catch (error) {
+                log('test1', '❌ ERROR: ' + error.message, 'error');
+            }
+        }
+
+        function testRefreshFunctionality() {
+            log('test2', 'Testing refresh functionality...', 'info');
+            
+            try {
+                const posWindow = window.open('http://localhost:3000/pos', '_blank');
+                
+                setTimeout(() => {
+                    try {
+                        const refreshButton = posWindow.document.querySelector('button[title*="Force refresh inventory"]');
+                        if (refreshButton) {
+                            log('test2', 'Found refresh button, clicking...', 'info');
+                            
+                            // Monitor console logs
+                            const originalConsoleLog = posWindow.console.log;
+                            let refreshLogs = [];
+                            
+                            posWindow.console.log = function(...args) {
+                                refreshLogs.push(args.join(' '));
+                                originalConsoleLog.apply(this, args);
+                            };
+                            
+                            refreshButton.click();
+                            
+                            setTimeout(() => {
+                                const debugLogs = refreshLogs.filter(log => 
+                                    log.includes('DEBUG REFRESH') || 
+                                    log.includes('inventory count')
+                                );
+                                
+                                if (debugLogs.length > 0) {
+                                    log('test2', '✅ SUCCESS: Refresh triggered! Debug logs detected:', 'success');
+                                    debugLogs.forEach(debugLog => {
+                                        log('test2', '📝 ' + debugLog, 'info');
+                                    });
+                                } else {
+                                    log('test2', '❌ FAILED: No debug logs detected from refresh', 'error');
+                                }
+                                
+                                posWindow.console.log = originalConsoleLog;
+                                posWindow.close();
+                            }, 3000);
+                        } else {
+                            log('test2', '❌ FAILED: Refresh button not found', 'error');
+                            posWindow.close();
+                        }
+                    } catch (error) {
+                        log('test2', '❌ ERROR: ' + error.message, 'error');
+                        posWindow.close();
+                    }
+                }, 3000);
+            } catch (error) {
+                log('test2', '❌ ERROR: ' + error.message, 'error');
+            }
+        }
+
+        function testBarcode2Search() {
+            log('test3', 'Testing barcode2 search functionality...', 'info');
+            
+            try {
+                const posWindow = window.open('http://localhost:3000/pos', '_blank');
+                
+                setTimeout(() => {
+                    try {
+                        // First refresh inventory
+                        const refreshButton = posWindow.document.querySelector('button[title*="Force refresh inventory"]');
+                        if (refreshButton) {
+                            log('test3', 'Refreshing inventory first...', 'info');
+                            refreshButton.click();
+                            
+                            setTimeout(() => {
+                                // Now test barcode2 search
+                                const searchInput = posWindow.document.querySelector('input[placeholder*="Search products"]');
+                                if (searchInput) {
+                                    log('test3', 'Testing search with barcode2: 04257207521', 'info');
+                                    
+                                    // Monitor console logs for search results
+                                    const originalConsoleLog = posWindow.console.log;
+                                    let searchLogs = [];
+                                    
+                                    posWindow.console.log = function(...args) {
+                                        searchLogs.push(args.join(' '));
+                                        originalConsoleLog.apply(this, args);
+                                    };
+                                    
+                                    searchInput.value = '04257207521';
+                                    searchInput.dispatchEvent(new posWindow.Event('input', { bubbles: true }));
+                                    
+                                    setTimeout(() => {
+                                        const matchLogs = searchLogs.filter(log => 
+                                            log.includes('04257207521') || 
+                                            log.includes('Dab - Maibock') ||
+                                            log.includes('matchesAnyBarcode')
+                                        );
+                                        
+                                        if (matchLogs.length > 0) {
+                                            log('test3', '✅ SUCCESS: Search logs detected for barcode2!', 'success');
+                                            matchLogs.forEach(matchLog => {
+                                                log('test3', '📝 ' + matchLog, 'info');
+                                            });
+                                        } else {
+                                            log('test3', '❌ FAILED: No search logs detected for barcode2', 'error');
+                                        }
+                                        
+                                        posWindow.console.log = originalConsoleLog;
+                                        posWindow.close();
+                                    }, 2000);
+                                } else {
+                                    log('test3', '❌ FAILED: Search input not found', 'error');
+                                    posWindow.close();
+                                }
+                            }, 2000);
+                        } else {
+                            log('test3', '❌ FAILED: Refresh button not found', 'error');
+                            posWindow.close();
+                        }
+                    } catch (error) {
+                        log('test3', '❌ ERROR: ' + error.message, 'error');
+                        posWindow.close();
+                    }
+                }, 3000);
+            } catch (error) {
+                log('test3', '❌ ERROR: ' + error.message, 'error');
+            }
+        }
+
+        function testCompleteWorkflow() {
+            log('test4', 'Running complete workflow test...', 'info');
+            
+            log('test4', 'Step 1: Open POS page', 'info');
+            const posWindow = window.open('http://localhost:3000/pos', '_blank');
+            
+            setTimeout(() => {
+                log('test4', 'Step 2: Click refresh button', 'info');
+                
+                try {
+                    const refreshButton = posWindow.document.querySelector('button[title*="Force refresh inventory"]');
+                    if (refreshButton) {
+                        refreshButton.click();
+                        
+                        setTimeout(() => {
+                            log('test4', 'Step 3: Search for barcode2', 'info');
+                            
+                            const searchInput = posWindow.document.querySelector('input[placeholder*="Search products"]');
+                            if (searchInput) {
+                                // Monitor all console output
+                                const originalConsoleLog = posWindow.console.log;
+                                let allLogs = [];
+                                
+                                posWindow.console.log = function(...args) {
+                                    const logMessage = args.join(' ');
+                                    allLogs.push(logMessage);
+                                    originalConsoleLog.apply(this, args);
+                                    
+                                    // Real-time log reporting
+                                    if (logMessage.includes('04257207521') || 
+                                        logMessage.includes('Dab - Maibock') ||
+                                        logMessage.includes('DEBUG REFRESH') ||
+                                        logMessage.includes('matchesAnyBarcode')) {
+                                        log('test4', '🔍 LIVE: ' + logMessage, 'info');
+                                    }
+                                };
+                                
+                                searchInput.value = '04257207521';
+                                searchInput.dispatchEvent(new posWindow.Event('input', { bubbles: true }));
+                                
+                                setTimeout(() => {
+                                    log('test4', 'Step 4: Check results', 'info');
+                                    
+                                    const relevantLogs = allLogs.filter(log => 
+                                        log.includes('04257207521') || 
+                                        log.includes('Dab - Maibock') ||
+                                        log.includes('DEBUG REFRESH') ||
+                                        log.includes('inventory count')
+                                    );
+                                    
+                                    if (relevantLogs.length > 0) {
+                                        log('test4', '✅ WORKFLOW SUCCESS: Detected activity for barcode2 search!', 'success');
+                                        log('test4', `Total relevant logs: ${relevantLogs.length}`, 'info');
+                                    } else {
+                                        log('test4', '❌ WORKFLOW FAILED: No activity detected', 'error');
+                                        log('test4', `Total console logs captured: ${allLogs.length}`, 'info');
+                                    }
+                                    
+                                    posWindow.console.log = originalConsoleLog;
+                                    
+                                    setTimeout(() => {
+                                        posWindow.close();
+                                        log('test4', '✅ Test completed', 'success');
+                                    }, 1000);
+                                }, 3000);
+                            } else {
+                                log('test4', '❌ FAILED: Search input not found', 'error');
+                                posWindow.close();
+                            }
+                        }, 2000);
+                    } else {
+                        log('test4', '❌ FAILED: Refresh button not found', 'error');
+                        posWindow.close();
+                    }
+                } catch (error) {
+                    log('test4', '❌ ERROR: ' + error.message, 'error');
+                    posWindow.close();
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

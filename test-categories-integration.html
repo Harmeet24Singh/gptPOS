@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories Test - Add Item vs Categories Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .column { padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Categories Integration Test</h1>
+    <p>Testing if add item page now shows all categories from the database</p>
+    
+    <div class="test-section">
+        <h3>Quick Tests</h3>
+        <button onclick="testCategoriesAPI()">1. Test Categories API</button>
+        <button onclick="testAddItemCategories()">2. Test Add Item Dropdown</button>
+        <button onclick="testCategoriesPageCategories()">3. Test Categories Page</button>
+        <button onclick="runFullComparison()">4. Full Comparison Test</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <div class="comparison" id="comparison" style="display: none;">
+        <div class="column">
+            <h4>📝 Add Item Page Categories</h4>
+            <div id="additem-categories"></div>
+        </div>
+        <div class="column">
+            <h4>📋 Categories Management Page</h4>
+            <div id="management-categories"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = new Date().toLocaleTimeString() + ': ' + message;
+            resultsDiv.appendChild(div);
+        }
+
+        async function testCategoriesAPI() {
+            log('🔌 Testing Categories API...', 'info');
+            
+            try {
+                const response = await fetch('/api/categories');
+                if (response.ok) {
+                    const categories = await response.json();
+                    log(`✅ API Success: ${categories.length} categories found`, 'success');
+                    categories.forEach((cat, i) => {
+                        const name = cat.name || cat;
+                        log(`   ${i+1}. ${name}`, 'info');
+                    });
+                    return categories;
+                } else {
+                    log(`❌ API Failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ API Error: ${error.message}`, 'error');
+            }
+            return [];
+        }
+
+        async function testAddItemCategories() {
+            log('📝 Testing Add Item Page Categories...', 'info');
+            
+            const addItemWindow = window.open('/inventory/add', '_blank');
+            
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    try {
+                        const categorySelect = addItemWindow.document.querySelector('#category');
+                        if (categorySelect) {
+                            const options = Array.from(categorySelect.options).filter(opt => opt.value);
+                            log(`✅ Add Item Success: ${options.length} categories in dropdown`, 'success');
+                            
+                            const categories = options.map(opt => opt.value);
+                            categories.forEach((cat, i) => {
+                                log(`   ${i+1}. ${cat}`, 'info');
+                            });
+                            
+                            addItemWindow.close();
+                            resolve(categories);
+                        } else {
+                            log('❌ Add Item Failed: Category dropdown not found', 'error');
+                            addItemWindow.close();
+                            resolve([]);
+                        }
+                    } catch (error) {
+                        log(`❌ Add Item Error: ${error.message}`, 'error');
+                        addItemWindow.close();
+                        resolve([]);
+                    }
+                }, 3000);
+            });
+        }
+
+        async function testCategoriesPageCategories() {
+            log('📋 Testing Categories Management Page...', 'info');
+            
+            const categoriesWindow = window.open('/categories', '_blank');
+            
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    try {
+                        // Look for category elements in the categories page
+                        const categoryElements = categoriesWindow.document.querySelectorAll('[data-category], .category-item, .category-name');
+                        
+                        if (categoryElements.length > 0) {
+                            log(`✅ Categories Page Success: ${categoryElements.length} categories displayed`, 'success');
+                            
+                            const categories = Array.from(categoryElements).map(el => el.textContent.trim()).filter(text => text);
+                            categories.forEach((cat, i) => {
+                                log(`   ${i+1}. ${cat}`, 'info');
+                            });
+                            
+                            categoriesWindow.close();
+                            resolve(categories);
+                        } else {
+                            log('❌ Categories Page: Could not find category elements', 'error');
+                            categoriesWindow.close();
+                            resolve([]);
+                        }
+                    } catch (error) {
+                        log(`❌ Categories Page Error: ${error.message}`, 'error');
+                        categoriesWindow.close();
+                        resolve([]);
+                    }
+                }, 3000);
+            });
+        }
+
+        async function runFullComparison() {
+            log('🔄 Running Full Comparison Test...', 'info');
+            document.getElementById('comparison').style.display = 'grid';
+            
+            // Test all sources
+            const [apiCategories, addItemCategories, managementCategories] = await Promise.all([
+                testCategoriesAPI(),
+                testAddItemCategories(),
+                testCategoriesPageCategories()
+            ]);
+            
+            // Display comparison
+            document.getElementById('additem-categories').innerHTML = 
+                addItemCategories.map((cat, i) => `${i+1}. ${cat}`).join('<br>') || 'No categories found';
+            
+            document.getElementById('management-categories').innerHTML = 
+                managementCategories.map((cat, i) => `${i+1}. ${cat}`).join('<br>') || 'No categories found';
+            
+            // Analysis
+            log('📊 Comparison Analysis:', 'info');
+            log(`API Categories: ${apiCategories.length}`, 'info');
+            log(`Add Item Categories: ${addItemCategories.length}`, 'info');
+            log(`Management Categories: ${managementCategories.length}`, 'info');
+            
+            if (addItemCategories.length > 0 && addItemCategories.length === apiCategories.length) {
+                log('🎉 SUCCESS: Add item page shows all categories from API!', 'success');
+            } else if (addItemCategories.length === 0) {
+                log('⚠️ ISSUE: Add item page shows no categories', 'error');
+            } else {
+                log(`⚠️ PARTIAL: Add item shows ${addItemCategories.length} of ${apiCategories.length} categories`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

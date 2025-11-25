@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-const mongo = require('../../../server/mongo');
+const mongo = require('../../../../server/mongo');
 
 export async function GET(req, { params }) {
   try {
@@ -14,18 +14,36 @@ export async function GET(req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
-    const { checkApiKey } = require("../../../server/auth");
-    if (!checkApiKey(req))
+    console.log("PUT /api/inventory/[id] called for ID:", params.id);
+    const { checkApiKey } = require("../../../../server/auth");
+    if (!checkApiKey(req)) {
+      console.log("PUT API key check failed");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await req.json();
+    console.log("PUT request body:", body);
+    
     // ensure id field is numeric
-    body.id = Number(params.id);
+    const numericId = Number(params.id);
+    if (isNaN(numericId)) {
+      console.log("Invalid ID provided:", params.id);
+      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    }
+    
+    body.id = numericId;
+    console.log("Upserting item with ID:", numericId);
+    
     await mongo.upsertInventoryItems([body]);
+    console.log("PUT upsert completed successfully");
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("PUT /api/inventory/[id] error", err);
-    return NextResponse.json({ error: "Failed to update item" }, { status: 500 });
+    console.error("PUT /api/inventory/[id] error - Full error:", err);
+    console.error("Error message:", err.message);
+    return NextResponse.json({ 
+      error: "Failed to update item", 
+      details: err.message 
+    }, { status: 500 });
   }
 }
 
