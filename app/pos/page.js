@@ -23,6 +23,28 @@ import {
   CheckoutButton,
   ReceiptSection,
 } from "../styles/posStyles";
+import OnScreenKeyboard from "../components/OnScreenKeyboard";
+import styled from "styled-components";
+
+// Wrapper to handle keyboard spacing
+const POSWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+`;
+
+const KeyboardArea = styled.div`
+  height: 180px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+`;
 
 // Initial inventory data as fallback
 const initialInventory = [
@@ -142,6 +164,13 @@ function POSContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const searchInputRef = useRef(null);
+  const cashAmountRef = useRef(null);
+  const cardAmountRef = useRef(null);
+  const discountRef = useRef(null);
+  const cashbackAmountRef = useRef(null);
+  const cashbackFeeRef = useRef(null);
+  const lottoWinningsRef = useRef(null);
+  const creditCustomerNameRef = useRef(null);
   const [barcodeBuffer, setBarcodeBuffer] = useState("");
   const [lastKeyTime, setLastKeyTime] = useState(0);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -155,6 +184,18 @@ function POSContent() {
   const [paymentError, setPaymentError] = useState("");
   const [autoFillOther, setAutoFillOther] = useState(true);
   const [lastEdited, setLastEdited] = useState(null); // 'cash' | 'card' | null
+
+  // Virtual keyboard states
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [activeInputRef, setActiveInputRef] = useState(null);
+  const [keyboardMode, setKeyboardMode] = useState('full'); // 'full' or 'numeric'
+
+  // Helper function to handle input focus and show appropriate keyboard
+  const handleInputFocus = (inputRef, isNumeric = false) => {
+    setActiveInputRef(inputRef);
+    setKeyboardMode(isNumeric ? 'numeric' : 'full');
+    setShowKeyboard(true);
+  };
 
   // Credit sale states
   const [isCreditSale, setIsCreditSale] = useState(false);
@@ -1788,7 +1829,8 @@ function POSContent() {
 
   if (showReceipt && lastTransaction) {
     return (
-      <Container>
+      <POSWrapper>
+        <Container>
         <ReceiptSection>
           <h2>Transaction Complete!</h2>
           <div className="receipt">
@@ -1880,13 +1922,15 @@ function POSContent() {
             <Button onClick={startNewSale}>New Sale</Button>
           </div>
         </ReceiptSection>
-      </Container>
+        </Container>
+      </POSWrapper>
     );
   }
 
   return (
-    <Container>
-      <POSGrid>
+    <POSWrapper>
+      <Container>
+        <POSGrid>
         <ProductsPanel>
           <div
             style={{
@@ -1927,12 +1971,31 @@ function POSContent() {
                 placeholder="Search products... (Barcode Scanner Ready)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => handleInputFocus(searchInputRef, false)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handleSearchEnter();
                   }
                 }}
               />
+              <Button
+                onClick={() => {
+                  if (showKeyboard && activeInputRef === searchInputRef) {
+                    setShowKeyboard(false);
+                  } else {
+                    handleInputFocus(searchInputRef, false);
+                  }
+                }}
+                style={{
+                  marginLeft: "0.5rem",
+                  padding: "0.75rem",
+                  background: showKeyboard && activeInputRef === searchInputRef ? "#27ae60" : "#3498db",
+                  minWidth: "auto"
+                }}
+                title="Toggle Virtual Keyboard"
+              >
+                ⌨️
+              </Button>
               {barcodeBuffer && (
                 <div
                   style={{
@@ -2097,14 +2160,31 @@ function POSContent() {
                 onClick={() => {
                   // Special handling for Lotto, Grocery, Western Union, and Tea categories
                   if (
-                    (category.key === "Lotto" ||
-                      category.key === "Grocery" ||
-                      category.key === "WesternUnion" ||
-                      category.key === "Tea") &&
-                    searchTerm.trim()
+                    category.key === "Lotto" ||
+                    category.key === "Grocery" ||
+                    category.key === "WesternUnion" ||
+                    category.key === "Tea"
                   ) {
-                    const searchValue = searchTerm.trim();
-                    const numericValue = parseFloat(searchValue);
+                    // Check search term first, then currently focused input field
+                    let inputValue = searchTerm.trim();
+                    
+                    // If search is empty, check the currently active input field
+                    if (!inputValue && activeInputRef && activeInputRef.current) {
+                      inputValue = activeInputRef.current.value;
+                    }
+                    
+                    // If still no value, check other input fields that might have values
+                    if (!inputValue) {
+                      const inputs = [discountRef, cashAmountRef, cardAmountRef, cashbackAmountRef, lottoWinningsRef];
+                      for (const inputRef of inputs) {
+                        if (inputRef.current && inputRef.current.value) {
+                          inputValue = inputRef.current.value;
+                          break;
+                        }
+                      }
+                    }
+                    
+                    const numericValue = parseFloat(inputValue);
 
                     // Check if search term is a valid number
                     if (!isNaN(numericValue) && numericValue > 0) {
@@ -2160,8 +2240,16 @@ function POSContent() {
                       // Add to cart
                       addToCart(newItem);
 
-                      // Clear search term after adding
-                      setSearchTerm("");
+                      // Clear the input field that was used
+                      if (searchTerm.trim()) {
+                        setSearchTerm("");
+                      } else if (activeInputRef && activeInputRef.current) {
+                        // Clear the currently active input field
+                        activeInputRef.current.value = "";
+                        // Trigger onChange event to update state
+                        const event = new Event('input', { bubbles: true });
+                        activeInputRef.current.dispatchEvent(event);
+                      }
 
                       // Show success feedback
                       console.log(`Added ${newItem.name} to cart`);
@@ -2540,6 +2628,19 @@ function POSContent() {
             </div>
           )}
 
+          {/* Dedicated Keyboard Area */}
+          <KeyboardArea>
+            <OnScreenKeyboard
+              show={true}
+              mode={keyboardMode}
+              onClose={() => setShowKeyboard(false)}
+              inputRef={activeInputRef}
+              onKeyPress={(key) => {
+                console.log('Virtual key pressed:', key);
+              }}
+            />
+          </KeyboardArea>
+
           <div className="products-grid">
             {filteredInventory.length === 0 &&
               inventory.length > 0 &&
@@ -2788,7 +2889,9 @@ function POSContent() {
             )}
           </div>
 
-          {/* Cashback Option */}
+          {/* Scrollable checkout sections */}
+          <div className="checkout-sections">
+            {/* Cashback Option */}
           <div
             style={{
               margin: "0.5rem 0",
@@ -2836,10 +2939,12 @@ function POSContent() {
                     Amount:
                   </label>
                   <input
+                    ref={cashbackAmountRef}
                     type="number"
                     step="0.01"
                     min="0"
                     value={cashbackAmount}
+                    onFocus={() => handleInputFocus(cashbackAmountRef, true)}
                     onChange={(e) => {
                       const value = e.target.value;
                       setCashbackAmount(value === "" ? "" : Number(value));
@@ -2872,10 +2977,12 @@ function POSContent() {
                     Fee:
                   </label>
                   <input
+                    ref={cashbackFeeRef}
                     type="number"
                     step="0.01"
                     min="0"
                     value={cashbackFee}
+                    onFocus={() => handleInputFocus(cashbackFeeRef, true)}
                     onChange={(e) => {
                       const value = e.target.value;
                       setCashbackFee(value === "" ? "" : Number(value));
@@ -2944,10 +3051,12 @@ function POSContent() {
                 Amount:
               </label>
               <input
+                ref={discountRef}
                 type="number"
                 step="0.01"
                 min="0"
                 value={discountAmount}
+                onFocus={() => handleInputFocus(discountRef, true)}
                 onChange={(e) => {
                   const value = e.target.value;
                   setDiscountAmount(value === "" ? "" : Number(value));
@@ -3108,10 +3217,12 @@ function POSContent() {
                 Amount:
               </label>
               <input
+                ref={lottoWinningsRef}
                 type="number"
                 step="0.01"
                 min="0"
                 value={lottoWinnings}
+                onFocus={() => handleInputFocus(lottoWinningsRef, true)}
                 onChange={(e) => {
                   const value = e.target.value;
                   setLottoWinnings(value === "" ? "" : Number(value));
@@ -3139,6 +3250,7 @@ function POSContent() {
                 lottery
               </div>
             )}
+          </div>
           </div>
 
           <div className="checkout-summary">
@@ -3332,8 +3444,10 @@ function POSContent() {
                                 }}
                               >
                                 <input
+                                  ref={creditCustomerNameRef}
                                   type="text"
                                   value={creditCustomerName}
+                                  onFocus={() => handleInputFocus(creditCustomerNameRef, false)}
                                   onChange={(e) =>
                                     handleCustomerNameChange(e.target.value)
                                   }
@@ -3784,11 +3898,13 @@ function POSContent() {
                         Cash:
                       </label>
                       <input
+                        ref={cashAmountRef}
                         type="number"
                         step="0.01"
                         min="0"
                         value={cashAmount}
                         disabled={(Number(cashbackAmount) || 0) > 0}
+                        onFocus={() => handleInputFocus(cashAmountRef, true)}
                         onChange={(e) => {
                           const value = e.target.value;
                           setLastEdited("cash");
@@ -3951,10 +4067,12 @@ function POSContent() {
                       </button>
                       <label style={{ minWidth: "80px" }}>Card:</label>
                       <input
+                        ref={cardAmountRef}
                         type="number"
                         step="0.01"
                         min="0"
                         value={cardAmount}
+                        onFocus={() => handleInputFocus(cardAmountRef, true)}
                         onChange={(e) => {
                           const value = e.target.value;
                           setLastEdited("card");
@@ -4279,7 +4397,9 @@ function POSContent() {
           </div>
         </CheckoutPanel>
       </POSGrid>
-    </Container>
+      
+      </Container>
+    </POSWrapper>
   );
 }
 

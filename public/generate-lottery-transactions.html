@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Lottery Transaction Generator</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #output {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎲 Fake Lottery Transaction Generator</h1>
+        <p>This tool will generate fake lottery transactions totaling approximately $1800 for today.</p>
+        
+        <button id="generateBtn" onclick="startGeneration()">Generate Lottery Transactions</button>
+        <button id="clearBtn" onclick="clearOutput()">Clear Output</button>
+        
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const API_KEY = 'dev-secret';
+        const API_BASE_URL = window.location.origin + '/api'; // Use current domain
+        
+        // Lottery ticket types and their typical prices
+        const lotteryTickets = [
+            { name: "Lotto 6/49", price: 3.00, category: "Lottery" },
+            { name: "Lotto Max", price: 5.00, category: "Lottery" },
+            { name: "Daily Grand", price: 3.00, category: "Lottery" },
+            { name: "Scratch Ticket $5", price: 5.00, category: "Lottery" },
+            { name: "Scratch Ticket $10", price: 10.00, category: "Lottery" },
+            { name: "Scratch Ticket $20", price: 20.00, category: "Lottery" },
+            { name: "Scratch Ticket $30", price: 30.00, category: "Lottery" },
+            { name: "Pro Line", price: 2.00, category: "Lottery" },
+            { name: "Pick 3", price: 1.00, category: "Lottery" },
+            { name: "Encore", price: 1.00, category: "Lottery" }
+        ];
+
+        // Payment methods for lottery transactions
+        const paymentMethods = ['cash', 'card'];
+
+        // Output functions
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+
+        // Generate random transaction time for today
+        function getRandomTimeToday() {
+            const today = new Date();
+            const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 7, 0, 0); // 7 AM
+            const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 22, 0, 0); // 10 PM
+            
+            const randomTime = new Date(startOfDay.getTime() + Math.random() * (endOfDay.getTime() - startOfDay.getTime()));
+            return randomTime;
+        }
+
+        // Generate random lottery transaction
+        function generateLotteryTransaction() {
+            const timestamp = getRandomTimeToday();
+            const transactionId = `lotto_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Random number of different lottery tickets (1-4 types per transaction)
+            const numTypes = Math.floor(Math.random() * 4) + 1;
+            const selectedTickets = [];
+            
+            for (let i = 0; i < numTypes; i++) {
+                const ticket = lotteryTickets[Math.floor(Math.random() * lotteryTickets.length)];
+                const quantity = Math.floor(Math.random() * 3) + 1; // 1-3 tickets of each type
+                
+                selectedTickets.push({
+                    id: `lottery_${ticket.name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}_${i}`,
+                    name: ticket.name,
+                    category: ticket.category,
+                    price: ticket.price,
+                    quantity: quantity,
+                    applyTax: true, // Lottery tickets are typically taxable
+                    taxable: true
+                });
+            }
+            
+            // Calculate totals
+            const subtotal = selectedTickets.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * 0.13; // 13% HST
+            const total = subtotal + tax;
+            
+            // Random payment method
+            const paymentMethod = paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
+            
+            let cashAmount = 0;
+            let cardAmount = 0;
+            
+            if (paymentMethod === 'cash') {
+                cashAmount = total;
+            } else {
+                cardAmount = total;
+            }
+            
+            return {
+                id: transactionId,
+                timestamp: timestamp.toISOString(),
+                items: selectedTickets,
+                subtotal: Math.round(subtotal * 100) / 100,
+                tax: Math.round(tax * 100) / 100,
+                total: Math.round(total * 100) / 100,
+                cashAmount: Math.round(cashAmount * 100) / 100,
+                cardAmount: Math.round(cardAmount * 100) / 100,
+                creditAmount: 0,
+                discountAmount: 0,
+                cashbackAmount: 0,
+                cashbackFee: 0,
+                lottoWinnings: 0,
+                change: paymentMethod === 'cash' ? Math.round((Math.ceil(total * 2) / 2 - total) * 100) / 100 : 0, // Round up to nearest 50 cents for change
+                transactionType: 'sale',
+                paymentMethod: paymentMethod,
+                status: 'completed'
+            };
+        }
+
+        // Function to create transactions via API
+        async function createTransactionViaAPI(transaction) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/transaction`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': API_KEY
+                    },
+                    body: JSON.stringify(transaction)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Error creating transaction:', error);
+                throw error;
+            }
+        }
+
+        // Main function to generate fake lottery transactions
+        async function generateFakeLotteryTransactions() {
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+            
+            log('🎲 Starting fake lottery transaction generation...', 'info');
+            
+            const transactions = [];
+            let totalAmount = 0;
+            const targetAmount = 1800;
+            
+            log(`🎯 Generating lottery transactions to reach ~$${targetAmount}...`, 'info');
+            
+            while (totalAmount < targetAmount - 50) { // Stop when we're within $50 of target
+                const transaction = generateLotteryTransaction();
+                
+                try {
+                    log(`Creating transaction: $${transaction.total.toFixed(2)}...`, 'info');
+                    const result = await createTransactionViaAPI(transaction);
+                    
+                    transactions.push(result);
+                    totalAmount += transaction.total;
+                    
+                    log(`✅ Created transaction: $${transaction.total.toFixed(2)} (Total so far: $${totalAmount.toFixed(2)})`, 'success');
+                    
+                    // Small delay to avoid overwhelming the server
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    
+                } catch (error) {
+                    log(`❌ Failed to create transaction: $${transaction.total.toFixed(2)} - ${error.message}`, 'error');
+                    break;
+                }
+                
+                // Safety check to prevent infinite loop
+                if (transactions.length > 100) {
+                    log('⚠️  Generated 100 transactions, stopping for safety', 'info');
+                    break;
+                }
+            }
+            
+            log(`\n📊 Summary:`, 'info');
+            log(`- Generated ${transactions.length} lottery transactions`, 'info');
+            log(`- Total amount: $${totalAmount.toFixed(2)}`, 'info');
+            log(`- Average transaction: $${(totalAmount / transactions.length).toFixed(2)}`, 'info');
+            
+            log(`\n🎉 Successfully created ${transactions.length} fake lottery transactions totaling $${totalAmount.toFixed(2)}`, 'success');
+            
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate More Transactions';
+        }
+
+        // Start generation function
+        async function startGeneration() {
+            try {
+                await generateFakeLotteryTransactions();
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('generateBtn').textContent = 'Generate Lottery Transactions';
+            }
+        }
+    </script>
+</body>
+</html>

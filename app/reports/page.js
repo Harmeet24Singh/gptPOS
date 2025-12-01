@@ -31,6 +31,8 @@ export default function ReportsPage() {
     topSellingItem: null,
     totalTaxCollected: 0,
   });
+  
+  const [categorySales, setCategorySales] = useState({});
 
   useEffect(() => {
     const load = async () => {
@@ -120,6 +122,89 @@ export default function ReportsPage() {
         topSellingItem,
         totalTaxCollected,
       });
+
+      // Calculate category-wise sales for today and recent days (last 7 days for testing)
+      const todayTransactions = savedTransactions.filter(
+        (t) => new Date(t.timestamp).toDateString() === today
+      );
+
+      // If no transactions today, use last 7 days for demonstration
+      const recentTransactions = savedTransactions.filter((t) => {
+        const transactionDate = new Date(t.timestamp);
+        const daysDiff = (new Date() - transactionDate) / (1000 * 60 * 60 * 24);
+        return daysDiff <= 7;
+      });
+
+      const transactionsToUse = todayTransactions.length > 0 ? todayTransactions : recentTransactions;
+
+      console.log("Today's transactions:", todayTransactions.length);
+      console.log("Recent transactions (7 days):", recentTransactions.length);
+      console.log("Using transactions:", transactionsToUse.length);
+      console.log("Sample transaction:", transactionsToUse[0]);
+      if (transactionsToUse[0] && transactionsToUse[0].items) {
+        console.log("Sample transaction items:", transactionsToUse[0].items);
+      }
+
+      const categorySalesData = {};
+      transactionsToUse.forEach((transaction, index) => {
+        const items = transaction.items || [];
+        console.log(`Transaction ${index + 1}:`, {
+          id: transaction._id,
+          itemCount: items.length,
+          items: items.map(item => ({
+            name: item.name,
+            category: item.category,
+            price: item.price,
+            quantity: item.quantity
+          }))
+        });
+
+        items.forEach((item) => {
+          if (!item) {
+            console.log("Skipping null item");
+            return;
+          }
+          
+          if (!item.category) {
+            console.log("Item without category:", item.name);
+            return;
+          }
+          
+          const category = item.category;
+          const itemTotal = (item.price || 0) * (item.quantity || 0);
+          
+          console.log(`Processing: ${item.name} - Category: ${category} - Total: $${itemTotal}`);
+          
+          if (!categorySalesData[category]) {
+            categorySalesData[category] = {
+              totalSales: 0,
+              itemsSold: 0,
+              transactions: 0
+            };
+          }
+          
+          categorySalesData[category].totalSales += itemTotal;
+          categorySalesData[category].itemsSold += item.quantity || 0;
+        });
+      });
+
+      // Count transactions per category
+      transactionsToUse.forEach((transaction) => {
+        const categoriesInTransaction = new Set();
+        (transaction.items || []).forEach((item) => {
+          if (item && item.category) {
+            categoriesInTransaction.add(item.category);
+          }
+        });
+        
+        categoriesInTransaction.forEach((category) => {
+          if (categorySalesData[category]) {
+            categorySalesData[category].transactions++;
+          }
+        });
+      });
+
+      setCategorySales(categorySalesData);
     };
 
     load();
@@ -187,6 +272,70 @@ export default function ReportsPage() {
             <p>Most sold product</p>
           </Card>
         </CardGrid>
+      </div>
+
+      <div style={{ marginBottom: "3rem" }}>
+        <h2 style={{ marginBottom: "1rem", color: "#2c3e50" }}>
+          {Object.keys(categorySales).length > 0 && 
+           Object.values(categorySales).some(cat => cat.totalSales > 0) 
+           ? "Recent Category-wise Sales (Last 7 Days)" 
+           : "Today's Category-wise Sales"}
+        </h2>
+        <Table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Total Sales</th>
+              <th>Items Sold</th>
+              <th>Transactions</th>
+              <th>Avg Sale per Transaction</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.keys(categorySales).length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: "center", color: "#7f8c8d" }}>
+                  No sales data for today
+                </td>
+              </tr>
+            ) : (
+              Object.entries(categorySales)
+                .sort((a, b) => b[1].totalSales - a[1].totalSales) // Sort by total sales descending
+                .map(([category, data]) => (
+                  <tr key={category}>
+                    <td style={{ fontWeight: "bold" }}>{category}</td>
+                    <td style={{ color: "#27ae60", fontWeight: "bold" }}>
+                      ${data.totalSales.toFixed(2)}
+                    </td>
+                    <td>{data.itemsSold}</td>
+                    <td>{data.transactions}</td>
+                    <td>
+                      ${data.transactions > 0 ? (data.totalSales / data.transactions).toFixed(2) : "0.00"}
+                    </td>
+                  </tr>
+                ))
+            )}
+          </tbody>
+        </Table>
+        
+        {Object.keys(categorySales).length > 0 && (
+          <div style={{ marginTop: "1rem", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+            {Object.entries(categorySales)
+              .sort((a, b) => b[1].totalSales - a[1].totalSales)
+              .slice(0, 4)
+              .map(([category, data]) => (
+                <Card key={category} style={{ minWidth: "200px", flex: "1" }}>
+                  <h4 style={{ margin: "0 0 0.5rem 0", color: "#2c3e50" }}>{category}</h4>
+                  <p style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#27ae60", margin: "0.5rem 0" }}>
+                    ${data.totalSales.toFixed(2)}
+                  </p>
+                  <p style={{ margin: "0", fontSize: "0.9rem", color: "#7f8c8d" }}>
+                    {data.itemsSold} items • {data.transactions} transactions
+                  </p>
+                </Card>
+              ))}
+          </div>
+        )}
       </div>
 
       <div style={{ marginBottom: "3rem" }}>

@@ -14,19 +14,25 @@ const colors = {
 export const Container = styled.div`
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 1rem;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial;
   color: #243746;
   background: ${colors.bg};
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 `;
 
 export const POSGrid = styled.div`
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
-  min-height: 60vh;
+  gap: 1rem;
+  flex: 1;
   align-items: start;
+  overflow: hidden;
+  min-height: 0;
 
   @media (max-width: 1024px) {
     grid-template-columns: 1fr;
@@ -36,9 +42,13 @@ export const POSGrid = styled.div`
 export const ProductsPanel = styled.div`
   background: ${colors.card};
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1rem;
   box-shadow: 0 6px 20px rgba(36, 55, 70, 0.06);
   overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 
   h2 {
     color: ${colors.primary};
@@ -50,10 +60,12 @@ export const ProductsPanel = styled.div`
   .products-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    max-height: calc(3 * (120px + 1rem) - 1rem);
+    gap: 0.8rem;
+    flex: 1;
     overflow-y: auto;
     padding-right: 0.5rem;
+    min-height: 200px;
+    max-height: 300px;
   }
 `;
 
@@ -64,6 +76,9 @@ export const CheckoutPanel = styled.div`
   box-shadow: 0 6px 20px rgba(36, 55, 70, 0.06);
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 
   h2 {
     color: ${colors.primary};
@@ -73,24 +88,46 @@ export const CheckoutPanel = styled.div`
   }
 
   .cart-items {
-    flex: 1 1 auto;
-    max-height: 52vh;
+    flex: 0 1 auto;
     overflow-y: auto;
     margin-bottom: 0.5rem;
+    min-height: 120px;
+    max-height: 200px;
+  }
+
+  .checkout-sections {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    
+    /* Custom scrollbar */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
   }
 
   .checkout-summary {
+    flex: 0 0 auto;
     margin-top: auto;
-    padding-top: 0.5rem;
-    border-top: 1px solid rgba(36, 55, 70, 0.06);
-    position: sticky;
-    bottom: 0;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0),
-      ${colors.card} 40%
-    );
-    padding-bottom: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid rgba(36, 55, 70, 0.08);
+    background: ${colors.card};
+    padding-bottom: 0.5rem;
   }
 `;
 

@@ -13,6 +13,7 @@
     "html5-qrcode": "^2.3.8",
     "mongodb": "^5.9.2",
     "next": "14.2.0",
+    "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-qr-barcode-scanner": "^2.1.18",
