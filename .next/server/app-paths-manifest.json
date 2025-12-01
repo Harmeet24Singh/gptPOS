@@ -1,7 +1,9 @@
 {
   "/pos/page": "app/pos/page.js",
-  "/api/credit/accounts/route": "app/api/credit/accounts/route.js",
   "/transactions/page": "app/transactions/page.js",
+  "/api/inventory/route": "app/api/inventory/route.js",
+  "/inventory/add/page": "app/inventory/add/page.js",
   "/api/categories/route": "app/api/categories/route.js",
-  "/api/inventory/route": "app/api/inventory/route.js"
+  "/api/transaction/route": "app/api/transaction/route.js",
+  "/inventory/page": "app/inventory/page.js"
 }
