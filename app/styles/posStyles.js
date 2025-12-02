@@ -100,22 +100,22 @@ export const CheckoutPanel = styled.div`
     overflow-y: auto;
     padding-right: 0.5rem;
     margin-bottom: 0.5rem;
-    
+
     /* Custom scrollbar */
     &::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: #f1f1f1;
       border-radius: 3px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: #c1c1c1;
       border-radius: 3px;
     }
-    
+
     &::-webkit-scrollbar-thumb:hover {
       background: #a8a8a8;
     }
@@ -135,13 +135,13 @@ export const ProductItem = styled.div`
   background: linear-gradient(180deg, #ffffff, #fbfdff);
   border: 1px solid rgba(36, 55, 70, 0.04);
   border-radius: 10px;
-  padding: 0.9rem 0.9rem;
+  padding: 0.6rem 0.6rem;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  height: 120px;
+  gap: 0.3rem;
+  height: 90px;
   justify-content: space-between;
 
   &:hover {
@@ -152,7 +152,7 @@ export const ProductItem = styled.div`
   h4 {
     color: ${colors.primary};
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     line-height: 1.1;
     font-weight: 600;
   }

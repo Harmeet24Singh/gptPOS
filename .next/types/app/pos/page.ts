@@ -1,4 +1,4 @@
-// File: C:\Users\shop\Desktop\gptPos\gptPOS\app\pos\page.js
+// File: /Users/harmeetsingh/Documents/harmeet24singhGIT/gptPOS/app/pos/page.js
 import * as entry from '../../../../app/pos/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
