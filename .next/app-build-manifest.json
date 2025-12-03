@@ -10,10 +10,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/layout.js"
     ],
-    "/transactions/page": [
+    "/credit-management/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/transactions/page.js"
+      "static/chunks/app/credit-management/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",

@@ -536,7 +536,7 @@ async function upsertCreditAccount(accountData) {
   if (existingAccount) {
     // Update existing account
     const updateData = {
-      balance: Number(accountData.balance || existingAccount.balance || 0),
+      balance: accountData.balance !== undefined ? Number(accountData.balance) : (existingAccount.balance || 0),
       phone: accountData.phone || existingAccount.phone || '',
       email: accountData.email || existingAccount.email || '',
       address: accountData.address || existingAccount.address || '',
@@ -544,6 +544,8 @@ async function upsertCreditAccount(accountData) {
       isActive: accountData.isActive !== undefined ? accountData.isActive : existingAccount.isActive,
       updatedAt: now
     };
+    
+    console.log(`Updating account ${customerName}: Old balance=${existingAccount.balance}, New balance=${updateData.balance}`);
     
     // Update last transaction date if provided
     if (accountData.lastTransactionDate) {
@@ -646,11 +648,15 @@ async function payToCreditAccount(customerName, paymentAmount) {
   const currentBalance = Number(account.balance || 0);
   const payment = Number(paymentAmount);
   
+  console.log(`Processing payment for ${customerName}: Balance=${currentBalance}, Payment=${payment}`);
+  
   if (payment > currentBalance) {
+    console.log(`Payment rejected: ${payment} > ${currentBalance}`);
     throw new Error('Payment amount exceeds account balance');
   }
   
   const newBalance = currentBalance - payment;
+  console.log(`Calculated new balance: ${newBalance}`);
   
   const updatedAccount = await upsertCreditAccount({
     customerName: customerName,
@@ -663,6 +669,8 @@ async function payToCreditAccount(customerName, paymentAmount) {
     notes: account.notes,
     isActive: account.isActive
   });
+  
+  console.log(`Updated account balance: ${updatedAccount.balance}`);
   
   return {
     ...updatedAccount,

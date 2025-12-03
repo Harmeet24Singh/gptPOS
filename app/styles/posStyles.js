@@ -78,7 +78,7 @@ export const CheckoutPanel = styled.div`
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
 
   h2 {
     color: ${colors.primary};
@@ -100,6 +100,7 @@ export const CheckoutPanel = styled.div`
     overflow-y: auto;
     padding-right: 0.5rem;
     margin-bottom: 0.5rem;
+    max-height: calc(100vh - 400px);
 
     /* Custom scrollbar */
     &::-webkit-scrollbar {
@@ -123,7 +124,6 @@ export const CheckoutPanel = styled.div`
 
   .checkout-summary {
     flex: 0 0 auto;
-    margin-top: auto;
     padding-top: 0.75rem;
     border-top: 2px solid rgba(36, 55, 70, 0.08);
     background: ${colors.card};

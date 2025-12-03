@@ -601,6 +601,8 @@ function POSContent() {
     // Calculate remaining balance after payment
     const remainingBalance = Math.max(0, customerBalance - paymentTotal);
 
+    console.log(`Processing payment: Customer=${selectedCustomer.customerName}, Balance=${customerBalance}, Payment=${paymentTotal}, Remaining=${remainingBalance}`);
+
     try {
       // Process the payment against customer's account
       const response = await fetch("/api/credit/accounts", {
@@ -689,6 +691,20 @@ function POSContent() {
               : c
           )
         );
+
+        // Refresh customers list from database to ensure latest data
+        console.log("Refreshing customer list after payment...");
+        setTimeout(async () => {
+          await fetchExistingCustomers();
+          console.log("Customer list refreshed with latest balances");
+        }, 500);
+
+        // Refresh customers list from database to ensure latest data
+        console.log("Refreshing customer list after payment...");
+        setTimeout(async () => {
+          await fetchExistingCustomers();
+          console.log("Customer list refreshed with latest balances");
+        }, 500);
 
         // Reset payment fields
         setCashAmount("");
