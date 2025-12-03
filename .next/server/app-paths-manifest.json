@@ -1,7 +1,8 @@
 {
-  "/api/categories/route": "app/api/categories/route.js",
-  "/api/inventory/route": "app/api/inventory/route.js",
-  "/api/credit/accounts/route": "app/api/credit/accounts/route.js",
   "/credit-management/page": "app/credit-management/page.js",
+  "/api/credit/accounts/route": "app/api/credit/accounts/route.js",
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/transaction/route": "app/api/transaction/route.js",
+  "/api/inventory/route": "app/api/inventory/route.js",
   "/pos/page": "app/pos/page.js"
 }

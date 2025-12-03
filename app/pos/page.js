@@ -2841,7 +2841,7 @@ function POSContent() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "0.5rem",
+                marginBottom: "0.1rem",
               }}
             >
               <h2 style={{ margin: 0 }}>Current Sale</h2>
@@ -2859,8 +2859,8 @@ function POSContent() {
                   style={{
                     background: isCreditSale ? "#28a745" : "#6c757d",
                     color: "white",
-                    padding: "0.5rem 0.75rem",
-                    fontSize: "0.8rem",
+                    padding: "0.2rem 0.4rem",
+                    fontSize: "0.65rem",
                     fontWeight: "600",
                   }}
                 >
@@ -3132,21 +3132,11 @@ function POSContent() {
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
+                    marginBottom: "0.3rem",
                   }}
                 >
-                  <span>💰 Discount Test</span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <label style={{ minWidth: "70px", fontSize: "0.9rem" }}>
-                    Amount:
+                  <label style={{ fontSize: "0.8rem", fontWeight: "bold" }}>
+                    💸 Discount:
                   </label>
                   <input
                     ref={discountRef}
@@ -3182,107 +3172,86 @@ function POSContent() {
                 )}
               </div>
 
-              {/* Enhanced Card Fee Section */}
+              {/* Card Fee Checkbox */}
               <div
                 style={{
-                  margin: "0.5rem 0",
-                  padding: "0.5rem",
-                  backgroundColor: "#f8f4ff",
-                  border: "1px solid #d4c5f9",
-                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  marginBottom: cardFeeEnabled ? "0.5rem" : "0",
+                  padding: "0.3rem 0.5rem",
+                  margin: "0.3rem 0",
                 }}
               >
-                <div
+                <label
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
-                    marginBottom: "0.5rem",
-                    fontWeight: "500",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
                   }}
                 >
-                  <span>💳 Card Fees</span>
-                </div>
+                  <input
+                    type="checkbox"
+                    checked={cardFeeEnabled}
+                    onChange={(e) => {
+                      const isEnabled = e.target.checked;
+                      setCardFeeEnabled(isEnabled);
 
-                {/* Card Fee Enable/Disable */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    marginBottom: cardFeeEnabled ? "0.5rem" : "0",
-                  }}
-                >
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: "pointer",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={cardFeeEnabled}
-                      onChange={(e) => {
-                        const isEnabled = e.target.checked;
-                        setCardFeeEnabled(isEnabled);
+                      const currentCardAmount = Number(
+                        parseFloat(cardAmount) || 0
+                      );
+                      const currentCashAmount = Number(
+                        parseFloat(cashAmount) || 0
+                      );
 
-                        const currentCardAmount = Number(
-                          parseFloat(cardAmount) || 0
-                        );
-                        const currentCashAmount = Number(
-                          parseFloat(cashAmount) || 0
-                        );
-
-                        if (isEnabled) {
-                          // When enabling, add card fee to total
-                          const totalAmount =
-                            currentCardAmount +
-                            currentCashAmount +
-                            CARD_FEE_AMOUNT;
-                          setCardAmount(String(totalAmount.toFixed(2)));
-                          setCashAmount("0");
-                          setLastEdited("card");
-                        } else {
-                          // When disabling, remove card fee from total
-                          if (currentCardAmount >= CARD_FEE_AMOUNT) {
-                            const newCardAmount = Math.max(
-                              0,
-                              currentCardAmount - CARD_FEE_AMOUNT
-                            );
-                            setCardAmount(String(newCardAmount.toFixed(2)));
-                          }
+                      if (isEnabled) {
+                        // When enabling, add card fee to total
+                        const totalAmount =
+                          currentCardAmount +
+                          currentCashAmount +
+                          CARD_FEE_AMOUNT;
+                        setCardAmount(String(totalAmount.toFixed(2)));
+                        setCashAmount("0");
+                        setLastEdited("card");
+                      } else {
+                        // When disabling, remove card fee from total
+                        if (currentCardAmount >= CARD_FEE_AMOUNT) {
+                          const newCardAmount = Math.max(
+                            0,
+                            currentCardAmount - CARD_FEE_AMOUNT
+                          );
+                          setCardAmount(String(newCardAmount.toFixed(2)));
                         }
-                      }}
-                      style={{
-                        marginRight: "0.25rem",
-                        transform: "scale(1.1)",
-                      }}
-                    />
-                    Apply card fee (+${CARD_FEE_AMOUNT.toFixed(2)})
-                  </label>
-                </div>
-
-                {/* Fee Status Display */}
-                {cardFeeEnabled && (
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      padding: "0.25rem 0.5rem",
-                      backgroundColor: "#fff3cd",
-                      border: "1px solid #ffeaa7",
-                      borderRadius: "4px",
-                      fontSize: "0.8rem",
-                      color: "#856404",
+                      }
                     }}
-                  >
-                    💰 Card processing fee: ${CARD_FEE_AMOUNT.toFixed(2)} added
-                    to total
-                  </div>
-                )}
+                    style={{
+                      marginRight: "0.25rem",
+                      transform: "scale(1.1)",
+                    }}
+                  />
+                  Apply card fee (+${CARD_FEE_AMOUNT.toFixed(2)})
+                </label>
               </div>
+
+              {/* Fee Status Display */}
+              {cardFeeEnabled && (
+                <div
+                  style={{
+                    marginTop: "0.5rem",
+                    padding: "0.25rem 0.5rem",
+                    backgroundColor: "#fff3cd",
+                    border: "1px solid #ffeaa7",
+                    borderRadius: "4px",
+                    fontSize: "0.8rem",
+                    color: "#856404",
+                  }}
+                >
+                  💰 Card processing fee: ${CARD_FEE_AMOUNT.toFixed(2)} added
+                  to total
+                </div>
+              )}
 
               {/* Lotto Winnings */}
               <div
@@ -3299,22 +3268,11 @@ function POSContent() {
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
+                    marginBottom: "0.3rem",
                   }}
                 >
-                  <span>🎰 Lotto Winnings</span>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <label style={{ minWidth: "70px", fontSize: "0.9rem" }}>
-                    Amount:
+                  <label style={{ fontSize: "0.8rem", fontWeight: "bold" }}>
+                    🎰 Lotto winnings:
                   </label>
                   <input
                     ref={lottoWinningsRef}

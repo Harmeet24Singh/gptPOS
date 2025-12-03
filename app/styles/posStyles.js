@@ -71,8 +71,8 @@ export const ProductsPanel = styled.div`
 
 export const CheckoutPanel = styled.div`
   background: ${colors.card};
-  border-radius: 12px;
-  padding: 0.75rem;
+  border-radius: 8px;
+  padding: 0.3rem;
   box-shadow: 0 6px 20px rgba(36, 55, 70, 0.06);
   display: flex;
   flex-direction: column;
@@ -82,25 +82,25 @@ export const CheckoutPanel = styled.div`
 
   h2 {
     color: ${colors.primary};
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
+    margin-bottom: 0.1rem;
+    font-size: 0.85rem;
     font-weight: 600;
   }
 
   .cart-items {
     flex: 0 1 auto;
     overflow-y: auto;
-    margin-bottom: 0.5rem;
-    min-height: 120px;
-    max-height: 200px;
+    margin-bottom: 0.3rem;
+    min-height: 80px;
+    max-height: 120px;
   }
 
   .checkout-sections {
     flex: 1 1 auto;
     overflow-y: auto;
-    padding-right: 0.5rem;
-    margin-bottom: 0.5rem;
-    max-height: calc(100vh - 400px);
+    padding-right: 0.3rem;
+    margin-bottom: 0.2rem;
+    max-height: calc(100vh - 350px);
 
     /* Custom scrollbar */
     &::-webkit-scrollbar {
@@ -124,10 +124,10 @@ export const CheckoutPanel = styled.div`
 
   .checkout-summary {
     flex: 0 0 auto;
-    padding-top: 0.75rem;
-    border-top: 2px solid rgba(36, 55, 70, 0.08);
+    padding-top: 0.4rem;
+    border-top: 1px solid rgba(36, 55, 70, 0.08);
     background: ${colors.card};
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.3rem;
   }
 `;
 
@@ -178,9 +178,9 @@ export const ProductItem = styled.div`
 export const CartItem = styled.div`
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 0.5rem;
+  gap: 0.3rem;
   align-items: center;
-  padding: 0.6rem 0.4rem;
+  padding: 0.3rem 0.2rem;
   border-bottom: 1px solid rgba(36, 55, 70, 0.04);
 
   &:last-child {
@@ -193,40 +193,40 @@ export const CartItem = styled.div`
 
     h4 {
       color: ${colors.primary};
-      margin: 0 0 2px 0;
-      font-size: 0.85rem;
+      margin: 0 0 1px 0;
+      font-size: 0.75rem;
       font-weight: 600;
     }
 
     p {
       color: ${colors.muted};
       margin: 0;
-      font-size: 0.75rem;
+      font-size: 0.65rem;
     }
   }
 
   .quantity-controls {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.2rem;
 
     button {
-      width: 24px;
-      height: 24px;
-      border-radius: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
       border: none;
       background: ${colors.primary};
       color: white;
       cursor: pointer;
       font-weight: 700;
-      font-size: 0.8rem;
+      font-size: 0.7rem;
     }
 
     span {
-      min-width: 24px;
+      min-width: 20px;
       text-align: center;
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
     }
   }
 
@@ -295,25 +295,25 @@ export const Button = styled.button`
 
 export const Total = styled.div`
   background: linear-gradient(180deg, #ffffff, #fbfdff);
-  padding: 0.6rem;
-  border-radius: 6px;
-  margin-bottom: 0.5rem;
+  padding: 0.4rem;
+  border-radius: 4px;
+  margin-bottom: 0.3rem;
 
   div {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
     color: #243746;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
   .final-total {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 800;
     color: ${colors.accent};
     border-top: 1px dashed rgba(36, 55, 70, 0.06);
-    padding-top: 0.35rem;
-    margin-top: 0.3rem;
+    padding-top: 0.25rem;
+    margin-top: 0.2rem;
   }
 `;
 
