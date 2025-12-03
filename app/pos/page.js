@@ -601,7 +601,9 @@ function POSContent() {
     // Calculate remaining balance after payment
     const remainingBalance = Math.max(0, customerBalance - paymentTotal);
 
-    console.log(`Processing payment: Customer=${selectedCustomer.customerName}, Balance=${customerBalance}, Payment=${paymentTotal}, Remaining=${remainingBalance}`);
+    console.log(
+      `Processing payment: Customer=${selectedCustomer.customerName}, Balance=${customerBalance}, Payment=${paymentTotal}, Remaining=${remainingBalance}`
+    );
 
     try {
       // Process the payment against customer's account

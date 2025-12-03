@@ -1,9 +1,7 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/api/categories/route": "app/api/categories/route.js",
   "/api/inventory/route": "app/api/inventory/route.js",
-  "/api/transaction/route": "app/api/transaction/route.js",
-  "/pos/page": "app/pos/page.js",
   "/api/credit/accounts/route": "app/api/credit/accounts/route.js",
-  "/credit-management/page": "app/credit-management/page.js"
+  "/credit-management/page": "app/credit-management/page.js",
+  "/pos/page": "app/pos/page.js"
 }
