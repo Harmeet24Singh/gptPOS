@@ -36,7 +36,7 @@ const POSWrapper = styled.div`
 `;
 
 const KeyboardArea = styled.div`
-  height: 180px;
+  height: 220px;
   background: #f8f9fa;
   border: 1px solid #dee2e6;
   border-radius: 8px;
@@ -3973,7 +3973,7 @@ function POSContent() {
                           onFocus={() => handleInputFocus(cashAmountRef)}
                           onChange={(e) => {
                             const value = e.target.value;
-                            
+
                             // Allow empty, numbers, and decimal point
                             if (value === "" || /^\d*\.?\d*$/.test(value)) {
                               setLastEdited("cash");
@@ -4146,7 +4146,7 @@ function POSContent() {
                           onFocus={() => handleInputFocus(cardAmountRef)}
                           onChange={(e) => {
                             const value = e.target.value;
-                            
+
                             // Allow empty, numbers, and decimal point
                             if (value === "" || /^\d*\.?\d*$/.test(value)) {
                               setLastEdited("card");

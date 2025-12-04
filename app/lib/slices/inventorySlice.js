@@ -166,24 +166,29 @@ export const deleteInventoryItem = createAsyncThunk(
   'inventory/deleteItem',
   async (id, { getState, rejectWithValue }) => {
     try {
-      const currentState = getState().inventory;
-      const updatedInventory = currentState.items.filter(item => item.id !== id);
+      console.log('Redux: Deleting inventory item with ID:', id);
 
-      const res = await fetch('/api/inventory', {
-        method: 'POST',
+      const res = await fetch(`/api/inventory/${id}`, {
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': 'dev-secret',
         },
-        body: JSON.stringify(updatedInventory),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to delete item on server');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.details || errorData.error || 'Failed to delete item on server');
       }
 
+      // Return the filtered inventory (remove the deleted item from local state)
+      const currentState = getState().inventory;
+      const updatedInventory = currentState.items.filter(item => item.id !== id);
+      
+      console.log('Redux: Successfully deleted item, updated inventory has', updatedInventory.length, 'items');
       return updatedInventory;
     } catch (error) {
+      console.error('Redux: Failed to delete inventory item:', error);
       return rejectWithValue(error.message);
     }
   }

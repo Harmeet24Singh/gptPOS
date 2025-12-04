@@ -49,13 +49,28 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { checkApiKey } = require("../../../server/auth");
-    if (!checkApiKey(req))
+    console.log("DELETE /api/inventory/[id] called for ID:", params.id);
+    
+    const { checkApiKey } = require("../../../../server/auth");
+    if (!checkApiKey(req)) {
+      console.log("DELETE API key check failed");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    await mongo.deleteInventoryById(params.id);
-    return NextResponse.json({ ok: true });
+    }
+    console.log("DELETE API key check passed");
+
+    const id = params.id;
+    console.log("Attempting to delete inventory item with ID:", id);
+    
+    await mongo.deleteInventoryById(id);
+    console.log("Successfully deleted inventory item with ID:", id);
+    
+    return NextResponse.json({ ok: true, deletedId: id });
   } catch (err) {
-    console.error("DELETE /api/inventory/[id] error", err);
-    return NextResponse.json({ error: "Failed to delete item" }, { status: 500 });
+    console.error("DELETE /api/inventory/[id] error - Full error:", err);
+    console.error("Error message:", err.message);
+    return NextResponse.json({ 
+      error: "Failed to delete item", 
+      details: err.message 
+    }, { status: 500 });
   }
 }
