@@ -952,9 +952,9 @@ async function getVisitedItems() {
   try {
     const db = await connect();
     const visitedCollection = db.collection("visitedItems");
-    
+
     const visitedItems = await visitedCollection.find({}).toArray();
-    return visitedItems.map(item => item.itemId);
+    return visitedItems.map((item) => item.itemId);
   } catch (error) {
     console.error("Error getting visited items:", error);
     throw error;
@@ -965,16 +965,16 @@ async function setVisitedItem(itemId, visited) {
   try {
     const db = await connect();
     const visitedCollection = db.collection("visitedItems");
-    
+
     if (visited) {
       // Add to visited items
       await visitedCollection.updateOne(
         { itemId: Number(itemId) },
-        { 
-          $set: { 
+        {
+          $set: {
             itemId: Number(itemId),
-            visitedAt: new Date()
-          }
+            visitedAt: new Date(),
+          },
         },
         { upsert: true }
       );
@@ -992,7 +992,7 @@ async function clearAllVisitedItems() {
   try {
     const db = await connect();
     const visitedCollection = db.collection("visitedItems");
-    
+
     await visitedCollection.deleteMany({});
   } catch (error) {
     console.error("Error clearing all visited items:", error);

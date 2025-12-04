@@ -100,13 +100,13 @@ export default function InventoryPage() {
 
   const loadVisitedItems = async () => {
     try {
-      const res = await fetch('/api/inventory/visited');
+      const res = await fetch("/api/inventory/visited");
       if (res.ok) {
         const visitedIds = await res.json();
         setVisitedItems(new Set(visitedIds));
       }
     } catch (error) {
-      console.error('Failed to load visited items:', error);
+      console.error("Failed to load visited items:", error);
     }
   };
 
@@ -167,55 +167,55 @@ export default function InventoryPage() {
   const toggleVisited = async (itemId) => {
     const isCurrentlyVisited = visitedItems.has(itemId);
     const newVisited = new Set(visitedItems);
-    
+
     if (isCurrentlyVisited) {
       newVisited.delete(itemId);
     } else {
       newVisited.add(itemId);
     }
-    
+
     // Update local state immediately for better UX
     setVisitedItems(newVisited);
-    
+
     // Save to database
     try {
-      await fetch('/api/inventory/visited', {
-        method: 'POST',
+      await fetch("/api/inventory/visited", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': 'dev-secret',
+          "Content-Type": "application/json",
+          "x-api-key": "dev-secret",
         },
         body: JSON.stringify({
           itemId: itemId,
-          visited: !isCurrentlyVisited
-        })
+          visited: !isCurrentlyVisited,
+        }),
       });
     } catch (error) {
-      console.error('Failed to save visited status:', error);
+      console.error("Failed to save visited status:", error);
       // Revert local state on error
       setVisitedItems(visitedItems);
     }
   };
 
   const clearAllVisited = async () => {
-    if (confirm('Are you sure you want to clear all visited markers?')) {
+    if (confirm("Are you sure you want to clear all visited markers?")) {
       try {
-        const res = await fetch('/api/inventory/visited', {
-          method: 'DELETE',
+        const res = await fetch("/api/inventory/visited", {
+          method: "DELETE",
           headers: {
-            'x-api-key': 'dev-secret',
-          }
+            "x-api-key": "dev-secret",
+          },
         });
-        
+
         if (res.ok) {
           setVisitedItems(new Set());
-          console.log('All visited items cleared successfully');
+          console.log("All visited items cleared successfully");
         } else {
-          throw new Error('Failed to clear visited items');
+          throw new Error("Failed to clear visited items");
         }
       } catch (error) {
-        console.error('Failed to clear visited items:', error);
-        alert('Failed to clear visited items: ' + error.message);
+        console.error("Failed to clear visited items:", error);
+        alert("Failed to clear visited items: " + error.message);
       }
     }
   };
@@ -307,6 +307,9 @@ export default function InventoryPage() {
             padding: "1.25rem",
             borderRadius: "8px",
             boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+            minHeight: "120px",
+            display: "flex",
+            alignItems: "center",
           }}
         >
           <div
@@ -357,6 +360,9 @@ export default function InventoryPage() {
             padding: "1.25rem",
             borderRadius: "8px",
             boxShadow: "0 4px 15px rgba(243, 156, 18, 0.4)",
+            minHeight: "120px",
+            display: "flex",
+            alignItems: "center",
           }}
         >
           <div
@@ -406,6 +412,9 @@ export default function InventoryPage() {
             padding: "1.25rem",
             borderRadius: "8px",
             boxShadow: "0 4px 15px rgba(39, 174, 96, 0.4)",
+            minHeight: "120px",
+            display: "flex",
+            alignItems: "center",
           }}
         >
           <div
@@ -454,6 +463,9 @@ export default function InventoryPage() {
             padding: "1.25rem",
             borderRadius: "8px",
             boxShadow: "0 4px 15px rgba(142, 68, 173, 0.4)",
+            minHeight: "120px",
+            display: "flex",
+            alignItems: "center",
           }}
         >
           <div
@@ -547,17 +559,37 @@ export default function InventoryPage() {
           onClick={clearAllVisited}
           style={{
             backgroundColor: "#e67e22",
-            marginLeft: "0.5rem"
+            marginLeft: "0.5rem",
           }}
         >
           🗑️ Clear All Visited
+        </Button>
+        <Button
+          onClick={() => setCategoryFilter(categoryFilter === "Tobacco" ? "" : "Tobacco")}
+          style={{
+            backgroundColor: categoryFilter === "Tobacco" ? "#8e44ad" : "#9b59b6",
+            marginLeft: "0.5rem",
+            fontWeight: categoryFilter === "Tobacco" ? "bold" : "normal",
+          }}
+        >
+          🚬 Tobacco
+        </Button>
+        <Button
+          onClick={() => setCategoryFilter(categoryFilter === "Lotto instant" ? "" : "Lotto instant")}
+          style={{
+            backgroundColor: categoryFilter === "Lotto instant" ? "#8e44ad" : "#9b59b6",
+            marginLeft: "0.5rem",
+            fontWeight: categoryFilter === "Lotto instant" ? "bold" : "normal",
+          }}
+        >
+          🎲 Lotto Instant
         </Button>
       </FilterContainer>
 
       <Table>
         <thead>
           <tr>
-            <th style={{ width: '60px', textAlign: 'center' }}>✓</th>
+            <th style={{ width: "60px", textAlign: "center" }}>✓</th>
             <th>Name</th>
             <th>Product ID/Barcode</th>
             <th>Category</th>
@@ -571,16 +603,16 @@ export default function InventoryPage() {
         <tbody>
           {filteredInventory.map((item) => (
             <tr key={item.id}>
-              <td style={{ textAlign: 'center' }}>
+              <td style={{ textAlign: "center" }}>
                 <input
                   type="checkbox"
                   checked={visitedItems.has(item.id)}
                   onChange={() => toggleVisited(item.id)}
                   style={{
-                    width: '16px',
-                    height: '16px',
-                    accentColor: '#3498db',
-                    cursor: 'pointer'
+                    width: "16px",
+                    height: "16px",
+                    accentColor: "#3498db",
+                    cursor: "pointer",
                   }}
                   title="Mark as visited/reviewed"
                 />

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-const mongo = require('../../../../server/mongo');
+const mongo = require("../../../../server/mongo");
 
 export async function GET() {
   try {
@@ -7,7 +7,10 @@ export async function GET() {
     return NextResponse.json(visitedItems);
   } catch (err) {
     console.error("GET /api/inventory/visited error", err);
-    return NextResponse.json({ error: "Failed to get visited items" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to get visited items" },
+      { status: 500 }
+    );
   }
 }
 
@@ -22,14 +25,20 @@ export async function POST(req) {
     const { itemId, visited } = body;
 
     if (!itemId) {
-      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Item ID is required" },
+        { status: 400 }
+      );
     }
 
     await mongo.setVisitedItem(itemId, visited);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("POST /api/inventory/visited error", err);
-    return NextResponse.json({ error: "Failed to update visited status" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update visited status" },
+      { status: 500 }
+    );
   }
 }
 
@@ -44,6 +53,9 @@ export async function DELETE(req) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("DELETE /api/inventory/visited error", err);
-    return NextResponse.json({ error: "Failed to clear visited items" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to clear visited items" },
+      { status: 500 }
+    );
   }
 }

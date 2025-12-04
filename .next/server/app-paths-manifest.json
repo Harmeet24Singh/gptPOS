@@ -1,11 +1,7 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/inventory/page": "app/inventory/page.js",
   "/api/categories/route": "app/api/categories/route.js",
-  "/api/inventory/visited/route": "app/api/inventory/visited/route.js",
   "/api/inventory/route": "app/api/inventory/route.js",
-  "/pos/page": "app/pos/page.js",
-  "/api/dashboard-preferences/route": "app/api/dashboard-preferences/route.js",
-  "/api/transaction/route": "app/api/transaction/route.js",
-  "/transactions/page": "app/transactions/page.js"
+  "/transactions/page": "app/transactions/page.js",
+  "/pos/page": "app/pos/page.js"
 }
