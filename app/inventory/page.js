@@ -6,7 +6,11 @@ import Link from "next/link";
 import { useAuth } from "../lib/auth";
 import { useInventoryManager, useAppDispatch } from "../lib/hooks";
 import { useEnsureInventory } from "../lib/withInventory";
-import { updateItemStock, deleteInventoryItem, loadInventory } from "../lib/slices/inventorySlice";
+import {
+  updateItemStock,
+  deleteInventoryItem,
+  loadInventory,
+} from "../lib/slices/inventorySlice";
 import {
   Container,
   Title,
@@ -25,11 +29,21 @@ export default function InventoryPage() {
   const auth = useAuth();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { items, loading, error, categories, getFilteredInventory, isDataStale } = useInventoryManager();
-  const { inventoryLoading, inventoryError, inventoryLoaded } = useEnsureInventory();
-  
+  const {
+    items,
+    loading,
+    error,
+    categories,
+    getFilteredInventory,
+    isDataStale,
+  } = useInventoryManager();
+  const { inventoryLoading, inventoryError, inventoryLoaded } =
+    useEnsureInventory();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [showDeleteButtons, setShowDeleteButtons] = useState(false);
+  const [showActionButtons, setShowActionButtons] = useState(false);
 
   useEffect(() => {
     // If not logged in, redirect to POS
@@ -59,12 +73,12 @@ export default function InventoryPage() {
     };
 
     // Use both visibilitychange and focus events for better coverage
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [auth?.user, dispatch]);
 
@@ -131,38 +145,126 @@ export default function InventoryPage() {
 
   return (
     <Container>
-      <Title>Inventory Management</Title>
-      
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1rem",
+        }}
+      >
+        <Title style={{ margin: 0 }}>Inventory Management</Title>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.9rem",
+              color: "#2c3e50",
+              cursor: "pointer",
+              userSelect: "none",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showActionButtons}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setShowActionButtons(checked);
+                // If disabling actions, also disable delete buttons
+                if (!checked) {
+                  setShowDeleteButtons(false);
+                }
+              }}
+              style={{
+                width: "16px",
+                height: "16px",
+                accentColor: "#f39c12",
+              }}
+            />
+            Enable Inventory Actions
+          </label>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.9rem",
+              color: "#2c3e50",
+              cursor: "pointer",
+              userSelect: "none",
+              opacity: showActionButtons ? 1 : 0.5,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showDeleteButtons}
+              onChange={(e) => setShowDeleteButtons(e.target.checked)}
+              disabled={!showActionButtons}
+              style={{
+                width: "16px",
+                height: "16px",
+                accentColor: "#e74c3c",
+              }}
+            />
+            Show Delete Buttons
+          </label>
+        </div>
+      </div>
+
       {/* Inventory Statistics */}
-      <div style={{ 
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '1rem',
-        marginBottom: '1.5rem'
-      }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+          gap: "1rem",
+          marginBottom: "1.5rem",
+        }}
+      >
         {/* Total Items */}
-        <div style={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '1.25rem',
-          borderRadius: '8px',
-          boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div
+          style={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+            padding: "1.25rem",
+            borderRadius: "8px",
+            boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: '600' }}>
+              <h3
+                style={{
+                  margin: "0 0 0.5rem 0",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                }}
+              >
                 📦 Total Items
               </h3>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: '0.85rem' }}>
-                {searchTerm || categoryFilter ? 'Filtered' : 'All items'}
+              <p style={{ margin: 0, opacity: 0.9, fontSize: "0.85rem" }}>
+                {searchTerm || categoryFilter ? "Filtered" : "All items"}
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '2.2rem', fontWeight: 'bold', lineHeight: 1 }}>
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: "2.2rem",
+                  fontWeight: "bold",
+                  lineHeight: 1,
+                }}
+              >
                 {filteredInventory.length}
               </div>
               {(searchTerm || categoryFilter) && (
-                <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                <div style={{ fontSize: "0.75rem", opacity: 0.8 }}>
                   of {items.length}
                 </div>
               )}
@@ -171,91 +273,158 @@ export default function InventoryPage() {
         </div>
 
         {/* Low Stock Items */}
-        <div style={{ 
-          background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
-          color: 'white',
-          padding: '1.25rem',
-          borderRadius: '8px',
-          boxShadow: '0 4px 15px rgba(243, 156, 18, 0.4)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div
+          style={{
+            background: "linear-gradient(135deg, #f39c12 0%, #e67e22 100%)",
+            color: "white",
+            padding: "1.25rem",
+            borderRadius: "8px",
+            boxShadow: "0 4px 15px rgba(243, 156, 18, 0.4)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: '600' }}>
+              <h3
+                style={{
+                  margin: "0 0 0.5rem 0",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                }}
+              >
                 ⚠️ Low Stock
               </h3>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: '0.85rem' }}>
+              <p style={{ margin: 0, opacity: 0.9, fontSize: "0.85rem" }}>
                 Items needing restock
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '2.2rem', fontWeight: 'bold', lineHeight: 1 }}>
-                {filteredInventory.filter(item => item.stock <= item.lowStockThreshold).length}
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: "2.2rem",
+                  fontWeight: "bold",
+                  lineHeight: 1,
+                }}
+              >
+                {
+                  filteredInventory.filter(
+                    (item) => item.stock <= item.lowStockThreshold
+                  ).length
+                }
               </div>
             </div>
           </div>
         </div>
 
         {/* Total Value */}
-        <div style={{ 
-          background: 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)',
-          color: 'white',
-          padding: '1.25rem',
-          borderRadius: '8px',
-          boxShadow: '0 4px 15px rgba(39, 174, 96, 0.4)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div
+          style={{
+            background: "linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)",
+            color: "white",
+            padding: "1.25rem",
+            borderRadius: "8px",
+            boxShadow: "0 4px 15px rgba(39, 174, 96, 0.4)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: '600' }}>
+              <h3
+                style={{
+                  margin: "0 0 0.5rem 0",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                }}
+              >
                 💰 Total Value
               </h3>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: '0.85rem' }}>
+              <p style={{ margin: 0, opacity: 0.9, fontSize: "0.85rem" }}>
                 Inventory worth
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '1.8rem', fontWeight: 'bold', lineHeight: 1 }}>
-                ${filteredInventory.reduce((total, item) => total + (item.price * item.stock), 0).toFixed(2)}
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: "1.8rem",
+                  fontWeight: "bold",
+                  lineHeight: 1,
+                }}
+              >
+                $
+                {filteredInventory
+                  .reduce((total, item) => total + item.price * item.stock, 0)
+                  .toFixed(2)}
               </div>
             </div>
           </div>
         </div>
 
         {/* Categories Count */}
-        <div style={{ 
-          background: 'linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%)',
-          color: 'white',
-          padding: '1.25rem',
-          borderRadius: '8px',
-          boxShadow: '0 4px 15px rgba(142, 68, 173, 0.4)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div
+          style={{
+            background: "linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%)",
+            color: "white",
+            padding: "1.25rem",
+            borderRadius: "8px",
+            boxShadow: "0 4px 15px rgba(142, 68, 173, 0.4)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <div>
-              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: '600' }}>
+              <h3
+                style={{
+                  margin: "0 0 0.5rem 0",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                }}
+              >
                 🏷️ Categories
               </h3>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: '0.85rem' }}>
+              <p style={{ margin: 0, opacity: 0.9, fontSize: "0.85rem" }}>
                 Product categories
               </p>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '2.2rem', fontWeight: 'bold', lineHeight: 1 }}>
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: "2.2rem",
+                  fontWeight: "bold",
+                  lineHeight: 1,
+                }}
+              >
                 {categories.length}
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       {(loading || inventoryLoading) && (
-        <div style={{ padding: '1rem', textAlign: 'center', color: '#3498db' }}>
+        <div style={{ padding: "1rem", textAlign: "center", color: "#3498db" }}>
           <p>Loading inventory...</p>
         </div>
       )}
-      
+
       {(error || inventoryError) && (
-        <div style={{ padding: '1rem', textAlign: 'center', color: '#e74c3c' }}>
+        <div style={{ padding: "1rem", textAlign: "center", color: "#e74c3c" }}>
           <p>Error loading inventory: {error || inventoryError}</p>
-          <p style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>
+          <p style={{ fontSize: "0.9rem", color: "#7f8c8d" }}>
             Using cached data if available
           </p>
         </div>
@@ -287,15 +456,15 @@ export default function InventoryPage() {
         <Link href="/inventory/add">
           <Button>Add New Item</Button>
         </Link>
-        <Button 
+        <Button
           onClick={refreshInventory}
           disabled={loading}
-          style={{ 
-            backgroundColor: loading ? '#95a5a6' : '#27ae60',
-            cursor: loading ? 'not-allowed' : 'pointer'
+          style={{
+            backgroundColor: loading ? "#95a5a6" : "#27ae60",
+            cursor: loading ? "not-allowed" : "pointer",
           }}
         >
-          {loading ? '🔄 Refreshing...' : '🔄 Refresh'}
+          {loading ? "🔄 Refreshing..." : "🔄 Refresh"}
         </Button>
       </FilterContainer>
 
@@ -317,33 +486,45 @@ export default function InventoryPage() {
             <tr key={item.id}>
               <td>{item.name}</td>
               <td>
-                <span style={{
-                  fontFamily: 'monospace',
-                  backgroundColor: '#ecf0f1', 
-                  padding: '0.2rem 0.4rem', 
-                  borderRadius: '3px',
-                  fontSize: '0.85rem'
-                }}>
+                <span
+                  style={{
+                    fontFamily: "monospace",
+                    backgroundColor: "#ecf0f1",
+                    padding: "0.2rem 0.4rem",
+                    borderRadius: "3px",
+                    fontSize: "0.85rem",
+                  }}
+                >
                   {item.barcode || item.id}
                 </span>
                 {!item.barcode && (
-                  <small style={{ 
-                    color: '#7f8c8d', 
-                    fontSize: '0.7rem', 
-                    marginLeft: '0.5rem' 
-                  }}>
+                  <small
+                    style={{
+                      color: "#7f8c8d",
+                      fontSize: "0.7rem",
+                      marginLeft: "0.5rem",
+                    }}
+                  >
                     (Product ID)
                   </small>
                 )}
               </td>
               <td>{item.category}</td>
               <td>${item.price.toFixed(2)}</td>
-              <td style={{ color: item.stock < 0 ? '#ff4444' : 'inherit' }}>
+              <td style={{ color: item.stock < 0 ? "#ff4444" : "inherit" }}>
                 {item.stock}
-                {item.stock < 0 && <span style={{ fontSize: '0.8em', marginLeft: '4px' }}>(Negative Stock)</span>}
+                {item.stock < 0 && (
+                  <span style={{ fontSize: "0.8em", marginLeft: "4px" }}>
+                    (Negative Stock)
+                  </span>
+                )}
               </td>
               <td>
-                <Badge $isLow={item.stock < 0 ? true : item.stock <= item.lowStockThreshold}>
+                <Badge
+                  $isLow={
+                    item.stock < 0 ? true : item.stock <= item.lowStockThreshold
+                  }
+                >
                   {item.stock < 0
                     ? "Negative Stock"
                     : item.stock <= item.lowStockThreshold
@@ -360,39 +541,53 @@ export default function InventoryPage() {
                 </Badge>
               </td>
               <td>
-                <ActionButtons>
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      updateStock(item.id, item.stock + 1);
+                {showActionButtons ? (
+                  <ActionButtons>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        updateStock(item.id, item.stock + 1);
+                      }}
+                    >
+                      +1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        updateStock(item.id, item.stock - 1);
+                      }}
+                    >
+                      -1
+                    </button>
+                    {showDeleteButtons && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          deleteItem(item.id);
+                        }}
+                        style={{ background: "#e74c3c" }}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </ActionButtons>
+                ) : (
+                  <span
+                    style={{
+                      color: "#95a5a6",
+                      fontSize: "0.9rem",
+                      fontStyle: "italic",
                     }}
                   >
-                    +1
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      updateStock(item.id, item.stock - 1);
-                    }}
-                  >
-                    -1
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      deleteItem(item.id);
-                    }}
-                    style={{ background: "#e74c3c" }}
-                  >
-                    Delete
-                  </button>
-                </ActionButtons>
+                    Actions disabled
+                  </span>
+                )}
               </td>
             </tr>
           ))}

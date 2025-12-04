@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-const mongo = require('../../../../server/mongo');
+const mongo = require("../../../../server/mongo");
 
 export async function GET(req, { params }) {
   try {
@@ -23,34 +23,37 @@ export async function PUT(req, { params }) {
 
     const body = await req.json();
     console.log("PUT request body:", body);
-    
+
     // ensure id field is numeric
     const numericId = Number(params.id);
     if (isNaN(numericId)) {
       console.log("Invalid ID provided:", params.id);
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
-    
+
     body.id = numericId;
     console.log("Upserting item with ID:", numericId);
-    
+
     await mongo.upsertInventoryItems([body]);
     console.log("PUT upsert completed successfully");
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("PUT /api/inventory/[id] error - Full error:", err);
     console.error("Error message:", err.message);
-    return NextResponse.json({ 
-      error: "Failed to update item", 
-      details: err.message 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Failed to update item",
+        details: err.message,
+      },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(req, { params }) {
   try {
     console.log("DELETE /api/inventory/[id] called for ID:", params.id);
-    
+
     const { checkApiKey } = require("../../../../server/auth");
     if (!checkApiKey(req)) {
       console.log("DELETE API key check failed");
@@ -60,17 +63,20 @@ export async function DELETE(req, { params }) {
 
     const id = params.id;
     console.log("Attempting to delete inventory item with ID:", id);
-    
+
     await mongo.deleteInventoryById(id);
     console.log("Successfully deleted inventory item with ID:", id);
-    
+
     return NextResponse.json({ ok: true, deletedId: id });
   } catch (err) {
     console.error("DELETE /api/inventory/[id] error - Full error:", err);
     console.error("Error message:", err.message);
-    return NextResponse.json({ 
-      error: "Failed to delete item", 
-      details: err.message 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Failed to delete item",
+        details: err.message,
+      },
+      { status: 500 }
+    );
   }
 }
