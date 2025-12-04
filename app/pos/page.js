@@ -188,13 +188,24 @@ function POSContent() {
   // Virtual keyboard states
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [activeInputRef, setActiveInputRef] = useState(null);
-  const [keyboardMode, setKeyboardMode] = useState('full'); // 'full' or 'numeric'
+  const [keyboardMode, setKeyboardMode] = useState("numeric"); // 'full' or 'numeric'
 
   // Helper function to handle input focus and show appropriate keyboard
-  const handleInputFocus = (inputRef, isNumeric = false) => {
+  const handleInputFocus = (inputRef, isNumeric = true) => {
     setActiveInputRef(inputRef);
-    setKeyboardMode(isNumeric ? 'numeric' : 'full');
+    // Only change keyboard mode if it's not already active for this input
+    // This preserves manual mode changes made by the user
+    if (activeInputRef !== inputRef) {
+      setKeyboardMode(isNumeric ? "numeric" : "full");
+    }
     setShowKeyboard(true);
+  };
+
+  // Function to show keyboard for already active input without changing mode
+  const showKeyboardForInput = (inputRef) => {
+    setActiveInputRef(inputRef);
+    setShowKeyboard(true);
+    // Don't change keyboard mode - preserve user's choice
   };
 
   // Credit sale states
@@ -1831,97 +1842,99 @@ function POSContent() {
     return (
       <POSWrapper>
         <Container>
-        <ReceiptSection>
-          <h2>Transaction Complete!</h2>
-          <div className="receipt">
-            <h3>CONVENIENCE STORE</h3>
-            <p>Scarborough, Ontario</p>
-            <p>
-              Transaction #{(lastTransaction.id || "N/A").toString().slice(-8)}
-            </p>
-            <p>{new Date(lastTransaction.timestamp).toLocaleString()}</p>
-            <hr />
-            {lastTransaction.items.map((item) => (
-              <div key={item.id} className="receipt-item">
-                <span>
-                  {item.name} {!item.taxable && "(No HST)"}
-                </span>
-                <span>
-                  {item.quantity} x ${item.price.toFixed(2)} = $
-                  {(item.quantity * item.price).toFixed(2)}
-                </span>
-              </div>
-            ))}
-            <hr />
-            <div className="receipt-totals">
-              {lastTransaction.taxableAmount > 0 &&
-                lastTransaction.nonTaxableAmount > 0 && (
-                  <>
-                    <div>
-                      Taxable Items: ${lastTransaction.taxableAmount.toFixed(2)}
-                    </div>
-                    <div>
-                      Non-Taxable Items: $
-                      {lastTransaction.nonTaxableAmount.toFixed(2)}
-                    </div>
-                  </>
-                )}
-              {lastTransaction.discount > 0 ? (
-                <>
-                  <div>
-                    Items Subtotal: $
-                    {lastTransaction.originalSubtotal.toFixed(2)}
-                  </div>
-                  <div style={{ fontWeight: "600", color: "#e65100" }}>
-                    Discount: -${lastTransaction.discount.toFixed(2)}
-                  </div>
-                  <div>Subtotal: ${lastTransaction.subtotal.toFixed(2)}</div>
-                </>
-              ) : (
-                <div>Subtotal: ${lastTransaction.subtotal.toFixed(2)}</div>
-              )}
-              {lastTransaction.includeTax && lastTransaction.tax > 0 && (
-                <div>HST (13%): ${lastTransaction.tax.toFixed(2)}</div>
-              )}
-              <div className="total">
-                Total: ${lastTransaction.total.toFixed(2)}
-              </div>
-              {lastTransaction.cashback > 0 && (
-                <div style={{ fontWeight: "600", color: "#e67e22" }}>
-                  Cashback: ${lastTransaction.cashback.toFixed(2)}
+          <ReceiptSection>
+            <h2>Transaction Complete!</h2>
+            <div className="receipt">
+              <h3>CONVENIENCE STORE</h3>
+              <p>Scarborough, Ontario</p>
+              <p>
+                Transaction #
+                {(lastTransaction.id || "N/A").toString().slice(-8)}
+              </p>
+              <p>{new Date(lastTransaction.timestamp).toLocaleString()}</p>
+              <hr />
+              {lastTransaction.items.map((item) => (
+                <div key={item.id} className="receipt-item">
+                  <span>
+                    {item.name} {!item.taxable && "(No HST)"}
+                  </span>
+                  <span>
+                    {item.quantity} x ${item.price.toFixed(2)} = $
+                    {(item.quantity * item.price).toFixed(2)}
+                  </span>
                 </div>
-              )}
-              {lastTransaction.paymentBreakdown &&
-                lastTransaction.paymentBreakdown.length > 0 && (
-                  <>
-                    <hr />
-                    <div>
-                      <strong>Payments</strong>
-                    </div>
-                    {lastTransaction.paymentBreakdown.map((p, idx) => (
-                      <div key={`payment-${p.method}-${idx}`}>
-                        {p.method.toUpperCase()}: ${p.amount.toFixed(2)}
+              ))}
+              <hr />
+              <div className="receipt-totals">
+                {lastTransaction.taxableAmount > 0 &&
+                  lastTransaction.nonTaxableAmount > 0 && (
+                    <>
+                      <div>
+                        Taxable Items: $
+                        {lastTransaction.taxableAmount.toFixed(2)}
                       </div>
-                    ))}
-                    {lastTransaction.change > 0 && (
-                      <div>Change: ${lastTransaction.change.toFixed(2)}</div>
-                    )}
+                      <div>
+                        Non-Taxable Items: $
+                        {lastTransaction.nonTaxableAmount.toFixed(2)}
+                      </div>
+                    </>
+                  )}
+                {lastTransaction.discount > 0 ? (
+                  <>
+                    <div>
+                      Items Subtotal: $
+                      {lastTransaction.originalSubtotal.toFixed(2)}
+                    </div>
+                    <div style={{ fontWeight: "600", color: "#e65100" }}>
+                      Discount: -${lastTransaction.discount.toFixed(2)}
+                    </div>
+                    <div>Subtotal: ${lastTransaction.subtotal.toFixed(2)}</div>
                   </>
+                ) : (
+                  <div>Subtotal: ${lastTransaction.subtotal.toFixed(2)}</div>
                 )}
+                {lastTransaction.includeTax && lastTransaction.tax > 0 && (
+                  <div>HST (13%): ${lastTransaction.tax.toFixed(2)}</div>
+                )}
+                <div className="total">
+                  Total: ${lastTransaction.total.toFixed(2)}
+                </div>
+                {lastTransaction.cashback > 0 && (
+                  <div style={{ fontWeight: "600", color: "#e67e22" }}>
+                    Cashback: ${lastTransaction.cashback.toFixed(2)}
+                  </div>
+                )}
+                {lastTransaction.paymentBreakdown &&
+                  lastTransaction.paymentBreakdown.length > 0 && (
+                    <>
+                      <hr />
+                      <div>
+                        <strong>Payments</strong>
+                      </div>
+                      {lastTransaction.paymentBreakdown.map((p, idx) => (
+                        <div key={`payment-${p.method}-${idx}`}>
+                          {p.method.toUpperCase()}: ${p.amount.toFixed(2)}
+                        </div>
+                      ))}
+                      {lastTransaction.change > 0 && (
+                        <div>Change: ${lastTransaction.change.toFixed(2)}</div>
+                      )}
+                    </>
+                  )}
+              </div>
+              <hr />
+              <p>Thank you for your business!</p>
             </div>
-            <hr />
-            <p>Thank you for your business!</p>
-          </div>
-          <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
-            <Button
-              onClick={printReceipt}
-              style={{ backgroundColor: "#27ae60", color: "white" }}
-            >
-              🖨️ Print Receipt
-            </Button>
-            <Button onClick={startNewSale}>New Sale</Button>
-          </div>
-        </ReceiptSection>
+            <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
+              <Button
+                onClick={printReceipt}
+                style={{ backgroundColor: "#27ae60", color: "white" }}
+              >
+                🖨️ Print Receipt
+              </Button>
+              <Button onClick={startNewSale}>New Sale</Button>
+            </div>
+          </ReceiptSection>
         </Container>
       </POSWrapper>
     );
@@ -1931,354 +1944,433 @@ function POSContent() {
     <POSWrapper>
       <Container>
         <POSGrid>
-        <ProductsPanel>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1rem",
-            }}
-          >
-            <h2>Products</h2>
+          <ProductsPanel>
             <div
               style={{
-                fontSize: "0.75rem",
-                color: "#7f8c8d",
-                padding: "0.25rem 0.5rem",
-                background: "#f8f9fa",
-                borderRadius: "4px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1rem",
               }}
             >
-              {inventory.length} items loaded
-              {inventoryLoaded && (
-                <span
+              <h2>Products</h2>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#7f8c8d",
+                  padding: "0.25rem 0.5rem",
+                  background: "#f8f9fa",
+                  borderRadius: "4px",
+                }}
+              >
+                {inventory.length} items loaded
+                {inventoryLoaded && (
+                  <span
+                    style={{
+                      marginLeft: "0.5rem",
+                      color: inventoryLoading ? "#f39c12" : "#27ae60",
+                    }}
+                  >
+                    • {inventoryLoading ? "syncing..." : "ready"}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+              <div style={{ position: "relative", flex: 1, display: "flex" }}>
+                <SearchBar
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search products... (Barcode Scanner Ready)"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={() => handleInputFocus(searchInputRef)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearchEnter();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={() => {
+                    if (showKeyboard && activeInputRef === searchInputRef) {
+                      setShowKeyboard(false);
+                    } else if (activeInputRef === searchInputRef) {
+                      // Keyboard was hidden but search input was the last active - preserve mode
+                      showKeyboardForInput(searchInputRef);
+                    } else {
+                      // First time focusing search input - use numeric keyboard for barcodes
+                      handleInputFocus(searchInputRef);
+                    }
+                  }}
                   style={{
                     marginLeft: "0.5rem",
-                    color: inventoryLoading ? "#f39c12" : "#27ae60",
+                    padding: "0.75rem",
+                    background:
+                      showKeyboard && activeInputRef === searchInputRef
+                        ? "#27ae60"
+                        : "#3498db",
+                    minWidth: "auto",
                   }}
+                  title="Toggle Virtual Keyboard"
                 >
-                  • {inventoryLoading ? "syncing..." : "ready"}
-                </span>
-              )}
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
-            <div style={{ position: "relative", flex: 1, display: "flex" }}>
-              <SearchBar
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search products... (Barcode Scanner Ready)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => handleInputFocus(searchInputRef, false)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSearchEnter();
-                  }
+                  ⌨️
+                </Button>
+                {barcodeBuffer && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "-25px",
+                      right: "0",
+                      background: "#27ae60",
+                      color: "white",
+                      padding: "2px 8px",
+                      borderRadius: "4px",
+                      fontSize: "0.8rem",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    📷 Scanning...
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleDebugRefresh}
+                style={{
+                  padding: "0.5rem 1rem",
+                  background: "#e74c3c",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  whiteSpace: "nowrap",
                 }}
-              />
-              <Button
-                onClick={() => {
-                  if (showKeyboard && activeInputRef === searchInputRef) {
-                    setShowKeyboard(false);
-                  } else {
-                    handleInputFocus(searchInputRef, false);
-                  }
+                title="Force refresh inventory from database (Debug)"
+              >
+                🔄 Refresh
+              </button>
+              <CategoryFilter
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  // After selection, return focus to search bar
+                  setTimeout(() => {
+                    if (searchInputRef.current) {
+                      searchInputRef.current.focus();
+                    }
+                  }, 100);
                 }}
+                onBlur={(e) => {
+                  // When dropdown loses focus (after selection or clicking away), return to search
+                  setTimeout(() => {
+                    if (
+                      searchInputRef.current &&
+                      document.activeElement !== searchInputRef.current
+                    ) {
+                      searchInputRef.current.focus();
+                    }
+                  }, 100);
+                }}
+              >
+                <option value="">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </CategoryFilter>
+
+              <button
+                onClick={() => setShowManualEntry(true)}
                 style={{
                   marginLeft: "0.5rem",
-                  padding: "0.75rem",
-                  background: showKeyboard && activeInputRef === searchInputRef ? "#27ae60" : "#3498db",
-                  minWidth: "auto"
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#3498db",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontWeight: "bold",
                 }}
-                title="Toggle Virtual Keyboard"
               >
-                ⌨️
-              </Button>
-              {barcodeBuffer && (
+                + Manual Item
+              </button>
+            </div>
+
+            {/* Category Cards */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+                gap: "0.8rem",
+                marginBottom: "1.5rem",
+                maxHeight: "200px",
+                overflowX: "auto",
+              }}
+            >
+              {[
+                {
+                  name: "Lotto",
+                  key: "Lotto",
+                  icon: "🎲",
+                  color: "#e74c3c",
+                  description: "Type amount & click to add",
+                },
+                {
+                  name: "Grocery",
+                  key: "Grocery",
+                  icon: "🛒",
+                  color: "#27ae60",
+                  description: "Type amount & click to add",
+                },
+                {
+                  name: "Western Union",
+                  key: "WesternUnion",
+                  icon: "💸",
+                  color: "#8e44ad",
+                  description: "Type amount & click to add",
+                },
+                {
+                  name: "Tea",
+                  key: "Tea",
+                  icon: "🍵",
+                  color: "#d35400",
+                  description: "Type amount & click to add",
+                },
+                {
+                  name: "Bakery",
+                  key: "Bakery",
+                  icon: "🍞",
+                  color: "#f39c12",
+                  description: "Bread & Baked Goods",
+                },
+                {
+                  name: "Dairy",
+                  key: "Dairy",
+                  icon: "🥛",
+                  color: "#16a085",
+                  description: "Milk & Dairy Products",
+                },
+                {
+                  name: "Beverages",
+                  key: "Beverages",
+                  icon: "🥤",
+                  color: "#3498db",
+                  description: "Drinks & Refreshments",
+                },
+                {
+                  name: "Tobacco",
+                  key: "Tobacco",
+                  icon: "🚬",
+                  color: "#95a5a6",
+                  description: "Cigarettes & Cigars",
+                },
+                {
+                  name: "Snacks",
+                  key: "Snacks",
+                  icon: "🍿",
+                  color: "#e67e22",
+                  description: "Chips & Snacks",
+                },
+              ].map((category) => (
                 <div
+                  key={category.key}
+                  data-category={category.key}
+                  onClick={() => {
+                    // Special handling for Lotto, Grocery, Western Union, and Tea categories
+                    if (
+                      category.key === "Lotto" ||
+                      category.key === "Grocery" ||
+                      category.key === "WesternUnion" ||
+                      category.key === "Tea"
+                    ) {
+                      // Check search term first, then currently focused input field
+                      let inputValue = searchTerm.trim();
+
+                      // If search is empty, check the currently active input field
+                      if (
+                        !inputValue &&
+                        activeInputRef &&
+                        activeInputRef.current
+                      ) {
+                        inputValue = activeInputRef.current.value;
+                      }
+
+                      // If still no value, check other input fields that might have values
+                      if (!inputValue) {
+                        const inputs = [
+                          discountRef,
+                          cashAmountRef,
+                          cardAmountRef,
+                          cashbackAmountRef,
+                          lottoWinningsRef,
+                        ];
+                        for (const inputRef of inputs) {
+                          if (inputRef.current && inputRef.current.value) {
+                            inputValue = inputRef.current.value;
+                            break;
+                          }
+                        }
+                      }
+
+                      const numericValue = parseFloat(inputValue);
+
+                      // Check if search term is a valid number
+                      if (!isNaN(numericValue) && numericValue > 0) {
+                        // Create item with the specified amount based on category
+                        let newItem;
+
+                        if (category.key === "Lotto") {
+                          newItem = {
+                            id: `lotto-${Date.now()}`, // Unique ID for manual lotto item
+                            name: `Lotto $${numericValue.toFixed(2)}`,
+                            category: "Lotto",
+                            price: numericValue,
+                            stock: 999,
+                            lowStockThreshold: 0,
+                            applyTax: true, // Lotto is typically taxable
+                            isManual: true,
+                          };
+                        } else if (category.key === "Grocery") {
+                          newItem = {
+                            id: `grocery-${Date.now()}`, // Unique ID for manual grocery item
+                            name: `Grocery Item $${numericValue.toFixed(2)}`,
+                            category: "Grocery",
+                            price: numericValue,
+                            stock: 999,
+                            lowStockThreshold: 0,
+                            applyTax: true, // Grocery is typically taxable
+                            isManual: true,
+                          };
+                        } else if (category.key === "WesternUnion") {
+                          newItem = {
+                            id: `western-union-${Date.now()}`, // Unique ID for manual Western Union item
+                            name: `Western Union $${numericValue.toFixed(2)}`,
+                            category: "Western Union",
+                            price: numericValue,
+                            stock: 999,
+                            lowStockThreshold: 0,
+                            applyTax: true, // Western Union is typically taxable
+                            isManual: true,
+                          };
+                        } else if (category.key === "Tea") {
+                          newItem = {
+                            id: `tea-${Date.now()}`, // Unique ID for manual Tea item
+                            name: `Tea $${numericValue.toFixed(2)}`,
+                            category: "Tea",
+                            price: numericValue,
+                            stock: 999,
+                            lowStockThreshold: 0,
+                            applyTax: true, // Tea is typically taxable
+                            isManual: true,
+                          };
+                        }
+
+                        // Add to cart
+                        addToCart(newItem);
+
+                        // Clear the input field that was used
+                        if (searchTerm.trim()) {
+                          setSearchTerm("");
+                        } else if (activeInputRef && activeInputRef.current) {
+                          // Clear the currently active input field
+                          activeInputRef.current.value = "";
+                          // Trigger onChange event to update state
+                          const event = new Event("input", { bubbles: true });
+                          activeInputRef.current.dispatchEvent(event);
+                        }
+
+                        // Show success feedback
+                        console.log(`Added ${newItem.name} to cart`);
+
+                        // Brief visual feedback by temporarily highlighting the card
+                        const currentCard = document.querySelector(
+                          `[data-category="${category.key}"]`
+                        );
+                        if (currentCard) {
+                          currentCard.style.transform = "scale(1.05)";
+                          setTimeout(() => {
+                            currentCard.style.transform = "scale(1)";
+                          }, 200);
+                        }
+
+                        // Return focus to search bar
+                        setTimeout(() => {
+                          if (searchInputRef.current) {
+                            searchInputRef.current.focus();
+                          }
+                        }, 100);
+
+                        return; // Don't set category filter, just add the item
+                      }
+                    }
+
+                    // Default behavior: set category filter
+                    setCategoryFilter(category.key);
+                    // Return focus to search bar after category selection
+                    setTimeout(() => {
+                      if (searchInputRef.current) {
+                        searchInputRef.current.focus();
+                      }
+                    }, 100);
+                  }}
                   style={{
-                    position: "absolute",
-                    top: "-25px",
-                    right: "0",
-                    background: "#27ae60",
+                    background: `linear-gradient(135deg, ${category.color}, ${category.color}dd)`,
                     color: "white",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                    fontSize: "0.8rem",
-                    fontWeight: "bold",
+                    padding: "0.8rem",
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    textAlign: "center",
+                    transition: "all 0.2s ease",
+                    boxShadow:
+                      categoryFilter === category.key
+                        ? `0 8px 25px ${category.color}40`
+                        : "0 4px 15px rgba(0,0,0,0.1)",
+                    transform:
+                      categoryFilter === category.key
+                        ? "translateY(-2px)"
+                        : "translateY(0)",
+                    border:
+                      categoryFilter === category.key
+                        ? `3px solid ${category.color}`
+                        : "3px solid transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (categoryFilter !== category.key) {
+                      e.target.style.transform = "translateY(-1px)";
+                      e.target.style.boxShadow = `0 6px 20px ${category.color}30`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (categoryFilter !== category.key) {
+                      e.target.style.transform = "translateY(0)";
+                      e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.1)";
+                    }
                   }}
                 >
-                  📷 Scanning...
+                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+                    {category.icon}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "1rem",
+                      fontWeight: "600",
+                      marginBottom: "0.25rem",
+                    }}
+                  >
+                    {category.name}
+                  </div>
+                  <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
+                    {category.description}
+                  </div>
                 </div>
-              )}
-            </div>
-            <button
-              onClick={handleDebugRefresh}
-              style={{
-                padding: "0.5rem 1rem",
-                background: "#e74c3c",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "0.9rem",
-                whiteSpace: "nowrap",
-              }}
-              title="Force refresh inventory from database (Debug)"
-            >
-              🔄 Refresh
-            </button>
-            <CategoryFilter
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                // After selection, return focus to search bar
-                setTimeout(() => {
-                  if (searchInputRef.current) {
-                    searchInputRef.current.focus();
-                  }
-                }, 100);
-              }}
-              onBlur={(e) => {
-                // When dropdown loses focus (after selection or clicking away), return to search
-                setTimeout(() => {
-                  if (
-                    searchInputRef.current &&
-                    document.activeElement !== searchInputRef.current
-                  ) {
-                    searchInputRef.current.focus();
-                  }
-                }, 100);
-              }}
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
               ))}
-            </CategoryFilter>
 
-            <button
-              onClick={() => setShowManualEntry(true)}
-              style={{
-                marginLeft: "0.5rem",
-                padding: "0.5rem 1rem",
-                backgroundColor: "#3498db",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-            >
-              + Manual Item
-            </button>
-          </div>
-
-          {/* Category Cards */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-              gap: "0.8rem",
-              marginBottom: "1.5rem",
-              maxHeight: "200px",
-              overflowX: "auto",
-            }}
-          >
-            {[
-              {
-                name: "Lotto",
-                key: "Lotto",
-                icon: "🎲",
-                color: "#e74c3c",
-                description: "Type amount & click to add",
-              },
-              {
-                name: "Grocery",
-                key: "Grocery",
-                icon: "🛒",
-                color: "#27ae60",
-                description: "Type amount & click to add",
-              },
-              {
-                name: "Western Union",
-                key: "WesternUnion",
-                icon: "💸",
-                color: "#8e44ad",
-                description: "Type amount & click to add",
-              },
-              {
-                name: "Tea",
-                key: "Tea",
-                icon: "🍵",
-                color: "#d35400",
-                description: "Type amount & click to add",
-              },
-              {
-                name: "Bakery",
-                key: "Bakery",
-                icon: "🍞",
-                color: "#f39c12",
-                description: "Bread & Baked Goods",
-              },
-              {
-                name: "Dairy",
-                key: "Dairy",
-                icon: "🥛",
-                color: "#16a085",
-                description: "Milk & Dairy Products",
-              },
-              {
-                name: "Beverages",
-                key: "Beverages",
-                icon: "🥤",
-                color: "#3498db",
-                description: "Drinks & Refreshments",
-              },
-              {
-                name: "Tobacco",
-                key: "Tobacco",
-                icon: "🚬",
-                color: "#95a5a6",
-                description: "Cigarettes & Cigars",
-              },
-              {
-                name: "Snacks",
-                key: "Snacks",
-                icon: "🍿",
-                color: "#e67e22",
-                description: "Chips & Snacks",
-              },
-            ].map((category) => (
+              {/* Clear Filter Card */}
               <div
-                key={category.key}
-                data-category={category.key}
                 onClick={() => {
-                  // Special handling for Lotto, Grocery, Western Union, and Tea categories
-                  if (
-                    category.key === "Lotto" ||
-                    category.key === "Grocery" ||
-                    category.key === "WesternUnion" ||
-                    category.key === "Tea"
-                  ) {
-                    // Check search term first, then currently focused input field
-                    let inputValue = searchTerm.trim();
-                    
-                    // If search is empty, check the currently active input field
-                    if (!inputValue && activeInputRef && activeInputRef.current) {
-                      inputValue = activeInputRef.current.value;
-                    }
-                    
-                    // If still no value, check other input fields that might have values
-                    if (!inputValue) {
-                      const inputs = [discountRef, cashAmountRef, cardAmountRef, cashbackAmountRef, lottoWinningsRef];
-                      for (const inputRef of inputs) {
-                        if (inputRef.current && inputRef.current.value) {
-                          inputValue = inputRef.current.value;
-                          break;
-                        }
-                      }
-                    }
-                    
-                    const numericValue = parseFloat(inputValue);
-
-                    // Check if search term is a valid number
-                    if (!isNaN(numericValue) && numericValue > 0) {
-                      // Create item with the specified amount based on category
-                      let newItem;
-
-                      if (category.key === "Lotto") {
-                        newItem = {
-                          id: `lotto-${Date.now()}`, // Unique ID for manual lotto item
-                          name: `Lotto $${numericValue.toFixed(2)}`,
-                          category: "Lotto",
-                          price: numericValue,
-                          stock: 999,
-                          lowStockThreshold: 0,
-                          applyTax: true, // Lotto is typically taxable
-                          isManual: true,
-                        };
-                      } else if (category.key === "Grocery") {
-                        newItem = {
-                          id: `grocery-${Date.now()}`, // Unique ID for manual grocery item
-                          name: `Grocery Item $${numericValue.toFixed(2)}`,
-                          category: "Grocery",
-                          price: numericValue,
-                          stock: 999,
-                          lowStockThreshold: 0,
-                          applyTax: true, // Grocery is typically taxable
-                          isManual: true,
-                        };
-                      } else if (category.key === "WesternUnion") {
-                        newItem = {
-                          id: `western-union-${Date.now()}`, // Unique ID for manual Western Union item
-                          name: `Western Union $${numericValue.toFixed(2)}`,
-                          category: "Western Union",
-                          price: numericValue,
-                          stock: 999,
-                          lowStockThreshold: 0,
-                          applyTax: true, // Western Union is typically taxable
-                          isManual: true,
-                        };
-                      } else if (category.key === "Tea") {
-                        newItem = {
-                          id: `tea-${Date.now()}`, // Unique ID for manual Tea item
-                          name: `Tea $${numericValue.toFixed(2)}`,
-                          category: "Tea",
-                          price: numericValue,
-                          stock: 999,
-                          lowStockThreshold: 0,
-                          applyTax: true, // Tea is typically taxable
-                          isManual: true,
-                        };
-                      }
-
-                      // Add to cart
-                      addToCart(newItem);
-
-                      // Clear the input field that was used
-                      if (searchTerm.trim()) {
-                        setSearchTerm("");
-                      } else if (activeInputRef && activeInputRef.current) {
-                        // Clear the currently active input field
-                        activeInputRef.current.value = "";
-                        // Trigger onChange event to update state
-                        const event = new Event('input', { bubbles: true });
-                        activeInputRef.current.dispatchEvent(event);
-                      }
-
-                      // Show success feedback
-                      console.log(`Added ${newItem.name} to cart`);
-
-                      // Brief visual feedback by temporarily highlighting the card
-                      const currentCard = document.querySelector(
-                        `[data-category="${category.key}"]`
-                      );
-                      if (currentCard) {
-                        currentCard.style.transform = "scale(1.05)";
-                        setTimeout(() => {
-                          currentCard.style.transform = "scale(1)";
-                        }, 200);
-                      }
-
-                      // Return focus to search bar
-                      setTimeout(() => {
-                        if (searchInputRef.current) {
-                          searchInputRef.current.focus();
-                        }
-                      }, 100);
-
-                      return; // Don't set category filter, just add the item
-                    }
-                  }
-
-                  // Default behavior: set category filter
-                  setCategoryFilter(category.key);
-                  // Return focus to search bar after category selection
+                  setCategoryFilter("");
                   setTimeout(() => {
                     if (searchInputRef.current) {
                       searchInputRef.current.focus();
@@ -2286,41 +2378,44 @@ function POSContent() {
                   }, 100);
                 }}
                 style={{
-                  background: `linear-gradient(135deg, ${category.color}, ${category.color}dd)`,
-                  color: "white",
+                  background:
+                    categoryFilter === ""
+                      ? "linear-gradient(135deg, #2c3e50, #34495e)"
+                      : "linear-gradient(135deg, #ecf0f1, #bdc3c7)",
+                  color: categoryFilter === "" ? "white" : "#2c3e50",
                   padding: "0.8rem",
                   borderRadius: "10px",
                   cursor: "pointer",
                   textAlign: "center",
                   transition: "all 0.2s ease",
                   boxShadow:
-                    categoryFilter === category.key
-                      ? `0 8px 25px ${category.color}40`
+                    categoryFilter === ""
+                      ? "0 8px 25px rgba(44,62,80,0.3)"
                       : "0 4px 15px rgba(0,0,0,0.1)",
                   transform:
-                    categoryFilter === category.key
+                    categoryFilter === ""
                       ? "translateY(-2px)"
                       : "translateY(0)",
                   border:
-                    categoryFilter === category.key
-                      ? `3px solid ${category.color}`
+                    categoryFilter === ""
+                      ? "3px solid #2c3e50"
                       : "3px solid transparent",
                 }}
                 onMouseEnter={(e) => {
-                  if (categoryFilter !== category.key) {
+                  if (categoryFilter !== "") {
                     e.target.style.transform = "translateY(-1px)";
-                    e.target.style.boxShadow = `0 6px 20px ${category.color}30`;
+                    e.target.style.boxShadow = "0 6px  20px rgba(44,62,80,0.2)";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (categoryFilter !== category.key) {
+                  if (categoryFilter !== "") {
                     e.target.style.transform = "translateY(0)";
                     e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.1)";
                   }
                 }}
               >
                 <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-                  {category.icon}
+                  🏪
                 </div>
                 <div
                   style={{
@@ -2329,264 +2424,40 @@ function POSContent() {
                     marginBottom: "0.25rem",
                   }}
                 >
-                  {category.name}
+                  All Categories
                 </div>
                 <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
-                  {category.description}
+                  View All Products
                 </div>
-              </div>
-            ))}
-
-            {/* Clear Filter Card */}
-            <div
-              onClick={() => {
-                setCategoryFilter("");
-                setTimeout(() => {
-                  if (searchInputRef.current) {
-                    searchInputRef.current.focus();
-                  }
-                }, 100);
-              }}
-              style={{
-                background:
-                  categoryFilter === ""
-                    ? "linear-gradient(135deg, #2c3e50, #34495e)"
-                    : "linear-gradient(135deg, #ecf0f1, #bdc3c7)",
-                color: categoryFilter === "" ? "white" : "#2c3e50",
-                padding: "0.8rem",
-                borderRadius: "10px",
-                cursor: "pointer",
-                textAlign: "center",
-                transition: "all 0.2s ease",
-                boxShadow:
-                  categoryFilter === ""
-                    ? "0 8px 25px rgba(44,62,80,0.3)"
-                    : "0 4px 15px rgba(0,0,0,0.1)",
-                transform:
-                  categoryFilter === "" ? "translateY(-2px)" : "translateY(0)",
-                border:
-                  categoryFilter === ""
-                    ? "3px solid #2c3e50"
-                    : "3px solid transparent",
-              }}
-              onMouseEnter={(e) => {
-                if (categoryFilter !== "") {
-                  e.target.style.transform = "translateY(-1px)";
-                  e.target.style.boxShadow = "0 6px  20px rgba(44,62,80,0.2)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (categoryFilter !== "") {
-                  e.target.style.transform = "translateY(0)";
-                  e.target.style.boxShadow = "0 4px 15px rgba(0,0,0,0.1)";
-                }
-              }}
-            >
-              <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🏪</div>
-              <div
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                  marginBottom: "0.25rem",
-                }}
-              >
-                All Categories
-              </div>
-              <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
-                View All Products
               </div>
             </div>
-          </div>
 
-          {/* Manual Entry Modal */}
-          {showManualEntry && (
-            <div
-              style={{
-                position: "fixed",
-                top: "0",
-                left: "0",
-                right: "0",
-                bottom: "0",
-                backgroundColor: "rgba(0, 0, 0, 0.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 1000,
-              }}
-            >
+            {/* Manual Entry Modal */}
+            {showManualEntry && (
               <div
                 style={{
-                  backgroundColor: "white",
-                  padding: "2rem",
-                  borderRadius: "8px",
-                  minWidth: "400px",
-                  maxWidth: "500px",
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    setShowManualEntry(false);
-                    setManualItem({
-                      name: "",
-                      price: "",
-                      category:
-                        categories.length > 0
-                          ? categories[0]
-                          : "grocery-taxable",
-                      quantity: 1,
-                    });
-                  }
+                  position: "fixed",
+                  top: "0",
+                  left: "0",
+                  right: "0",
+                  bottom: "0",
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1000,
                 }}
               >
-                <h3 style={{ marginBottom: "1rem", color: "#2c3e50" }}>
-                  Add Manual Item
-                </h3>
-
-                <div style={{ marginBottom: "1rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "0.5rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Item Name:
-                  </label>
-                  <input
-                    type="text"
-                    value={manualItem.name}
-                    onChange={(e) =>
-                      setManualItem((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter item name or description"
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                    }}
-                    autoFocus
-                  />
-                </div>
-
-                <div style={{ marginBottom: "1rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "0.5rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Price:
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={manualItem.price}
-                    onChange={(e) =>
-                      setManualItem((prev) => ({
-                        ...prev,
-                        price: e.target.value,
-                      }))
-                    }
-                    placeholder="0.00"
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                    }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: "1rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "0.5rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Category:
-                  </label>
-                  <select
-                    value={manualItem.category}
-                    onChange={(e) =>
-                      setManualItem((prev) => ({
-                        ...prev,
-                        category: e.target.value,
-                      }))
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    {categories.length > 0 ? (
-                      // Use categories from Redux/database
-                      categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))
-                    ) : (
-                      // Fallback to hardcoded options if no categories loaded
-                      <>
-                        <option value="grocery-taxable">
-                          Grocery (Taxable)
-                        </option>
-                        <option value="grocery-non-taxable">
-                          Grocery (Non-Taxable)
-                        </option>
-                        <option value="lotto">Lotto (Taxable)</option>
-                      </>
-                    )}
-                  </select>
-                </div>
-
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "0.5rem",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Quantity:
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={manualItem.quantity}
-                    onChange={(e) =>
-                      setManualItem((prev) => ({
-                        ...prev,
-                        quantity: parseInt(e.target.value) || 1,
-                      }))
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
-                    }}
-                  />
-                </div>
-
                 <div
                   style={{
-                    display: "flex",
-                    gap: "0.5rem",
-                    justifyContent: "flex-end",
+                    backgroundColor: "white",
+                    padding: "2rem",
+                    borderRadius: "8px",
+                    minWidth: "400px",
+                    maxWidth: "500px",
                   }}
-                >
-                  <button
-                    onClick={() => {
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
                       setShowManualEntry(false);
                       setManualItem({
                         name: "",
@@ -2597,339 +2468,622 @@ function POSContent() {
                             : "grocery-taxable",
                         quantity: 1,
                       });
-                    }}
+                    }
+                  }}
+                >
+                  <h3 style={{ marginBottom: "1rem", color: "#2c3e50" }}>
+                    Add Manual Item
+                  </h3>
+
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "0.5rem",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Item Name:
+                    </label>
+                    <input
+                      type="text"
+                      value={manualItem.name}
+                      onChange={(e) =>
+                        setManualItem((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter item name or description"
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                      }}
+                      autoFocus
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "0.5rem",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Price:
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={manualItem.price}
+                      onChange={(e) =>
+                        setManualItem((prev) => ({
+                          ...prev,
+                          price: e.target.value,
+                        }))
+                      }
+                      placeholder="0.00"
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: "1rem" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "0.5rem",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Category:
+                    </label>
+                    <select
+                      value={manualItem.category}
+                      onChange={(e) =>
+                        setManualItem((prev) => ({
+                          ...prev,
+                          category: e.target.value,
+                        }))
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                      }}
+                    >
+                      {categories.length > 0 ? (
+                        // Use categories from Redux/database
+                        categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))
+                      ) : (
+                        // Fallback to hardcoded options if no categories loaded
+                        <>
+                          <option value="grocery-taxable">
+                            Grocery (Taxable)
+                          </option>
+                          <option value="grocery-non-taxable">
+                            Grocery (Non-Taxable)
+                          </option>
+                          <option value="lotto">Lotto (Taxable)</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "0.5rem",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Quantity:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={manualItem.quantity}
+                      onChange={(e) =>
+                        setManualItem((prev) => ({
+                          ...prev,
+                          quantity: parseInt(e.target.value) || 1,
+                        }))
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "0.5rem",
+                        border: "1px solid #ddd",
+                        borderRadius: "4px",
+                      }}
+                    />
+                  </div>
+
+                  <div
                     style={{
-                      padding: "0.5rem 1rem",
-                      backgroundColor: "#95a5a6",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
+                      display: "flex",
+                      gap: "0.5rem",
+                      justifyContent: "flex-end",
                     }}
                   >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={addManualItem}
-                    style={{
-                      padding: "0.5rem 1rem",
-                      backgroundColor: "#27ae60",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Add to Cart
-                  </button>
+                    <button
+                      onClick={() => {
+                        setShowManualEntry(false);
+                        setManualItem({
+                          name: "",
+                          price: "",
+                          category:
+                            categories.length > 0
+                              ? categories[0]
+                              : "grocery-taxable",
+                          quantity: 1,
+                        });
+                      }}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        backgroundColor: "#95a5a6",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={addManualItem}
+                      style={{
+                        padding: "0.5rem 1rem",
+                        backgroundColor: "#27ae60",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Dedicated Keyboard Area */}
-          <KeyboardArea>
-            <OnScreenKeyboard
-              show={true}
-              mode={keyboardMode}
-              onClose={() => setShowKeyboard(false)}
-              inputRef={activeInputRef}
-              onKeyPress={(key) => {
-                console.log('Virtual key pressed:', key);
-              }}
-            />
-          </KeyboardArea>
+            {/* Dedicated Keyboard Area */}
+            <KeyboardArea>
+              <OnScreenKeyboard
+                show={true}
+                mode={keyboardMode}
+                onClose={() => setShowKeyboard(false)}
+                inputRef={activeInputRef}
+                onKeyPress={(key) => {
+                  console.log("Virtual key pressed:", key);
+                }}
+                onModeToggle={(newMode) => setKeyboardMode(newMode)}
+              />
+            </KeyboardArea>
 
-          <div className="products-grid">
-            {filteredInventory.length === 0 &&
-              inventory.length > 0 &&
-              searchTerm && (
+            <div className="products-grid">
+              {filteredInventory.length === 0 &&
+                inventory.length > 0 &&
+                searchTerm && (
+                  <div
+                    style={{
+                      padding: "2rem",
+                      textAlign: "center",
+                      color: "#f39c12",
+                    }}
+                  >
+                    <h3>No products match your search</h3>
+                    <p>
+                      Search: "{searchTerm}"{" "}
+                      {categoryFilter && `| Category: "${categoryFilter}"`}
+                    </p>
+                    <div
+                      style={{
+                        marginTop: "1rem",
+                        padding: "0.75rem",
+                        backgroundColor: "#fff3cd",
+                        border: "1px solid #ffeaa7",
+                        borderRadius: "4px",
+                        color: "#856404",
+                      }}
+                    >
+                      💡 <strong>Press Enter</strong> to add "{searchTerm}" as a
+                      manual item with custom price
+                    </div>
+                  </div>
+                )}
+              {inventoryLoading && (
                 <div
                   style={{
                     padding: "2rem",
                     textAlign: "center",
-                    color: "#f39c12",
+                    color: "#3498db",
                   }}
                 >
-                  <h3>No products match your search</h3>
+                  <h3>Loading products...</h3>
+                  <p>Please wait while we load the inventory from database</p>
+                </div>
+              )}
+              {inventory.length === 0 && !inventoryLoading && (
+                <div
+                  style={{
+                    padding: "2rem",
+                    textAlign: "center",
+                    color: "#e74c3c",
+                  }}
+                >
+                  <h3>No products available</h3>
                   <p>
-                    Search: "{searchTerm}"{" "}
-                    {categoryFilter && `| Category: "${categoryFilter}"`}
+                    No inventory items found. Please check your connection or
+                    contact support.
                   </p>
+                </div>
+              )}
+              {filteredInventory.map((product) => (
+                <ProductItem
+                  key={product.id}
+                  onClick={() => addToCart(product)}
+                  style={{
+                    opacity: product.stock <= 0 ? 0.7 : 1,
+                    cursor: "pointer",
+                  }}
+                >
+                  <h4>{product.name}</h4>
+                  <div className="price-row">
+                    <div className="price">${product.price.toFixed(2)}</div>
+                    <div style={{ fontSize: "0.8rem", color: "#7f8c8d" }}>
+                      {product.taxable ? "HST" : "No HST"}
+                    </div>
+                  </div>
                   <div
+                    className="stock"
                     style={{
-                      marginTop: "1rem",
-                      padding: "0.75rem",
-                      backgroundColor: "#fff3cd",
-                      border: "1px solid #ffeaa7",
-                      borderRadius: "4px",
-                      color: "#856404",
+                      color:
+                        product.stock < 0
+                          ? "#e74c3c"
+                          : product.stock === 0
+                          ? "#f39c12"
+                          : product.stock <= product.lowStockThreshold
+                          ? "#f39c12"
+                          : "#27ae60",
                     }}
                   >
-                    💡 <strong>Press Enter</strong> to add "{searchTerm}" as a
-                    manual item with custom price
+                    Stock: {product.stock}{" "}
+                    {product.stock < 0
+                      ? "(Negative Stock)"
+                      : product.stock === 0
+                      ? "(Out of Stock)"
+                      : product.stock <= product.lowStockThreshold
+                      ? "(Low Stock)"
+                      : ""}
                   </div>
-                </div>
-              )}
-            {inventoryLoading && (
-              <div
-                style={{
-                  padding: "2rem",
-                  textAlign: "center",
-                  color: "#3498db",
-                }}
-              >
-                <h3>Loading products...</h3>
-                <p>Please wait while we load the inventory from database</p>
-              </div>
-            )}
-            {inventory.length === 0 && !inventoryLoading && (
-              <div
-                style={{
-                  padding: "2rem",
-                  textAlign: "center",
-                  color: "#e74c3c",
-                }}
-              >
-                <h3>No products available</h3>
-                <p>
-                  No inventory items found. Please check your connection or
-                  contact support.
-                </p>
-              </div>
-            )}
-            {filteredInventory.map((product) => (
-              <ProductItem
-                key={product.id}
-                onClick={() => addToCart(product)}
-                style={{
-                  opacity: product.stock <= 0 ? 0.7 : 1,
-                  cursor: "pointer",
-                }}
-              >
-                <h4>{product.name}</h4>
-                <div className="price-row">
-                  <div className="price">${product.price.toFixed(2)}</div>
-                  <div style={{ fontSize: "0.8rem", color: "#7f8c8d" }}>
-                    {product.taxable ? "HST" : "No HST"}
-                  </div>
-                </div>
-                <div
-                  className="stock"
-                  style={{
-                    color:
-                      product.stock < 0
-                        ? "#e74c3c"
-                        : product.stock === 0
-                        ? "#f39c12"
-                        : product.stock <= product.lowStockThreshold
-                        ? "#f39c12"
-                        : "#27ae60",
-                  }}
-                >
-                  Stock: {product.stock}{" "}
-                  {product.stock < 0
-                    ? "(Negative Stock)"
-                    : product.stock === 0
-                    ? "(Out of Stock)"
-                    : product.stock <= product.lowStockThreshold
-                    ? "(Low Stock)"
-                    : ""}
-                </div>
-              </ProductItem>
-            ))}
-          </div>
-        </ProductsPanel>
-
-        <CheckoutPanel>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "0.5rem",
-            }}
-          >
-            <h2 style={{ margin: 0 }}>Current Sale</h2>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button
-                onClick={() => {
-                  setIsCreditSale(!isCreditSale);
-                  if (isCreditSale) {
-                    setCreditCustomerName("");
-                    setCreditAmount(0);
-                    setSelectedCustomer(null);
-                    setCustomerBalance(0);
-                  }
-                }}
-                style={{
-                  background: isCreditSale ? "#28a745" : "#6c757d",
-                  color: "white",
-                  padding: "0.5rem 0.75rem",
-                  fontSize: "0.8rem",
-                  fontWeight: "600",
-                }}
-              >
-                💳 Credit
-              </Button>
+                </ProductItem>
+              ))}
             </div>
-          </div>
+          </ProductsPanel>
 
-          {/* Credit Sale Status Indicator */}
-          {isCreditSale && (
+          <CheckoutPanel>
             <div
               style={{
-                padding: "0.5rem",
-                backgroundColor: "#fff3cd",
-                border: "2px solid #ffc107",
-                borderRadius: "8px",
-                marginBottom: "0.75rem",
-                textAlign: "center",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "0.5rem",
               }}
             >
-              <div
-                style={{
-                  fontWeight: "600",
-                  color: "#856404",
-                  fontSize: "0.9rem",
-                }}
-              >
-                💳 CREDIT SALE MODE ACTIVE
-              </div>
-              {creditCustomerName && (
-                <div
+              <h2 style={{ margin: 0 }}>Current Sale</h2>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <Button
+                  onClick={() => {
+                    setIsCreditSale(!isCreditSale);
+                    if (isCreditSale) {
+                      setCreditCustomerName("");
+                      setCreditAmount(0);
+                      setSelectedCustomer(null);
+                      setCustomerBalance(0);
+                    }
+                  }}
                   style={{
+                    background: isCreditSale ? "#28a745" : "#6c757d",
+                    color: "white",
+                    padding: "0.5rem 0.75rem",
                     fontSize: "0.8rem",
-                    color: "#856404",
-                    marginTop: "0.25rem",
+                    fontWeight: "600",
                   }}
                 >
-                  Customer: <strong>{creditCustomerName}</strong>
-                  {selectedCustomer && (
-                    <span style={{ marginLeft: "0.5rem" }}>
-                      (Balance: ${Math.abs(customerBalance).toFixed(2)}{" "}
-                      {customerBalance > 0 ? "owed" : "credit"})
-                    </span>
-                  )}
-                </div>
-              )}
+                  💳 Credit
+                </Button>
+              </div>
             </div>
-          )}
-          <div className="cart-items">
-            {cart.length === 0 ? (
-              <p
+
+            {/* Credit Sale Status Indicator */}
+            {isCreditSale && (
+              <div
                 style={{
+                  padding: "0.5rem",
+                  backgroundColor: "#fff3cd",
+                  border: "2px solid #ffc107",
+                  borderRadius: "8px",
+                  marginBottom: "0.75rem",
                   textAlign: "center",
-                  color: "#7f8c8d",
-                  marginTop: "2rem",
                 }}
               >
-                No items in cart — add products from the left panel
-              </p>
-            ) : (
-              cart.map((item) => (
-                <CartItem key={item.id}>
-                  <div className="item-details">
-                    <h4>{item.name}</h4>
-                    <p>${item.price.toFixed(2)} each</p>
-                    <button
-                      onClick={() => toggleItemTax(item.id)}
-                      style={{
-                        fontSize: "0.75rem",
-                        padding: "0.25rem 0.5rem",
-                        borderRadius: "12px",
-                        border: "none",
-                        background:
-                          item.applyTax === true ? "#27ae60" : "#95a5a6",
-                        color: "white",
-                        cursor: "pointer",
-                        marginTop: "0.25rem",
-                      }}
-                    >
-                      {item.applyTax === true ? "HST ON" : "HST OFF"}
-                    </button>
-                  </div>
-                  <div className="quantity-controls">
-                    <button
-                      onClick={() => handleDecreaseQuantity(item.id)}
-                      disabled={item.quantity <= 1}
-                      style={{
-                        opacity: item.quantity <= 1 ? 0.5 : 1,
-                        cursor: item.quantity <= 1 ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      -
-                    </button>
-                    <span>{item.quantity}</span>
-                    <button
-                      onClick={() =>
-                        updateCartQuantity(item.id, item.quantity + 1)
-                      }
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div className="item-total">
-                    <div>${(item.price * item.quantity).toFixed(2)}</div>
-                    {item.applyTax === true && (
-                      <div style={{ fontSize: "0.75rem", color: "#7f8c8d" }}>
-                        +${(item.price * item.quantity * 0.13).toFixed(2)} HST
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    className="remove-btn"
-                    onClick={() => removeFromCart(item.id)}
-                  >
-                    ×
-                  </button>
-                </CartItem>
-              ))
-            )}
-          </div>
-
-          {/* Scrollable checkout sections */}
-          <div className="checkout-sections">
-            {/* Cashback Option */}
-          <div
-            style={{
-              margin: "0.5rem 0",
-              padding: "0.5rem",
-              backgroundColor: "#f8f9fa",
-              border: "1px solid #e9ecef",
-              borderRadius: "6px",
-            }}
-          >
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                cursor: "pointer",
-                fontWeight: "500",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={cashbackEnabled}
-                onChange={(e) => {
-                  setCashbackEnabled(e.target.checked);
-                  if (!e.target.checked) {
-                    setCashbackAmount("");
-                    setCashbackFee("");
-                  }
-                }}
-                style={{ transform: "scale(1.2)" }}
-              />
-              <span>Add Cashback</span>
-            </label>
-
-            {cashbackEnabled && (
-              <>
                 <div
                   style={{
-                    marginTop: "0.5rem",
+                    fontWeight: "600",
+                    color: "#856404",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  💳 CREDIT SALE MODE ACTIVE
+                </div>
+                {creditCustomerName && (
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "#856404",
+                      marginTop: "0.25rem",
+                    }}
+                  >
+                    Customer: <strong>{creditCustomerName}</strong>
+                    {selectedCustomer && (
+                      <span style={{ marginLeft: "0.5rem" }}>
+                        (Balance: ${Math.abs(customerBalance).toFixed(2)}{" "}
+                        {customerBalance > 0 ? "owed" : "credit"})
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="cart-items">
+              {cart.length === 0 ? (
+                <p
+                  style={{
+                    textAlign: "center",
+                    color: "#7f8c8d",
+                    marginTop: "2rem",
+                  }}
+                >
+                  No items in cart — add products from the left panel
+                </p>
+              ) : (
+                cart.map((item) => (
+                  <CartItem key={item.id}>
+                    <div className="item-details">
+                      <h4>{item.name}</h4>
+                      <p>${item.price.toFixed(2)} each</p>
+                      <button
+                        onClick={() => toggleItemTax(item.id)}
+                        style={{
+                          fontSize: "0.75rem",
+                          padding: "0.25rem 0.5rem",
+                          borderRadius: "12px",
+                          border: "none",
+                          background:
+                            item.applyTax === true ? "#27ae60" : "#95a5a6",
+                          color: "white",
+                          cursor: "pointer",
+                          marginTop: "0.25rem",
+                        }}
+                      >
+                        {item.applyTax === true ? "HST ON" : "HST OFF"}
+                      </button>
+                    </div>
+                    <div className="quantity-controls">
+                      <button
+                        onClick={() => handleDecreaseQuantity(item.id)}
+                        disabled={item.quantity <= 1}
+                        style={{
+                          opacity: item.quantity <= 1 ? 0.5 : 1,
+                          cursor:
+                            item.quantity <= 1 ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        -
+                      </button>
+                      <span>{item.quantity}</span>
+                      <button
+                        onClick={() =>
+                          updateCartQuantity(item.id, item.quantity + 1)
+                        }
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className="item-total">
+                      <div>${(item.price * item.quantity).toFixed(2)}</div>
+                      {item.applyTax === true && (
+                        <div style={{ fontSize: "0.75rem", color: "#7f8c8d" }}>
+                          +${(item.price * item.quantity * 0.13).toFixed(2)} HST
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      className="remove-btn"
+                      onClick={() => removeFromCart(item.id)}
+                    >
+                      ×
+                    </button>
+                  </CartItem>
+                ))
+              )}
+            </div>
+
+            {/* Scrollable checkout sections */}
+            <div className="checkout-sections">
+              {/* Cashback Option */}
+              <div
+                style={{
+                  margin: "0.5rem 0",
+                  padding: "0.5rem",
+                  backgroundColor: "#f8f9fa",
+                  border: "1px solid #e9ecef",
+                  borderRadius: "6px",
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={cashbackEnabled}
+                    onChange={(e) => {
+                      setCashbackEnabled(e.target.checked);
+                      if (!e.target.checked) {
+                        setCashbackAmount("");
+                        setCashbackFee("");
+                      }
+                    }}
+                    style={{ transform: "scale(1.2)" }}
+                  />
+                  <span>Add Cashback</span>
+                </label>
+
+                {cashbackEnabled && (
+                  <>
+                    <div
+                      style={{
+                        marginTop: "0.5rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <label style={{ minWidth: "70px", fontSize: "0.9rem" }}>
+                        Amount:
+                      </label>
+                      <input
+                        ref={cashbackAmountRef}
+                        type="text"
+                        inputMode="decimal"
+                        pattern="[0-9]*\.?[0-9]*"
+                        value={cashbackAmount}
+                        onFocus={() => handleInputFocus(cashbackAmountRef)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Allow empty, numbers, and decimal point
+                          if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                            setCashbackAmount(value);
+                          }
+                        }}
+                        style={{
+                          padding: "0.4rem",
+                          flex: 1,
+                          borderRadius: "4px",
+                          border: "1px solid #ddd",
+                        }}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: "0.5rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      <label
+                        style={{
+                          minWidth: "70px",
+                          fontSize: "0.9rem",
+                          color: "#e67e22",
+                        }}
+                      >
+                        Fee:
+                      </label>
+                      <input
+                        ref={cashbackFeeRef}
+                        type="text"
+                        inputMode="decimal"
+                        pattern="[0-9]*\.?[0-9]*"
+                        value={cashbackFee}
+                        onFocus={() => handleInputFocus(cashbackFeeRef)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Allow empty, numbers, and decimal point
+                          if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                            setCashbackFee(value);
+                          }
+                        }}
+                        style={{
+                          padding: "0.4rem",
+                          flex: 1,
+                          borderRadius: "4px",
+                          border: "1px solid #e67e22",
+                          backgroundColor: "#fef5e7",
+                        }}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    {(Number(cashbackFee) || 0) > 0 && (
+                      <div
+                        style={{
+                          marginTop: "0.5rem",
+                          fontSize: "0.8rem",
+                          color: "#e67e22",
+                          fontStyle: "italic",
+                          backgroundColor: "#fef5e7",
+                          padding: "0.25rem 0.5rem",
+                          borderRadius: "4px",
+                          border: "1px solid #f4d03f",
+                        }}
+                      >
+                        💰 Cashback fee: $
+                        {(Number(cashbackFee) || 0).toFixed(2)} added to total
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Discount */}
+              <div
+                style={{
+                  margin: "0.5rem 0",
+                  padding: "0.5rem",
+                  backgroundColor: "#fff3e0",
+                  border: "1px solid #ffcc80",
+                  borderRadius: "6px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    fontWeight: "500",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <span>💰 Discount</span>
+                </div>
+                <div
+                  style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
@@ -2939,15 +3093,190 @@ function POSContent() {
                     Amount:
                   </label>
                   <input
-                    ref={cashbackAmountRef}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={cashbackAmount}
-                    onFocus={() => handleInputFocus(cashbackAmountRef, true)}
+                    ref={discountRef}
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\.?[0-9]*"
+                    value={discountAmount}
+                    onFocus={() => handleInputFocus(discountRef)}
                     onChange={(e) => {
                       const value = e.target.value;
-                      setCashbackAmount(value === "" ? "" : Number(value));
+                      // Allow empty, numbers, and decimal point
+                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                        setDiscountAmount(value);
+                      }
+                    }}
+                    style={{
+                      padding: "0.4rem",
+                      flex: 1,
+                      borderRadius: "4px",
+                      border: "1px solid #ddd",
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+                {(Number(discountAmount) || 0) > 0 && (
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      fontSize: "0.8rem",
+                      color: "#e65100",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    💸 Customer saves $
+                    {(Number(discountAmount) || 0).toFixed(2)}
+                  </div>
+                )}
+              </div>
+
+              {/* Enhanced Card Fee Section */}
+              <div
+                style={{
+                  margin: "0.5rem 0",
+                  padding: "0.5rem",
+                  backgroundColor: "#f8f4ff",
+                  border: "1px solid #d4c5f9",
+                  borderRadius: "6px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    marginBottom: "0.5rem",
+                    fontWeight: "500",
+                  }}
+                >
+                  <span>💳 Card Fees</span>
+                </div>
+
+                {/* Card Fee Enable/Disable */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    marginBottom: cardFeeEnabled ? "0.5rem" : "0",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={cardFeeEnabled}
+                      onChange={(e) => {
+                        const isEnabled = e.target.checked;
+                        setCardFeeEnabled(isEnabled);
+
+                        const currentCardAmount = Number(
+                          parseFloat(cardAmount) || 0
+                        );
+                        const currentCashAmount = Number(
+                          parseFloat(cashAmount) || 0
+                        );
+
+                        if (isEnabled) {
+                          // When enabling, add card fee to total
+                          const totalAmount =
+                            currentCardAmount +
+                            currentCashAmount +
+                            CARD_FEE_AMOUNT;
+                          setCardAmount(String(totalAmount.toFixed(2)));
+                          setCashAmount("0");
+                          setLastEdited("card");
+                        } else {
+                          // When disabling, remove card fee from total
+                          if (currentCardAmount >= CARD_FEE_AMOUNT) {
+                            const newCardAmount = Math.max(
+                              0,
+                              currentCardAmount - CARD_FEE_AMOUNT
+                            );
+                            setCardAmount(String(newCardAmount.toFixed(2)));
+                          }
+                        }
+                      }}
+                      style={{
+                        marginRight: "0.25rem",
+                        transform: "scale(1.1)",
+                      }}
+                    />
+                    Apply card fee (+${CARD_FEE_AMOUNT.toFixed(2)})
+                  </label>
+                </div>
+
+                {/* Fee Status Display */}
+                {cardFeeEnabled && (
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      padding: "0.25rem 0.5rem",
+                      backgroundColor: "#fff3cd",
+                      border: "1px solid #ffeaa7",
+                      borderRadius: "4px",
+                      fontSize: "0.8rem",
+                      color: "#856404",
+                    }}
+                  >
+                    💰 Card processing fee: ${CARD_FEE_AMOUNT.toFixed(2)} added
+                    to total
+                  </div>
+                )}
+              </div>
+
+              {/* Lotto Winnings */}
+              <div
+                style={{
+                  margin: "0.5rem 0",
+                  padding: "0.5rem",
+                  backgroundColor: "#e8f5e8",
+                  border: "1px solid #c3e6c3",
+                  borderRadius: "6px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    fontWeight: "500",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <span>🎰 Lotto Winnings</span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <label style={{ minWidth: "70px", fontSize: "0.9rem" }}>
+                    Amount:
+                  </label>
+                  <input
+                    ref={lottoWinningsRef}
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\.?[0-9]*"
+                    value={lottoWinnings}
+                    onFocus={() => handleInputFocus(lottoWinningsRef)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow empty, numbers, and decimal point
+                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                        setLottoWinnings(value);
+                      }
                     }}
                     style={{
                       padding: "0.4rem",
@@ -2959,736 +3288,968 @@ function POSContent() {
                   />
                 </div>
 
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <label
-                    style={{
-                      minWidth: "70px",
-                      fontSize: "0.9rem",
-                      color: "#e67e22",
-                    }}
-                  >
-                    Fee:
-                  </label>
-                  <input
-                    ref={cashbackFeeRef}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={cashbackFee}
-                    onFocus={() => handleInputFocus(cashbackFeeRef, true)}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setCashbackFee(value === "" ? "" : Number(value));
-                    }}
-                    style={{
-                      padding: "0.4rem",
-                      flex: 1,
-                      borderRadius: "4px",
-                      border: "1px solid #e67e22",
-                      backgroundColor: "#fef5e7",
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-
-                {(Number(cashbackFee) || 0) > 0 && (
+                {(Number(lottoWinnings) || 0) > 0 && (
                   <div
                     style={{
                       marginTop: "0.5rem",
                       fontSize: "0.8rem",
-                      color: "#e67e22",
+                      color: "#28a745",
                       fontStyle: "italic",
-                      backgroundColor: "#fef5e7",
-                      padding: "0.25rem 0.5rem",
-                      borderRadius: "4px",
-                      border: "1px solid #f4d03f",
                     }}
                   >
-                    💰 Cashback fee: ${(Number(cashbackFee) || 0).toFixed(2)}{" "}
-                    added to total
+                    💰 Customer won ${(Number(lottoWinnings) || 0).toFixed(2)}{" "}
+                    in lottery
                   </div>
                 )}
-              </>
-            )}
-          </div>
-
-          {/* Discount */}
-          <div
-            style={{
-              margin: "0.5rem 0",
-              padding: "0.5rem",
-              backgroundColor: "#fff3e0",
-              border: "1px solid #ffcc80",
-              borderRadius: "6px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                fontWeight: "500",
-                marginBottom: "0.5rem",
-              }}
-            >
-              <span>💰 Discount</span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              <label style={{ minWidth: "70px", fontSize: "0.9rem" }}>
-                Amount:
-              </label>
-              <input
-                ref={discountRef}
-                type="number"
-                step="0.01"
-                min="0"
-                value={discountAmount}
-                onFocus={() => handleInputFocus(discountRef, true)}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setDiscountAmount(value === "" ? "" : Number(value));
-                }}
-                style={{
-                  padding: "0.4rem",
-                  flex: 1,
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
-                }}
-                placeholder="0.00"
-              />
-            </div>
-            {(Number(discountAmount) || 0) > 0 && (
-              <div
-                style={{
-                  marginTop: "0.5rem",
-                  fontSize: "0.8rem",
-                  color: "#e65100",
-                  fontStyle: "italic",
-                }}
-              >
-                💸 Customer saves ${(Number(discountAmount) || 0).toFixed(2)}
               </div>
-            )}
-          </div>
-
-          {/* Enhanced Card Fee Section */}
-          <div
-            style={{
-              margin: "0.5rem 0",
-              padding: "0.5rem",
-              backgroundColor: "#f8f4ff",
-              border: "1px solid #d4c5f9",
-              borderRadius: "6px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                marginBottom: "0.5rem",
-                fontWeight: "500",
-              }}
-            >
-              <span>💳 Card Fees</span>
             </div>
 
-            {/* Card Fee Enable/Disable */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                marginBottom: cardFeeEnabled ? "0.5rem" : "0",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  cursor: "pointer",
-                  fontSize: "0.9rem",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={cardFeeEnabled}
-                  onChange={(e) => {
-                    const isEnabled = e.target.checked;
-                    setCardFeeEnabled(isEnabled);
+            <div className="checkout-summary">
+              {(() => {
+                const originalSubtotal = calculateSubtotal(); // Items total before discount
+                const discount = Number(parseFloat(discountAmount) || 0);
+                const subtotal = calculateTotal(); // After discount
+                const tax = calculateTax();
+                const total = +(subtotal + tax).toFixed(2);
+                const cashback = Number(parseFloat(cashbackAmount) || 0);
+                const lotto = Number(parseFloat(lottoWinnings) || 0);
+                const paidCash = Number(parseFloat(cashAmount) || 0);
+                const paidCard = Number(parseFloat(cardAmount) || 0);
+                const paidTotal = +(paidCash + paidCard).toFixed(2);
 
-                    const currentCardAmount = Number(
-                      parseFloat(cardAmount) || 0
-                    );
-                    const currentCashAmount = Number(
-                      parseFloat(cashAmount) || 0
-                    );
+                // Calculate final total with cashback and lotto winnings
+                const finalTotal = total + cashback - lotto;
 
-                    if (isEnabled) {
-                      // When enabling, add card fee to total
-                      const totalAmount =
-                        currentCardAmount + currentCashAmount + CARD_FEE_AMOUNT;
-                      setCardAmount(String(totalAmount.toFixed(2)));
-                      setCashAmount("0");
-                      setLastEdited("card");
-                    } else {
-                      // When disabling, remove card fee from total
-                      if (currentCardAmount >= CARD_FEE_AMOUNT) {
-                        const newCardAmount = Math.max(
-                          0,
-                          currentCardAmount - CARD_FEE_AMOUNT
-                        );
-                        setCardAmount(String(newCardAmount.toFixed(2)));
-                      }
-                    }
-                  }}
-                  style={{
-                    marginRight: "0.25rem",
-                    transform: "scale(1.1)",
-                  }}
-                />
-                Apply card fee (+${CARD_FEE_AMOUNT.toFixed(2)})
-              </label>
-            </div>
+                // For cashback transactions, require card payment to cover total + cashback
+                let isSufficient;
+                if (cashback > 0 && lotto === 0) {
+                  const totalNeeded = total + cashback;
+                  isSufficient = paidCard + 0.0001 >= totalNeeded;
+                } else if (lotto > 0) {
+                  // With lotto winnings, customer may owe less or even get money back
+                  isSufficient =
+                    finalTotal <= 0 || paidTotal + 0.0001 >= finalTotal;
+                } else {
+                  isSufficient = paidTotal + 0.0001 >= total;
+                }
 
-            {/* Fee Status Display */}
-            {cardFeeEnabled && (
-              <div
-                style={{
-                  marginTop: "0.5rem",
-                  padding: "0.25rem 0.5rem",
-                  backgroundColor: "#fff3cd",
-                  border: "1px solid #ffeaa7",
-                  borderRadius: "4px",
-                  fontSize: "0.8rem",
-                  color: "#856404",
-                }}
-              >
-                💰 Card processing fee: ${CARD_FEE_AMOUNT.toFixed(2)} added to
-                total
-              </div>
-            )}
-          </div>
+                const change =
+                  cashback > 0 && lotto === 0
+                    ? 0
+                    : Math.max(0, +(paidTotal - finalTotal).toFixed(2));
 
-          {/* Lotto Winnings */}
-          <div
-            style={{
-              margin: "0.5rem 0",
-              padding: "0.5rem",
-              backgroundColor: "#e8f5e8",
-              border: "1px solid #c3e6c3",
-              borderRadius: "6px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                fontWeight: "500",
-                marginBottom: "0.5rem",
-              }}
-            >
-              <span>🎰 Lotto Winnings</span>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              <label style={{ minWidth: "70px", fontSize: "0.9rem" }}>
-                Amount:
-              </label>
-              <input
-                ref={lottoWinningsRef}
-                type="number"
-                step="0.01"
-                min="0"
-                value={lottoWinnings}
-                onFocus={() => handleInputFocus(lottoWinningsRef, true)}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setLottoWinnings(value === "" ? "" : Number(value));
-                }}
-                style={{
-                  padding: "0.4rem",
-                  flex: 1,
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
-                }}
-                placeholder="0.00"
-              />
-            </div>
-
-            {(Number(lottoWinnings) || 0) > 0 && (
-              <div
-                style={{
-                  marginTop: "0.5rem",
-                  fontSize: "0.8rem",
-                  color: "#28a745",
-                  fontStyle: "italic",
-                }}
-              >
-                💰 Customer won ${(Number(lottoWinnings) || 0).toFixed(2)} in
-                lottery
-              </div>
-            )}
-          </div>
-          </div>
-
-          <div className="checkout-summary">
-            {(() => {
-              const originalSubtotal = calculateSubtotal(); // Items total before discount
-              const discount = Number(parseFloat(discountAmount) || 0);
-              const subtotal = calculateTotal(); // After discount
-              const tax = calculateTax();
-              const total = +(subtotal + tax).toFixed(2);
-              const cashback = Number(parseFloat(cashbackAmount) || 0);
-              const lotto = Number(parseFloat(lottoWinnings) || 0);
-              const paidCash = Number(parseFloat(cashAmount) || 0);
-              const paidCard = Number(parseFloat(cardAmount) || 0);
-              const paidTotal = +(paidCash + paidCard).toFixed(2);
-
-              // Calculate final total with cashback and lotto winnings
-              const finalTotal = total + cashback - lotto;
-
-              // For cashback transactions, require card payment to cover total + cashback
-              let isSufficient;
-              if (cashback > 0 && lotto === 0) {
-                const totalNeeded = total + cashback;
-                isSufficient = paidCard + 0.0001 >= totalNeeded;
-              } else if (lotto > 0) {
-                // With lotto winnings, customer may owe less or even get money back
-                isSufficient =
-                  finalTotal <= 0 || paidTotal + 0.0001 >= finalTotal;
-              } else {
-                isSufficient = paidTotal + 0.0001 >= total;
-              }
-
-              const change =
-                cashback > 0 && lotto === 0
-                  ? 0
-                  : Math.max(0, +(paidTotal - finalTotal).toFixed(2));
-
-              return (
-                <>
-                  <Total>
-                    {getTaxableTotal() > 0 && getNonTaxableTotal() > 0 && (
-                      <>
-                        <div>Taxable: ${getTaxableTotal().toFixed(2)}</div>
-                        <div>
-                          Non-Taxable: ${getNonTaxableTotal().toFixed(2)}
-                        </div>
-                      </>
-                    )}
-                    {discount > 0 ? (
-                      <>
-                        <div>
-                          Items Subtotal: ${originalSubtotal.toFixed(2)}
-                        </div>
-                        <div style={{ color: "#e65100", fontWeight: "500" }}>
-                          Discount: -${discount.toFixed(2)}
-                        </div>
-                        <div>Subtotal: ${subtotal.toFixed(2)}</div>
-                      </>
-                    ) : (
-                      <div>Subtotal: ${subtotal.toFixed(2)}</div>
-                    )}
-                    {tax > 0 && <div>HST (13%): ${tax.toFixed(2)}</div>}
-                    <div>Purchase Total: ${total.toFixed(2)}</div>
-                    {cashback > 0 && (
-                      <div style={{ color: "#e67e22", fontWeight: "500" }}>
-                        Cashback: ${cashback.toFixed(2)}
-                      </div>
-                    )}
-                    {Number(parseFloat(cashbackFee) || 0) > 0 && (
-                      <div style={{ color: "#d35400", fontWeight: "500" }}>
-                        Cashback Fee: $
-                        {Number(parseFloat(cashbackFee) || 0).toFixed(2)}
-                      </div>
-                    )}
-                    {lotto > 0 && (
-                      <div style={{ color: "#28a745", fontWeight: "500" }}>
-                        Lotto Winnings: -${lotto.toFixed(2)}
-                      </div>
-                    )}
-                    <div className="final-total">
-                      {isBalancePayment ? (
+                return (
+                  <>
+                    <Total>
+                      {getTaxableTotal() > 0 && getNonTaxableTotal() > 0 && (
                         <>
-                          <div
-                            style={{
-                              color: "#17a2b8",
-                              fontWeight: "600",
-                              marginBottom: "5px",
-                            }}
-                          >
-                            🏦 Customer Balance Payment
-                          </div>
+                          <div>Taxable: ${getTaxableTotal().toFixed(2)}</div>
                           <div>
-                            Paying for:{" "}
-                            {selectedCustomer?.name || "Selected Customer"}
+                            Non-Taxable: ${getNonTaxableTotal().toFixed(2)}
                           </div>
-                          <div>
-                            Current Balance: $
-                            {selectedCustomer?.balance?.toFixed(2) || "0.00"}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          Total Amount Due: $
-                          {finalTotal >= 0
-                            ? finalTotal.toFixed(2)
-                            : `(${Math.abs(finalTotal).toFixed(2)}) Credit`}
                         </>
                       )}
-                    </div>
-                  </Total>
-
-                  <div
-                    style={{
-                      marginTop: "1rem",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    {/* Credit Sale Section */}
-                    <div
-                      style={{
-                        padding: "1rem",
-                        backgroundColor: "#fff3cd",
-                        border: "2px solid #ffc107",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      {/* Credit Sale Toggle */}
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                          cursor: "pointer",
-                          fontWeight: "600",
-                          fontSize: "1.1rem",
-                          color: "#856404",
-                          marginBottom: isCreditSale ? "0.75rem" : "0",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isCreditSale}
-                          onChange={(e) => {
-                            setIsCreditSale(e.target.checked);
-                            if (!e.target.checked) {
-                              setCreditCustomerName("");
-                              setCreditAmount(0);
-                            } else {
-                              // Clear existing payments when entering credit mode
-                              setCashAmount("");
-                              setCardAmount("");
-                              setCreditAmount(0);
-                            }
-                          }}
-                          style={{ transform: "scale(1.2)" }}
-                        />
-                        <span>💳 Credit Sale Mode</span>
-                      </label>
-
-                      {isCreditSale && (
+                      {discount > 0 ? (
                         <>
-                          {/* Credit Sale Inputs */}
-                          <div style={{ marginBottom: "0.75rem" }}>
+                          <div>
+                            Items Subtotal: ${originalSubtotal.toFixed(2)}
+                          </div>
+                          <div style={{ color: "#e65100", fontWeight: "500" }}>
+                            Discount: -${discount.toFixed(2)}
+                          </div>
+                          <div>Subtotal: ${subtotal.toFixed(2)}</div>
+                        </>
+                      ) : (
+                        <div>Subtotal: ${subtotal.toFixed(2)}</div>
+                      )}
+                      {tax > 0 && <div>HST (13%): ${tax.toFixed(2)}</div>}
+                      <div>Purchase Total: ${total.toFixed(2)}</div>
+                      {cashback > 0 && (
+                        <div style={{ color: "#e67e22", fontWeight: "500" }}>
+                          Cashback: ${cashback.toFixed(2)}
+                        </div>
+                      )}
+                      {Number(parseFloat(cashbackFee) || 0) > 0 && (
+                        <div style={{ color: "#d35400", fontWeight: "500" }}>
+                          Cashback Fee: $
+                          {Number(parseFloat(cashbackFee) || 0).toFixed(2)}
+                        </div>
+                      )}
+                      {lotto > 0 && (
+                        <div style={{ color: "#28a745", fontWeight: "500" }}>
+                          Lotto Winnings: -${lotto.toFixed(2)}
+                        </div>
+                      )}
+                      <div className="final-total">
+                        {isBalancePayment ? (
+                          <>
                             <div
                               style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "0.5rem",
-                                marginBottom: "0.5rem",
-                                position: "relative",
+                                color: "#17a2b8",
+                                fontWeight: "600",
+                                marginBottom: "5px",
                               }}
                             >
-                              <label
-                                style={{
-                                  minWidth: "80px",
-                                  fontSize: "0.9rem",
-                                  color: "#856404",
-                                  fontWeight: "500",
-                                }}
-                              >
-                                Customer:
-                              </label>
-                              <div
-                                style={{
-                                  flex: 1,
-                                  position: "relative",
-                                  display: "flex",
-                                  gap: "0.25rem",
-                                }}
-                              >
-                                <input
-                                  ref={creditCustomerNameRef}
-                                  type="text"
-                                  value={creditCustomerName}
-                                  onFocus={() => handleInputFocus(creditCustomerNameRef, false)}
-                                  onChange={(e) =>
-                                    handleCustomerNameChange(e.target.value)
-                                  }
-                                  style={{
-                                    padding: "0.4rem",
-                                    flex: 1,
-                                    borderRadius: "4px",
-                                    border: "1px solid #ddd",
-                                  }}
-                                  placeholder="Enter customer name"
-                                />
-                                <button
-                                  onClick={fetchExistingCustomers}
-                                  style={{
-                                    padding: "0.4rem",
-                                    backgroundColor: "#6c757d",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                    fontSize: "0.8rem",
-                                  }}
-                                  title="Refresh customer list"
-                                >
-                                  🔄
-                                </button>
-
-                                {/* Customer suggestions dropdown */}
-                                {showCustomerSuggestions && (
-                                  <div
-                                    style={{
-                                      position: "absolute",
-                                      top: "100%",
-                                      left: 0,
-                                      right: 0,
-                                      backgroundColor: "white",
-                                      border: "1px solid #ddd",
-                                      borderRadius: "4px",
-                                      boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                                      zIndex: 1000,
-                                      maxHeight: "150px",
-                                      overflowY: "auto",
-                                    }}
-                                  >
-                                    {(() => {
-                                      const filteredCustomers = Array.isArray(
-                                        existingCustomers
-                                      )
-                                        ? existingCustomers.filter(
-                                            (customer) =>
-                                              customer &&
-                                              customer.customerName &&
-                                              customer.customerName
-                                                .toLowerCase()
-                                                .includes(
-                                                  creditCustomerName.toLowerCase()
-                                                )
-                                          )
-                                        : [];
-
-                                      const exactMatch = filteredCustomers.find(
-                                        (customer) =>
-                                          customer.customerName.toLowerCase() ===
-                                          creditCustomerName.toLowerCase()
-                                      );
-
-                                      return (
-                                        <>
-                                          {filteredCustomers.map(
-                                            (customer, index) => (
-                                              <div
-                                                key={index}
-                                                onClick={() =>
-                                                  handleCustomerSelection(
-                                                    customer
-                                                  )
-                                                }
-                                                style={{
-                                                  padding: "0.5rem",
-                                                  cursor: "pointer",
-                                                  borderBottom:
-                                                    "1px solid #eee",
-                                                  display: "flex",
-                                                  justifyContent:
-                                                    "space-between",
-                                                  alignItems: "center",
-                                                }}
-                                                onMouseEnter={(e) =>
-                                                  (e.target.style.backgroundColor =
-                                                    "#f5f5f5")
-                                                }
-                                                onMouseLeave={(e) =>
-                                                  (e.target.style.backgroundColor =
-                                                    "white")
-                                                }
-                                              >
-                                                <span>
-                                                  {customer.customerName}
-                                                </span>
-                                                <span
-                                                  style={{
-                                                    fontSize: "0.8rem",
-                                                    color:
-                                                      customer.balance > 0
-                                                        ? "#dc3545"
-                                                        : "#28a745",
-                                                    fontWeight: "500",
-                                                  }}
-                                                >
-                                                  $
-                                                  {Math.abs(
-                                                    customer.balance || 0
-                                                  ).toFixed(2)}{" "}
-                                                  {customer.balance > 0
-                                                    ? "owed"
-                                                    : "credit"}
-                                                </span>
-                                              </div>
-                                            )
-                                          )}
-
-                                          {/* Add New Customer option when no exact match found */}
-                                          {creditCustomerName.trim().length >
-                                            0 &&
-                                            !exactMatch && (
-                                              <div
-                                                onClick={() => {
-                                                  // Create new customer with entered name
-                                                  const newCustomer = {
-                                                    customerName:
-                                                      creditCustomerName.trim(),
-                                                    balance: 0,
-                                                    isNewCustomer: true,
-                                                  };
-                                                  handleCustomerSelection(
-                                                    newCustomer
-                                                  );
-                                                }}
-                                                style={{
-                                                  padding: "0.5rem",
-                                                  cursor: "pointer",
-                                                  borderTop:
-                                                    filteredCustomers.length > 0
-                                                      ? "2px solid #e9ecef"
-                                                      : "none",
-                                                  backgroundColor: "#e8f5e8",
-                                                  display: "flex",
-                                                  alignItems: "center",
-                                                  gap: "0.5rem",
-                                                  fontWeight: "500",
-                                                  color: "#155724",
-                                                }}
-                                                onMouseEnter={(e) =>
-                                                  (e.target.style.backgroundColor =
-                                                    "#d4edda")
-                                                }
-                                                onMouseLeave={(e) =>
-                                                  (e.target.style.backgroundColor =
-                                                    "#e8f5e8")
-                                                }
-                                              >
-                                                <span>➕</span>
-                                                <span>
-                                                  Add "
-                                                  {creditCustomerName.trim()}"
-                                                  as new credit customer
-                                                </span>
-                                              </div>
-                                            )}
-                                        </>
-                                      );
-                                    })()}
-                                  </div>
-                                )}
-                              </div>
+                              🏦 Customer Balance Payment
                             </div>
+                            <div>
+                              Paying for:{" "}
+                              {selectedCustomer?.name || "Selected Customer"}
+                            </div>
+                            <div>
+                              Current Balance: $
+                              {selectedCustomer?.balance?.toFixed(2) || "0.00"}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            Total Amount Due: $
+                            {finalTotal >= 0
+                              ? finalTotal.toFixed(2)
+                              : `(${Math.abs(finalTotal).toFixed(2)}) Credit`}
+                          </>
+                        )}
+                      </div>
+                    </Total>
 
-                            {/* Debug info for customer data */}
-                            {existingCustomers.length > 0 && (
+                    <div
+                      style={{
+                        marginTop: "1rem",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.5rem",
+                      }}
+                    >
+                      {/* Credit Sale Section */}
+                      <div
+                        style={{
+                          padding: "1rem",
+                          backgroundColor: "#fff3cd",
+                          border: "2px solid #ffc107",
+                          borderRadius: "8px",
+                        }}
+                      >
+                        {/* Credit Sale Toggle */}
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            fontSize: "1.1rem",
+                            color: "#856404",
+                            marginBottom: isCreditSale ? "0.75rem" : "0",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isCreditSale}
+                            onChange={(e) => {
+                              setIsCreditSale(e.target.checked);
+                              if (!e.target.checked) {
+                                setCreditCustomerName("");
+                                setCreditAmount(0);
+                              } else {
+                                // Clear existing payments when entering credit mode
+                                setCashAmount("");
+                                setCardAmount("");
+                                setCreditAmount(0);
+                              }
+                            }}
+                            style={{ transform: "scale(1.2)" }}
+                          />
+                          <span>💳 Credit Sale Mode</span>
+                        </label>
+
+                        {isCreditSale && (
+                          <>
+                            {/* Credit Sale Inputs */}
+                            <div style={{ marginBottom: "0.75rem" }}>
                               <div
                                 style={{
-                                  fontSize: "0.8rem",
-                                  color: "#6c757d",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
                                   marginBottom: "0.5rem",
-                                  padding: "0.25rem",
-                                  backgroundColor: "#f8f9fa",
-                                  borderRadius: "4px",
+                                  position: "relative",
                                 }}
                               >
-                                Loaded {existingCustomers.length} customers.{" "}
-                                {creditCustomerName &&
-                                  `Searching for: "${creditCustomerName}"`}
-                              </div>
-                            )}
-
-                            {/* Customer balance display */}
-                            {selectedCustomer && (
-                              <div
-                                style={{
-                                  padding: "0.5rem",
-                                  backgroundColor:
-                                    customerBalance > 0 ? "#f8d7da" : "#d4edda",
-                                  border: `1px solid ${
-                                    customerBalance > 0 ? "#f5c6cb" : "#c3e6cb"
-                                  }`,
-                                  borderRadius: "4px",
-                                  marginBottom: "0.5rem",
-                                  fontSize: "0.9rem",
-                                }}
-                              >
-                                <strong>{selectedCustomer.customerName}</strong>{" "}
-                                - Current Balance:
-                                <span
+                                <label
                                   style={{
-                                    color:
-                                      customerBalance > 0
-                                        ? "#721c24"
-                                        : "#155724",
-                                    fontWeight: "600",
-                                    marginLeft: "0.25rem",
+                                    minWidth: "80px",
+                                    fontSize: "0.9rem",
+                                    color: "#856404",
+                                    fontWeight: "500",
                                   }}
                                 >
-                                  ${Math.abs(customerBalance).toFixed(2)}{" "}
-                                  {customerBalance > 0 ? "owed" : "credit"}
-                                </span>
+                                  Customer:
+                                </label>
                                 <div
                                   style={{
-                                    fontSize: "0.7rem",
-                                    color: "#6c757d",
-                                    marginTop: "0.25rem",
+                                    flex: 1,
+                                    position: "relative",
+                                    display: "flex",
+                                    gap: "0.25rem",
                                   }}
                                 >
-                                  ID: {selectedCustomer.id} | Last updated:{" "}
-                                  {new Date(
-                                    selectedCustomer.updatedAt
-                                  ).toLocaleTimeString()}
+                                  <input
+                                    ref={creditCustomerNameRef}
+                                    type="text"
+                                    value={creditCustomerName}
+                                    onFocus={() =>
+                                      handleInputFocus(
+                                        creditCustomerNameRef,
+                                        false
+                                      )
+                                    }
+                                    onChange={(e) =>
+                                      handleCustomerNameChange(e.target.value)
+                                    }
+                                    style={{
+                                      padding: "0.4rem",
+                                      flex: 1,
+                                      borderRadius: "4px",
+                                      border: "1px solid #ddd",
+                                    }}
+                                    placeholder="Enter customer name"
+                                  />
+                                  <button
+                                    onClick={fetchExistingCustomers}
+                                    style={{
+                                      padding: "0.4rem",
+                                      backgroundColor: "#6c757d",
+                                      color: "white",
+                                      border: "none",
+                                      borderRadius: "4px",
+                                      cursor: "pointer",
+                                      fontSize: "0.8rem",
+                                    }}
+                                    title="Refresh customer list"
+                                  >
+                                    🔄
+                                  </button>
+
+                                  {/* Customer suggestions dropdown */}
+                                  {showCustomerSuggestions && (
+                                    <div
+                                      style={{
+                                        position: "absolute",
+                                        top: "100%",
+                                        left: 0,
+                                        right: 0,
+                                        backgroundColor: "white",
+                                        border: "1px solid #ddd",
+                                        borderRadius: "4px",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                        zIndex: 1000,
+                                        maxHeight: "150px",
+                                        overflowY: "auto",
+                                      }}
+                                    >
+                                      {(() => {
+                                        const filteredCustomers = Array.isArray(
+                                          existingCustomers
+                                        )
+                                          ? existingCustomers.filter(
+                                              (customer) =>
+                                                customer &&
+                                                customer.customerName &&
+                                                customer.customerName
+                                                  .toLowerCase()
+                                                  .includes(
+                                                    creditCustomerName.toLowerCase()
+                                                  )
+                                            )
+                                          : [];
+
+                                        const exactMatch =
+                                          filteredCustomers.find(
+                                            (customer) =>
+                                              customer.customerName.toLowerCase() ===
+                                              creditCustomerName.toLowerCase()
+                                          );
+
+                                        return (
+                                          <>
+                                            {filteredCustomers.map(
+                                              (customer, index) => (
+                                                <div
+                                                  key={index}
+                                                  onClick={() =>
+                                                    handleCustomerSelection(
+                                                      customer
+                                                    )
+                                                  }
+                                                  style={{
+                                                    padding: "0.5rem",
+                                                    cursor: "pointer",
+                                                    borderBottom:
+                                                      "1px solid #eee",
+                                                    display: "flex",
+                                                    justifyContent:
+                                                      "space-between",
+                                                    alignItems: "center",
+                                                  }}
+                                                  onMouseEnter={(e) =>
+                                                    (e.target.style.backgroundColor =
+                                                      "#f5f5f5")
+                                                  }
+                                                  onMouseLeave={(e) =>
+                                                    (e.target.style.backgroundColor =
+                                                      "white")
+                                                  }
+                                                >
+                                                  <span>
+                                                    {customer.customerName}
+                                                  </span>
+                                                  <span
+                                                    style={{
+                                                      fontSize: "0.8rem",
+                                                      color:
+                                                        customer.balance > 0
+                                                          ? "#dc3545"
+                                                          : "#28a745",
+                                                      fontWeight: "500",
+                                                    }}
+                                                  >
+                                                    $
+                                                    {Math.abs(
+                                                      customer.balance || 0
+                                                    ).toFixed(2)}{" "}
+                                                    {customer.balance > 0
+                                                      ? "owed"
+                                                      : "credit"}
+                                                  </span>
+                                                </div>
+                                              )
+                                            )}
+
+                                            {/* Add New Customer option when no exact match found */}
+                                            {creditCustomerName.trim().length >
+                                              0 &&
+                                              !exactMatch && (
+                                                <div
+                                                  onClick={() => {
+                                                    // Create new customer with entered name
+                                                    const newCustomer = {
+                                                      customerName:
+                                                        creditCustomerName.trim(),
+                                                      balance: 0,
+                                                      isNewCustomer: true,
+                                                    };
+                                                    handleCustomerSelection(
+                                                      newCustomer
+                                                    );
+                                                  }}
+                                                  style={{
+                                                    padding: "0.5rem",
+                                                    cursor: "pointer",
+                                                    borderTop:
+                                                      filteredCustomers.length >
+                                                      0
+                                                        ? "2px solid #e9ecef"
+                                                        : "none",
+                                                    backgroundColor: "#e8f5e8",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: "0.5rem",
+                                                    fontWeight: "500",
+                                                    color: "#155724",
+                                                  }}
+                                                  onMouseEnter={(e) =>
+                                                    (e.target.style.backgroundColor =
+                                                      "#d4edda")
+                                                  }
+                                                  onMouseLeave={(e) =>
+                                                    (e.target.style.backgroundColor =
+                                                      "#e8f5e8")
+                                                  }
+                                                >
+                                                  <span>➕</span>
+                                                  <span>
+                                                    Add "
+                                                    {creditCustomerName.trim()}"
+                                                    as new credit customer
+                                                  </span>
+                                                </div>
+                                              )}
+                                          </>
+                                        );
+                                      })()}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                            )}
-                          </div>{" "}
-                          {(() => {
+
+                              {/* Debug info for customer data */}
+                              {existingCustomers.length > 0 && (
+                                <div
+                                  style={{
+                                    fontSize: "0.8rem",
+                                    color: "#6c757d",
+                                    marginBottom: "0.5rem",
+                                    padding: "0.25rem",
+                                    backgroundColor: "#f8f9fa",
+                                    borderRadius: "4px",
+                                  }}
+                                >
+                                  Loaded {existingCustomers.length} customers.{" "}
+                                  {creditCustomerName &&
+                                    `Searching for: "${creditCustomerName}"`}
+                                </div>
+                              )}
+
+                              {/* Customer balance display */}
+                              {selectedCustomer && (
+                                <div
+                                  style={{
+                                    padding: "0.5rem",
+                                    backgroundColor:
+                                      customerBalance > 0
+                                        ? "#f8d7da"
+                                        : "#d4edda",
+                                    border: `1px solid ${
+                                      customerBalance > 0
+                                        ? "#f5c6cb"
+                                        : "#c3e6cb"
+                                    }`,
+                                    borderRadius: "4px",
+                                    marginBottom: "0.5rem",
+                                    fontSize: "0.9rem",
+                                  }}
+                                >
+                                  <strong>
+                                    {selectedCustomer.customerName}
+                                  </strong>{" "}
+                                  - Current Balance:
+                                  <span
+                                    style={{
+                                      color:
+                                        customerBalance > 0
+                                          ? "#721c24"
+                                          : "#155724",
+                                      fontWeight: "600",
+                                      marginLeft: "0.25rem",
+                                    }}
+                                  >
+                                    ${Math.abs(customerBalance).toFixed(2)}{" "}
+                                    {customerBalance > 0 ? "owed" : "credit"}
+                                  </span>
+                                  <div
+                                    style={{
+                                      fontSize: "0.7rem",
+                                      color: "#6c757d",
+                                      marginTop: "0.25rem",
+                                    }}
+                                  >
+                                    ID: {selectedCustomer.id} | Last updated:{" "}
+                                    {new Date(
+                                      selectedCustomer.updatedAt
+                                    ).toLocaleTimeString()}
+                                  </div>
+                                </div>
+                              )}
+                            </div>{" "}
+                            {(() => {
+                              const subtotal = calculateTotal();
+                              const tax = calculateTax();
+                              const total = +(subtotal + tax).toFixed(2);
+                              const cashback = Number(
+                                parseFloat(cashbackAmount) || 0
+                              );
+                              const lotto = Number(
+                                parseFloat(lottoWinnings) || 0
+                              );
+                              const finalTotal = total + cashback - lotto;
+                              const paidCash = Number(
+                                parseFloat(cashAmount) || 0
+                              );
+                              const paidCard = Number(
+                                parseFloat(cardAmount) || 0
+                              );
+                              const paidTotal = paidCash + paidCard;
+                              const specifiedCreditAmount = Number(
+                                parseFloat(creditAmount) || 0
+                              );
+
+                              // Use specified credit amount or calculate from payment difference
+                              const creditBalance =
+                                specifiedCreditAmount > 0
+                                  ? specifiedCreditAmount
+                                  : Math.max(0, finalTotal - paidTotal);
+                              const requiredPayment =
+                                specifiedCreditAmount > 0
+                                  ? finalTotal - specifiedCreditAmount
+                                  : paidTotal;
+
+                              if (specifiedCreditAmount > 0) {
+                                // Specified credit amount mode
+                                const paymentNeeded =
+                                  finalTotal - specifiedCreditAmount;
+                                const paymentStatus =
+                                  paidTotal >= paymentNeeded - 0.001;
+
+                                return (
+                                  <div
+                                    style={{
+                                      backgroundColor: paymentStatus
+                                        ? "#e8f5e8"
+                                        : "#fff3cd",
+                                      border: `1px solid ${
+                                        paymentStatus ? "#28a745" : "#ffc107"
+                                      }`,
+                                      borderRadius: "4px",
+                                      padding: "0.5rem",
+                                      fontSize: "0.9rem",
+                                    }}
+                                  >
+                                    <div>
+                                      <strong>Specified Credit Mode:</strong>
+                                    </div>
+                                    <div>
+                                      � Unpaid Balance: $
+                                      {specifiedCreditAmount.toFixed(2)}
+                                    </div>
+                                    <div>
+                                      💰 Payment Needed: $
+                                      {paymentNeeded.toFixed(2)}
+                                    </div>
+                                    <div>
+                                      📊 Payment Status: ${paidTotal.toFixed(2)}{" "}
+                                      / ${paymentNeeded.toFixed(2)}
+                                    </div>
+                                    {!paymentStatus && (
+                                      <div
+                                        style={{
+                                          color: "#dc3545",
+                                          fontWeight: "500",
+                                          marginTop: "0.25rem",
+                                        }}
+                                      >
+                                        ⚠️ Need $
+                                        {(paymentNeeded - paidTotal).toFixed(2)}{" "}
+                                        more
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              } else if (paidTotal > 0 && creditBalance > 0) {
+                                return (
+                                  <div
+                                    style={{
+                                      backgroundColor: "#e8f5e8",
+                                      border: "1px solid #28a745",
+                                      borderRadius: "4px",
+                                      padding: "0.5rem",
+                                      fontSize: "0.9rem",
+                                    }}
+                                  >
+                                    <div>
+                                      <strong>Auto-Calculate Mode:</strong>
+                                    </div>
+                                    {paidCash > 0 && (
+                                      <div>💵 Cash: ${paidCash.toFixed(2)}</div>
+                                    )}
+                                    {paidCard > 0 && (
+                                      <div>💳 Card: ${paidCard.toFixed(2)}</div>
+                                    )}
+                                    <div
+                                      style={{
+                                        color: "#dc3545",
+                                        fontWeight: "500",
+                                      }}
+                                    >
+                                      📝 Credit Balance: $
+                                      {creditBalance.toFixed(2)}
+                                    </div>
+                                  </div>
+                                );
+                              } else if (paidTotal >= finalTotal) {
+                                return (
+                                  <div
+                                    style={{
+                                      backgroundColor: "#e8f5e8",
+                                      border: "1px solid #28a745",
+                                      borderRadius: "4px",
+                                      padding: "0.5rem",
+                                      fontSize: "0.9rem",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    ✅{" "}
+                                    <strong>
+                                      Fully Paid - No Credit Balance
+                                    </strong>
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <div
+                                    style={{
+                                      backgroundColor: "#f8d7da",
+                                      border: "1px solid #dc3545",
+                                      borderRadius: "4px",
+                                      padding: "0.5rem",
+                                      fontSize: "0.9rem",
+                                      textAlign: "center",
+                                    }}
+                                  >
+                                    📝{" "}
+                                    <strong>
+                                      Full Credit: ${creditBalance.toFixed(2)}
+                                    </strong>
+                                  </div>
+                                );
+                              }
+                            })()}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Payment Input Fields - Always Visible */}
+                      {!isCreditSale && (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <label
+                            style={{
+                              display: "flex",
+                              gap: "0.5rem",
+                              alignItems: "center",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={autoFillOther}
+                              onChange={(e) =>
+                                setAutoFillOther(!!e.target.checked)
+                              }
+                            />
+                            <span style={{ fontSize: "0.9rem" }}>
+                              Auto-fill other payment
+                            </span>
+                          </label>
+                          <div
+                            style={{ fontSize: "0.85rem", color: "#7f8c8d" }}
+                          >
+                            Toggle to automatically fill the other field
+                          </div>
+                        </div>
+                      )}
+
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          alignItems: "center",
+                          position: "relative",
+                        }}
+                      >
+                        <label
+                          style={{
+                            minWidth: "80px",
+                            color:
+                              (Number(cashbackAmount) || 0) > 0
+                                ? "#95a5a6"
+                                : "inherit",
+                          }}
+                        >
+                          Cash:
+                        </label>
+                        <input
+                          ref={cashAmountRef}
+                          type="text"
+                          inputMode="decimal"
+                          pattern="[0-9]*\.?[0-9]*"
+                          value={cashAmount}
+                          disabled={(Number(cashbackAmount) || 0) > 0}
+                          onFocus={() => handleInputFocus(cashAmountRef)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            
+                            // Allow empty, numbers, and decimal point
+                            if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                              setLastEdited("cash");
+                              setCashAmount(value);
+                            } else {
+                              return; // Don't process invalid input
+                            }
+
+                            // Only do validation and auto-fill if value is not empty and not currently being typed
+                            if (value !== "") {
+                              const parsed = Number(value);
+
+                              if (isCreditSale) {
+                                // Check if this is a balance payment (no items in cart)
+                                const isBalancePayment =
+                                  cart.length === 0 &&
+                                  selectedCustomer &&
+                                  customerBalance > 0;
+
+                                if (isBalancePayment) {
+                                  // For balance payments, allow any amount up to the customer's balance
+                                  const validCashAmount = Math.min(
+                                    parsed,
+                                    customerBalance
+                                  );
+                                  if (parsed > customerBalance) {
+                                    setCashAmount(String(validCashAmount));
+                                  }
+                                  // Clear card when cash is entered
+                                  if (validCashAmount > 0) {
+                                    setCardAmount("");
+                                  }
+                                  return;
+                                }
+
+                                // For regular credit sales with items in cart
+                                const subtotal = calculateTotal();
+                                const tax = calculateTax();
+                                const total = +(subtotal + tax).toFixed(2);
+                                const cashback = Number(
+                                  parseFloat(cashbackAmount) || 0
+                                );
+                                const lotto = Number(
+                                  parseFloat(lottoWinnings) || 0
+                                );
+                                const finalTotal = total + cashback - lotto;
+                                const currentCredit = Number(
+                                  parseFloat(creditAmount) || 0
+                                );
+                                const remainingAmount = Math.max(
+                                  0,
+                                  finalTotal - currentCredit
+                                );
+
+                                // If customer has existing balance, allow payment up to transaction total + existing balance
+                                let maxAllowedPayment = remainingAmount;
+                                if (selectedCustomer && customerBalance > 0) {
+                                  maxAllowedPayment =
+                                    finalTotal + customerBalance;
+                                }
+
+                                // Allow cash up to max allowed payment
+                                const validCashAmount = Math.min(
+                                  parsed,
+                                  maxAllowedPayment
+                                );
+                                if (parsed > maxAllowedPayment) {
+                                  setCashAmount(String(validCashAmount));
+                                }
+
+                                // If user enters cash, clear card (only one payment method)
+                                if (validCashAmount > 0) {
+                                  setCardAmount("");
+                                }
+                                return;
+                              }
+
+                              if (autoFillOther) {
+                                // Regular mode auto-fill
+                                const subtotal = calculateTotal();
+                                const tax = calculateTax();
+                                const total = +(subtotal + tax).toFixed(2);
+                                const newCard = Math.max(
+                                  0,
+                                  +(total - parsed).toFixed(2)
+                                );
+                                setCardAmount(String(newCard));
+                              }
+                            }
+                          }}
+                          style={{
+                            padding: "0.4rem",
+                            flex: 1,
+                            backgroundColor: isCreditSale ? "#f8f9fa" : "white",
+                          }}
+                          placeholder={
+                            isCreditSale ? "Enter partial payment" : "0.00"
+                          }
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.5rem",
+                          alignItems: "center",
+                          position: "relative",
+                        }}
+                      >
+                        {/* Swap Button - Absolutely positioned between Cash and Card */}
+                        <button
+                          onClick={swapPayments}
+                          disabled={isCreditSale}
+                          style={{
+                            position: "absolute",
+                            left: "40px",
+                            top: "-15px",
+                            background: isCreditSale
+                              ? "#f8f9fa"
+                              : "linear-gradient(135deg, #3498db, #2980b9)",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: "20px",
+                            height: "20px",
+                            cursor: isCreditSale ? "not-allowed" : "pointer",
+                            color: "white",
+                            fontSize: "10px",
+                            fontWeight: "bold",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: isCreditSale
+                              ? "none"
+                              : "0 1px 4px rgba(52, 152, 219, 0.3)",
+                            transition: "all 0.2s ease",
+                            opacity: isCreditSale ? 0.4 : 1,
+                            zIndex: 10,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isCreditSale) {
+                              e.target.style.transform =
+                                "rotate(180deg) scale(1.2)";
+                              e.target.style.boxShadow =
+                                "0 2px 6px rgba(52, 152, 219, 0.4)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isCreditSale) {
+                              e.target.style.transform =
+                                "rotate(0deg) scale(1)";
+                              e.target.style.boxShadow =
+                                "0 1px 4px rgba(52, 152, 219, 0.3)";
+                            }
+                          }}
+                          title={
+                            isCreditSale
+                              ? "Swap disabled in credit mode"
+                              : "Swap cash and card amounts"
+                          }
+                        >
+                          ⇅
+                        </button>
+                        <label style={{ minWidth: "80px" }}>Card:</label>
+                        <input
+                          ref={cardAmountRef}
+                          type="text"
+                          inputMode="decimal"
+                          pattern="[0-9]*\.?[0-9]*"
+                          value={cardAmount}
+                          onFocus={() => handleInputFocus(cardAmountRef)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            
+                            // Allow empty, numbers, and decimal point
+                            if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                              setLastEdited("card");
+                              setCardAmount(value);
+                            } else {
+                              return; // Don't process invalid input
+                            }
+
+                            // Only do validation and auto-fill if value is not empty and not currently being typed
+                            if (value !== "") {
+                              const parsed = Number(value);
+
+                              if (isCreditSale) {
+                                // Check if this is a balance payment (no items in cart)
+                                const isBalancePayment =
+                                  cart.length === 0 &&
+                                  selectedCustomer &&
+                                  customerBalance > 0;
+
+                                if (isBalancePayment) {
+                                  // For balance payments, allow any amount up to the customer's balance
+                                  const validCardAmount = Math.min(
+                                    parsed,
+                                    customerBalance
+                                  );
+                                  if (parsed > customerBalance) {
+                                    setCardAmount(String(validCardAmount));
+                                  }
+                                  // Clear cash when card is entered
+                                  if (validCardAmount > 0) {
+                                    setCashAmount("");
+                                  }
+                                  return;
+                                }
+
+                                // For regular credit sales with items in cart
+                                const subtotal = calculateTotal();
+                                const tax = calculateTax();
+                                const total = +(subtotal + tax).toFixed(2);
+                                const cashback = Number(
+                                  parseFloat(cashbackAmount) || 0
+                                );
+                                const lotto = Number(
+                                  parseFloat(lottoWinnings) || 0
+                                );
+                                const finalTotal = total + cashback - lotto;
+                                const currentCredit = Number(
+                                  parseFloat(creditAmount) || 0
+                                );
+                                const remainingAmount = Math.max(
+                                  0,
+                                  finalTotal - currentCredit
+                                );
+
+                                // If customer has existing balance, allow payment up to transaction total + existing balance
+                                let maxAllowedPayment = remainingAmount;
+                                if (selectedCustomer && customerBalance > 0) {
+                                  maxAllowedPayment =
+                                    finalTotal + customerBalance;
+                                }
+
+                                // Allow card up to max allowed payment
+                                const validCardAmount = Math.min(
+                                  parsed,
+                                  maxAllowedPayment
+                                );
+                                if (parsed > maxAllowedPayment) {
+                                  setCardAmount(String(validCardAmount));
+                                }
+
+                                // If user enters card, clear cash (only one payment method)
+                                if (validCardAmount > 0) {
+                                  setCashAmount("");
+                                }
+                                return;
+                              }
+
+                              if (autoFillOther) {
+                                // Regular mode auto-fill
+                                const subtotal = calculateTotal();
+                                const tax = calculateTax();
+                                const total = +(subtotal + tax).toFixed(2);
+                                const newCash = Math.max(
+                                  0,
+                                  +(total - parsed).toFixed(2)
+                                );
+                                setCashAmount(String(newCash));
+                              }
+                            }
+                          }}
+                          style={{
+                            padding: "0.4rem",
+                            flex: 1,
+                            backgroundColor: isCreditSale ? "#f8f9fa" : "white",
+                          }}
+                          placeholder={
+                            isCreditSale ? "Enter partial payment" : "0.00"
+                          }
+                        />
+                        {/* Payment Terminal Button */}
+                        <button
+                          onClick={() => {
+                            // Calculate total for terminal payment
                             const subtotal = calculateTotal();
                             const tax = calculateTax();
                             const total = +(subtotal + tax).toFixed(2);
@@ -3698,483 +4259,192 @@ function POSContent() {
                             const lotto = Number(
                               parseFloat(lottoWinnings) || 0
                             );
+                            // Note: total already includes credit card charge from calculateTotal()
                             const finalTotal = total + cashback - lotto;
+
+                            // Process terminal payment
+                            handleTerminalPayment(finalTotal);
+                          }}
+                          disabled={isCreditSale || cart.length === 0}
+                          style={{
+                            padding: "0.4rem 0.8rem",
+                            backgroundColor:
+                              isCreditSale || cart.length === 0
+                                ? "#f8f9fa"
+                                : "#6f42c1",
+                            color:
+                              isCreditSale || cart.length === 0
+                                ? "#6c757d"
+                                : "white",
+                            border: "none",
+                            borderRadius: "6px",
+                            cursor:
+                              isCreditSale || cart.length === 0
+                                ? "not-allowed"
+                                : "pointer",
+                            fontSize: "0.85rem",
+                            fontWeight: "600",
+                            marginLeft: "0.5rem",
+                            transition: "all 0.2s ease",
+                            opacity:
+                              isCreditSale || cart.length === 0 ? 0.6 : 1,
+                          }}
+                          title={
+                            isCreditSale
+                              ? "Terminal disabled in credit mode"
+                              : cart.length === 0
+                              ? "Add items to cart first"
+                              : "Process payment via terminal"
+                          }
+                        >
+                          💳 Terminal
+                        </button>
+                      </div>
+
+                      {/* Cashback Card-Only Notice */}
+                      {(Number(cashbackAmount) || 0) > 0 && (
+                        <div
+                          style={{
+                            padding: "0.5rem",
+                            backgroundColor: "#e8f4fd",
+                            border: "1px solid #85c1e9",
+                            borderRadius: "4px",
+                            fontSize: "0.85rem",
+                            color: "#2e86c1",
+                            textAlign: "center",
+                            fontWeight: "500",
+                            marginTop: "0.5rem",
+                          }}
+                        >
+                          🚫{" "}
+                          <strong>
+                            Cash payment disabled for cashback transactions
+                          </strong>
+                          <div
+                            style={{
+                              fontSize: "0.8rem",
+                              marginTop: "0.25rem",
+                              opacity: 0.9,
+                            }}
+                          >
+                            Customer must pay by card • Cash register: -
+                            {(Number(cashbackAmount) || 0).toFixed(2)} +{" "}
+                            {(Number(cashbackFee) || 0).toFixed(2)} profit
+                          </div>
+                        </div>
+                      )}
+
+                      {!isCreditSale && (
+                        <>
+                          {cashback > 0 && (
+                            <div
+                              style={{
+                                padding: "0.5rem",
+                                backgroundColor: "#fff3cd",
+                                border: "1px solid #ffeaa7",
+                                borderRadius: "4px",
+                                marginTop: "0.5rem",
+                              }}
+                            >
+                              <strong>Cashback: ${cashback.toFixed(2)}</strong>
+                              <div
+                                style={{
+                                  fontSize: "0.85rem",
+                                  color: "#856404",
+                                }}
+                              >
+                                Requires card payment: $
+                                {(total + cashback).toFixed(2)} (Purchase: $
+                                {total.toFixed(2)} + Cashback: $
+                                {cashback.toFixed(2)})
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "0.8rem",
+                                  color: "#d68910",
+                                  marginTop: "0.25rem",
+                                  fontWeight: "500",
+                                }}
+                              >
+                                💳 Customer pays by card • 💵 You give $
+                                {cashback.toFixed(2)} cash from register
+                              </div>
+                            </div>
+                          )}
+
+                          <div
+                            style={{
+                              color: isSufficient ? "#2ecc71" : "#e74c3c",
+                              fontWeight: "600",
+                            }}
+                          >
+                            {isSufficient
+                              ? `Card Payment: $${paidCard.toFixed(2)}${
+                                  change > 0 && cashback === 0
+                                    ? ` — Change: $${change.toFixed(2)}`
+                                    : ""
+                                }${
+                                  cashback > 0
+                                    ? ` — Cashback Given: $${cashback.toFixed(
+                                        2
+                                      )}`
+                                    : ""
+                                }`
+                              : cashback > 0
+                              ? `Card payment needed: $${(
+                                  total + cashback
+                                ).toFixed(2)} (Current: $${paidCard.toFixed(
+                                  2
+                                )})`
+                              : `Amount due: $${(total - paidTotal).toFixed(
+                                  2
+                                )}`}
+                          </div>
+
+                          {paymentError && (
+                            <div style={{ color: "#e74c3c" }}>
+                              {paymentError}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      <CheckoutButton
+                        onClick={processCheckout}
+                        disabled={isCreditSale ? false : !isSufficient}
+                      >
+                        {(() => {
+                          // Check if this is a balance payment
+                          if (isBalancePayment) {
                             const paidCash = Number(
                               parseFloat(cashAmount) || 0
                             );
                             const paidCard = Number(
                               parseFloat(cardAmount) || 0
                             );
-                            const paidTotal = paidCash + paidCard;
-                            const specifiedCreditAmount = Number(
-                              parseFloat(creditAmount) || 0
-                            );
+                            const paymentTotal = paidCash + paidCard;
+                            const customerBalance =
+                              selectedCustomer?.balance || 0;
+                            const remainingBalance =
+                              customerBalance - paymentTotal;
 
-                            // Use specified credit amount or calculate from payment difference
-                            const creditBalance =
-                              specifiedCreditAmount > 0
-                                ? specifiedCreditAmount
-                                : Math.max(0, finalTotal - paidTotal);
-                            const requiredPayment =
-                              specifiedCreditAmount > 0
-                                ? finalTotal - specifiedCreditAmount
-                                : paidTotal;
-
-                            if (specifiedCreditAmount > 0) {
-                              // Specified credit amount mode
-                              const paymentNeeded =
-                                finalTotal - specifiedCreditAmount;
-                              const paymentStatus =
-                                paidTotal >= paymentNeeded - 0.001;
-
-                              return (
-                                <div
-                                  style={{
-                                    backgroundColor: paymentStatus
-                                      ? "#e8f5e8"
-                                      : "#fff3cd",
-                                    border: `1px solid ${
-                                      paymentStatus ? "#28a745" : "#ffc107"
-                                    }`,
-                                    borderRadius: "4px",
-                                    padding: "0.5rem",
-                                    fontSize: "0.9rem",
-                                  }}
-                                >
-                                  <div>
-                                    <strong>Specified Credit Mode:</strong>
-                                  </div>
-                                  <div>
-                                    � Unpaid Balance: $
-                                    {specifiedCreditAmount.toFixed(2)}
-                                  </div>
-                                  <div>
-                                    💰 Payment Needed: $
-                                    {paymentNeeded.toFixed(2)}
-                                  </div>
-                                  <div>
-                                    📊 Payment Status: ${paidTotal.toFixed(2)} /
-                                    ${paymentNeeded.toFixed(2)}
-                                  </div>
-                                  {!paymentStatus && (
-                                    <div
-                                      style={{
-                                        color: "#dc3545",
-                                        fontWeight: "500",
-                                        marginTop: "0.25rem",
-                                      }}
-                                    >
-                                      ⚠️ Need $
-                                      {(paymentNeeded - paidTotal).toFixed(2)}{" "}
-                                      more
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            } else if (paidTotal > 0 && creditBalance > 0) {
-                              return (
-                                <div
-                                  style={{
-                                    backgroundColor: "#e8f5e8",
-                                    border: "1px solid #28a745",
-                                    borderRadius: "4px",
-                                    padding: "0.5rem",
-                                    fontSize: "0.9rem",
-                                  }}
-                                >
-                                  <div>
-                                    <strong>Auto-Calculate Mode:</strong>
-                                  </div>
-                                  {paidCash > 0 && (
-                                    <div>💵 Cash: ${paidCash.toFixed(2)}</div>
-                                  )}
-                                  {paidCard > 0 && (
-                                    <div>💳 Card: ${paidCard.toFixed(2)}</div>
-                                  )}
-                                  <div
-                                    style={{
-                                      color: "#dc3545",
-                                      fontWeight: "500",
-                                    }}
-                                  >
-                                    📝 Credit Balance: $
-                                    {creditBalance.toFixed(2)}
-                                  </div>
-                                </div>
-                              );
-                            } else if (paidTotal >= finalTotal) {
-                              return (
-                                <div
-                                  style={{
-                                    backgroundColor: "#e8f5e8",
-                                    border: "1px solid #28a745",
-                                    borderRadius: "4px",
-                                    padding: "0.5rem",
-                                    fontSize: "0.9rem",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  ✅{" "}
-                                  <strong>
-                                    Fully Paid - No Credit Balance
-                                  </strong>
-                                </div>
-                              );
+                            if (paymentTotal === 0) {
+                              return "Enter Payment Amount";
+                            } else if (remainingBalance > 0) {
+                              return `Pay $${paymentTotal.toFixed(
+                                2
+                              )} (Balance Remaining: $${remainingBalance.toFixed(
+                                2
+                              )})`;
                             } else {
-                              return (
-                                <div
-                                  style={{
-                                    backgroundColor: "#f8d7da",
-                                    border: "1px solid #dc3545",
-                                    borderRadius: "4px",
-                                    padding: "0.5rem",
-                                    fontSize: "0.9rem",
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  📝{" "}
-                                  <strong>
-                                    Full Credit: ${creditBalance.toFixed(2)}
-                                  </strong>
-                                </div>
-                              );
-                            }
-                          })()}
-                        </>
-                      )}
-                    </div>
-
-                    {/* Payment Input Fields - Always Visible */}
-                    {!isCreditSale && (
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "0.5rem",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <label
-                          style={{
-                            display: "flex",
-                            gap: "0.5rem",
-                            alignItems: "center",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={autoFillOther}
-                            onChange={(e) =>
-                              setAutoFillOther(!!e.target.checked)
-                            }
-                          />
-                          <span style={{ fontSize: "0.9rem" }}>
-                            Auto-fill other payment
-                          </span>
-                        </label>
-                        <div style={{ fontSize: "0.85rem", color: "#7f8c8d" }}>
-                          Toggle to automatically fill the other field
-                        </div>
-                      </div>
-                    )}
-
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.5rem",
-                        alignItems: "center",
-                        position: "relative",
-                      }}
-                    >
-                      <label
-                        style={{
-                          minWidth: "80px",
-                          color:
-                            (Number(cashbackAmount) || 0) > 0
-                              ? "#95a5a6"
-                              : "inherit",
-                        }}
-                      >
-                        Cash:
-                      </label>
-                      <input
-                        ref={cashAmountRef}
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={cashAmount}
-                        disabled={(Number(cashbackAmount) || 0) > 0}
-                        onFocus={() => handleInputFocus(cashAmountRef, true)}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setLastEdited("cash");
-
-                          // Always set the raw value first to allow proper typing
-                          setCashAmount(value);
-
-                          // Only do validation and auto-fill if value is not empty and not currently being typed
-                          if (value !== "") {
-                            const parsed = Number(value);
-
-                            if (isCreditSale) {
-                              // Check if this is a balance payment (no items in cart)
-                              const isBalancePayment =
-                                cart.length === 0 &&
-                                selectedCustomer &&
-                                customerBalance > 0;
-
-                              if (isBalancePayment) {
-                                // For balance payments, allow any amount up to the customer's balance
-                                const validCashAmount = Math.min(
-                                  parsed,
-                                  customerBalance
-                                );
-                                if (parsed > customerBalance) {
-                                  setCashAmount(String(validCashAmount));
-                                }
-                                // Clear card when cash is entered
-                                if (validCashAmount > 0) {
-                                  setCardAmount("");
-                                }
-                                return;
-                              }
-
-                              // For regular credit sales with items in cart
-                              const subtotal = calculateTotal();
-                              const tax = calculateTax();
-                              const total = +(subtotal + tax).toFixed(2);
-                              const cashback = Number(
-                                parseFloat(cashbackAmount) || 0
-                              );
-                              const lotto = Number(
-                                parseFloat(lottoWinnings) || 0
-                              );
-                              const finalTotal = total + cashback - lotto;
-                              const currentCredit = Number(
-                                parseFloat(creditAmount) || 0
-                              );
-                              const remainingAmount = Math.max(
-                                0,
-                                finalTotal - currentCredit
-                              );
-
-                              // If customer has existing balance, allow payment up to transaction total + existing balance
-                              let maxAllowedPayment = remainingAmount;
-                              if (selectedCustomer && customerBalance > 0) {
-                                maxAllowedPayment =
-                                  finalTotal + customerBalance;
-                              }
-
-                              // Allow cash up to max allowed payment
-                              const validCashAmount = Math.min(
-                                parsed,
-                                maxAllowedPayment
-                              );
-                              if (parsed > maxAllowedPayment) {
-                                setCashAmount(String(validCashAmount));
-                              }
-
-                              // If user enters cash, clear card (only one payment method)
-                              if (validCashAmount > 0) {
-                                setCardAmount("");
-                              }
-                              return;
-                            }
-
-                            if (autoFillOther) {
-                              // Regular mode auto-fill
-                              const subtotal = calculateTotal();
-                              const tax = calculateTax();
-                              const total = +(subtotal + tax).toFixed(2);
-                              const newCard = Math.max(
-                                0,
-                                +(total - parsed).toFixed(2)
-                              );
-                              setCardAmount(String(newCard));
+                              return `Pay $${paymentTotal.toFixed(
+                                2
+                              )} (Balance Paid)`;
                             }
                           }
-                        }}
-                        style={{
-                          padding: "0.4rem",
-                          flex: 1,
-                          backgroundColor: isCreditSale ? "#f8f9fa" : "white",
-                        }}
-                        placeholder={
-                          isCreditSale ? "Enter partial payment" : "0.00"
-                        }
-                      />
-                    </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "0.5rem",
-                        alignItems: "center",
-                        position: "relative",
-                      }}
-                    >
-                      {/* Swap Button - Absolutely positioned between Cash and Card */}
-                      <button
-                        onClick={swapPayments}
-                        disabled={isCreditSale}
-                        style={{
-                          position: "absolute",
-                          left: "40px",
-                          top: "-15px",
-                          background: isCreditSale
-                            ? "#f8f9fa"
-                            : "linear-gradient(135deg, #3498db, #2980b9)",
-                          border: "none",
-                          borderRadius: "50%",
-                          width: "20px",
-                          height: "20px",
-                          cursor: isCreditSale ? "not-allowed" : "pointer",
-                          color: "white",
-                          fontSize: "10px",
-                          fontWeight: "bold",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: isCreditSale
-                            ? "none"
-                            : "0 1px 4px rgba(52, 152, 219, 0.3)",
-                          transition: "all 0.2s ease",
-                          opacity: isCreditSale ? 0.4 : 1,
-                          zIndex: 10,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isCreditSale) {
-                            e.target.style.transform =
-                              "rotate(180deg) scale(1.2)";
-                            e.target.style.boxShadow =
-                              "0 2px 6px rgba(52, 152, 219, 0.4)";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isCreditSale) {
-                            e.target.style.transform = "rotate(0deg) scale(1)";
-                            e.target.style.boxShadow =
-                              "0 1px 4px rgba(52, 152, 219, 0.3)";
-                          }
-                        }}
-                        title={
-                          isCreditSale
-                            ? "Swap disabled in credit mode"
-                            : "Swap cash and card amounts"
-                        }
-                      >
-                        ⇅
-                      </button>
-                      <label style={{ minWidth: "80px" }}>Card:</label>
-                      <input
-                        ref={cardAmountRef}
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={cardAmount}
-                        onFocus={() => handleInputFocus(cardAmountRef, true)}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setLastEdited("card");
+                          if (!isCreditSale) return "Process Payment";
 
-                          // Always set the raw value first to allow proper typing
-                          setCardAmount(value);
-
-                          // Only do validation and auto-fill if value is not empty and not currently being typed
-                          if (value !== "") {
-                            const parsed = Number(value);
-
-                            if (isCreditSale) {
-                              // Check if this is a balance payment (no items in cart)
-                              const isBalancePayment =
-                                cart.length === 0 &&
-                                selectedCustomer &&
-                                customerBalance > 0;
-
-                              if (isBalancePayment) {
-                                // For balance payments, allow any amount up to the customer's balance
-                                const validCardAmount = Math.min(
-                                  parsed,
-                                  customerBalance
-                                );
-                                if (parsed > customerBalance) {
-                                  setCardAmount(String(validCardAmount));
-                                }
-                                // Clear cash when card is entered
-                                if (validCardAmount > 0) {
-                                  setCashAmount("");
-                                }
-                                return;
-                              }
-
-                              // For regular credit sales with items in cart
-                              const subtotal = calculateTotal();
-                              const tax = calculateTax();
-                              const total = +(subtotal + tax).toFixed(2);
-                              const cashback = Number(
-                                parseFloat(cashbackAmount) || 0
-                              );
-                              const lotto = Number(
-                                parseFloat(lottoWinnings) || 0
-                              );
-                              const finalTotal = total + cashback - lotto;
-                              const currentCredit = Number(
-                                parseFloat(creditAmount) || 0
-                              );
-                              const remainingAmount = Math.max(
-                                0,
-                                finalTotal - currentCredit
-                              );
-
-                              // If customer has existing balance, allow payment up to transaction total + existing balance
-                              let maxAllowedPayment = remainingAmount;
-                              if (selectedCustomer && customerBalance > 0) {
-                                maxAllowedPayment =
-                                  finalTotal + customerBalance;
-                              }
-
-                              // Allow card up to max allowed payment
-                              const validCardAmount = Math.min(
-                                parsed,
-                                maxAllowedPayment
-                              );
-                              if (parsed > maxAllowedPayment) {
-                                setCardAmount(String(validCardAmount));
-                              }
-
-                              // If user enters card, clear cash (only one payment method)
-                              if (validCardAmount > 0) {
-                                setCashAmount("");
-                              }
-                              return;
-                            }
-
-                            if (autoFillOther) {
-                              // Regular mode auto-fill
-                              const subtotal = calculateTotal();
-                              const tax = calculateTax();
-                              const total = +(subtotal + tax).toFixed(2);
-                              const newCash = Math.max(
-                                0,
-                                +(total - parsed).toFixed(2)
-                              );
-                              setCashAmount(String(newCash));
-                            }
-                          }
-                        }}
-                        style={{
-                          padding: "0.4rem",
-                          flex: 1,
-                          backgroundColor: isCreditSale ? "#f8f9fa" : "white",
-                        }}
-                        placeholder={
-                          isCreditSale ? "Enter partial payment" : "0.00"
-                        }
-                      />
-                      {/* Payment Terminal Button */}
-                      <button
-                        onClick={() => {
-                          // Calculate total for terminal payment
                           const subtotal = calculateTotal();
                           const tax = calculateTax();
                           const total = +(subtotal + tax).toFixed(2);
@@ -4182,222 +4452,44 @@ function POSContent() {
                             parseFloat(cashbackAmount) || 0
                           );
                           const lotto = Number(parseFloat(lottoWinnings) || 0);
-                          // Note: total already includes credit card charge from calculateTotal()
                           const finalTotal = total + cashback - lotto;
-
-                          // Process terminal payment
-                          handleTerminalPayment(finalTotal);
-                        }}
-                        disabled={isCreditSale || cart.length === 0}
-                        style={{
-                          padding: "0.4rem 0.8rem",
-                          backgroundColor:
-                            isCreditSale || cart.length === 0
-                              ? "#f8f9fa"
-                              : "#6f42c1",
-                          color:
-                            isCreditSale || cart.length === 0
-                              ? "#6c757d"
-                              : "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          cursor:
-                            isCreditSale || cart.length === 0
-                              ? "not-allowed"
-                              : "pointer",
-                          fontSize: "0.85rem",
-                          fontWeight: "600",
-                          marginLeft: "0.5rem",
-                          transition: "all 0.2s ease",
-                          opacity: isCreditSale || cart.length === 0 ? 0.6 : 1,
-                        }}
-                        title={
-                          isCreditSale
-                            ? "Terminal disabled in credit mode"
-                            : cart.length === 0
-                            ? "Add items to cart first"
-                            : "Process payment via terminal"
-                        }
-                      >
-                        💳 Terminal
-                      </button>
-                    </div>
-
-                    {/* Cashback Card-Only Notice */}
-                    {(Number(cashbackAmount) || 0) > 0 && (
-                      <div
-                        style={{
-                          padding: "0.5rem",
-                          backgroundColor: "#e8f4fd",
-                          border: "1px solid #85c1e9",
-                          borderRadius: "4px",
-                          fontSize: "0.85rem",
-                          color: "#2e86c1",
-                          textAlign: "center",
-                          fontWeight: "500",
-                          marginTop: "0.5rem",
-                        }}
-                      >
-                        🚫{" "}
-                        <strong>
-                          Cash payment disabled for cashback transactions
-                        </strong>
-                        <div
-                          style={{
-                            fontSize: "0.8rem",
-                            marginTop: "0.25rem",
-                            opacity: 0.9,
-                          }}
-                        >
-                          Customer must pay by card • Cash register: -
-                          {(Number(cashbackAmount) || 0).toFixed(2)} +{" "}
-                          {(Number(cashbackFee) || 0).toFixed(2)} profit
-                        </div>
-                      </div>
-                    )}
-
-                    {!isCreditSale && (
-                      <>
-                        {cashback > 0 && (
-                          <div
-                            style={{
-                              padding: "0.5rem",
-                              backgroundColor: "#fff3cd",
-                              border: "1px solid #ffeaa7",
-                              borderRadius: "4px",
-                              marginTop: "0.5rem",
-                            }}
-                          >
-                            <strong>Cashback: ${cashback.toFixed(2)}</strong>
-                            <div
-                              style={{ fontSize: "0.85rem", color: "#856404" }}
-                            >
-                              Requires card payment: $
-                              {(total + cashback).toFixed(2)} (Purchase: $
-                              {total.toFixed(2)} + Cashback: $
-                              {cashback.toFixed(2)})
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "0.8rem",
-                                color: "#d68910",
-                                marginTop: "0.25rem",
-                                fontWeight: "500",
-                              }}
-                            >
-                              💳 Customer pays by card • 💵 You give $
-                              {cashback.toFixed(2)} cash from register
-                            </div>
-                          </div>
-                        )}
-
-                        <div
-                          style={{
-                            color: isSufficient ? "#2ecc71" : "#e74c3c",
-                            fontWeight: "600",
-                          }}
-                        >
-                          {isSufficient
-                            ? `Card Payment: $${paidCard.toFixed(2)}${
-                                change > 0 && cashback === 0
-                                  ? ` — Change: $${change.toFixed(2)}`
-                                  : ""
-                              }${
-                                cashback > 0
-                                  ? ` — Cashback Given: $${cashback.toFixed(2)}`
-                                  : ""
-                              }`
-                            : cashback > 0
-                            ? `Card payment needed: $${(
-                                total + cashback
-                              ).toFixed(2)} (Current: $${paidCard.toFixed(2)})`
-                            : `Amount due: $${(total - paidTotal).toFixed(2)}`}
-                        </div>
-
-                        {paymentError && (
-                          <div style={{ color: "#e74c3c" }}>{paymentError}</div>
-                        )}
-                      </>
-                    )}
-
-                    <CheckoutButton
-                      onClick={processCheckout}
-                      disabled={isCreditSale ? false : !isSufficient}
-                    >
-                      {(() => {
-                        // Check if this is a balance payment
-                        if (isBalancePayment) {
                           const paidCash = Number(parseFloat(cashAmount) || 0);
                           const paidCard = Number(parseFloat(cardAmount) || 0);
-                          const paymentTotal = paidCash + paidCard;
-                          const customerBalance =
-                            selectedCustomer?.balance || 0;
-                          const remainingBalance =
-                            customerBalance - paymentTotal;
-
-                          if (paymentTotal === 0) {
-                            return "Enter Payment Amount";
-                          } else if (remainingBalance > 0) {
-                            return `Pay $${paymentTotal.toFixed(
-                              2
-                            )} (Balance Remaining: $${remainingBalance.toFixed(
-                              2
-                            )})`;
-                          } else {
-                            return `Pay $${paymentTotal.toFixed(
-                              2
-                            )} (Balance Paid)`;
-                          }
-                        }
-
-                        if (!isCreditSale) return "Process Payment";
-
-                        const subtotal = calculateTotal();
-                        const tax = calculateTax();
-                        const total = +(subtotal + tax).toFixed(2);
-                        const cashback = Number(
-                          parseFloat(cashbackAmount) || 0
-                        );
-                        const lotto = Number(parseFloat(lottoWinnings) || 0);
-                        const finalTotal = total + cashback - lotto;
-                        const paidCash = Number(parseFloat(cashAmount) || 0);
-                        const paidCard = Number(parseFloat(cardAmount) || 0);
-                        const paidTotal = paidCash + paidCard;
-                        const specifiedCreditAmount = Number(
-                          parseFloat(creditAmount) || 0
-                        );
-
-                        if (specifiedCreditAmount > 0) {
-                          const paymentNeeded =
-                            finalTotal - specifiedCreditAmount;
-                          return `Process Sale (Payment: $${paymentNeeded.toFixed(
-                            2
-                          )}, Credit: $${specifiedCreditAmount.toFixed(2)})`;
-                        } else {
-                          const creditBalance = Math.max(
-                            0,
-                            finalTotal - paidTotal
+                          const paidTotal = paidCash + paidCard;
+                          const specifiedCreditAmount = Number(
+                            parseFloat(creditAmount) || 0
                           );
-                          if (paidTotal > 0 && creditBalance > 0) {
-                            return `Process Partial Payment (Credit: $${creditBalance.toFixed(
+
+                          if (specifiedCreditAmount > 0) {
+                            const paymentNeeded =
+                              finalTotal - specifiedCreditAmount;
+                            return `Process Sale (Payment: $${paymentNeeded.toFixed(
                               2
-                            )})`;
-                          } else if (paidTotal >= finalTotal) {
-                            return "Process Full Payment";
+                            )}, Credit: $${specifiedCreditAmount.toFixed(2)})`;
                           } else {
-                            return "Create Full Credit Sale";
+                            const creditBalance = Math.max(
+                              0,
+                              finalTotal - paidTotal
+                            );
+                            if (paidTotal > 0 && creditBalance > 0) {
+                              return `Process Partial Payment (Credit: $${creditBalance.toFixed(
+                                2
+                              )})`;
+                            } else if (paidTotal >= finalTotal) {
+                              return "Process Full Payment";
+                            } else {
+                              return "Create Full Credit Sale";
+                            }
                           }
-                        }
-                      })()}
-                    </CheckoutButton>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </CheckoutPanel>
-      </POSGrid>
-      
+                        })()}
+                      </CheckoutButton>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </CheckoutPanel>
+        </POSGrid>
       </Container>
     </POSWrapper>
   );
