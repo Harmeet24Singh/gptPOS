@@ -44,6 +44,7 @@ export default function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [showDeleteButtons, setShowDeleteButtons] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(false);
+  const [visitedItems, setVisitedItems] = useState(new Set());
 
   useEffect(() => {
     // If not logged in, redirect to POS
@@ -89,6 +90,25 @@ export default function InventoryPage() {
       dispatch(loadInventory(true));
     }
   }, [auth?.user, items.length, dispatch]);
+
+  // Load visited items from database
+  useEffect(() => {
+    if (auth?.user) {
+      loadVisitedItems();
+    }
+  }, [auth?.user]);
+
+  const loadVisitedItems = async () => {
+    try {
+      const res = await fetch('/api/inventory/visited');
+      if (res.ok) {
+        const visitedIds = await res.json();
+        setVisitedItems(new Set(visitedIds));
+      }
+    } catch (error) {
+      console.error('Failed to load visited items:', error);
+    }
+  };
 
   // Periodic refresh as fallback (every 30 seconds)
   useEffect(() => {
@@ -136,10 +156,67 @@ export default function InventoryPage() {
   const refreshInventory = async () => {
     try {
       await dispatch(loadInventory(true)).unwrap(); // Force refresh from database
+      await loadVisitedItems(); // Reload visited items from database
       console.log("Inventory refreshed successfully");
     } catch (error) {
       console.error("Failed to refresh inventory:", error);
       alert("Failed to refresh inventory: " + error);
+    }
+  };
+
+  const toggleVisited = async (itemId) => {
+    const isCurrentlyVisited = visitedItems.has(itemId);
+    const newVisited = new Set(visitedItems);
+    
+    if (isCurrentlyVisited) {
+      newVisited.delete(itemId);
+    } else {
+      newVisited.add(itemId);
+    }
+    
+    // Update local state immediately for better UX
+    setVisitedItems(newVisited);
+    
+    // Save to database
+    try {
+      await fetch('/api/inventory/visited', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'dev-secret',
+        },
+        body: JSON.stringify({
+          itemId: itemId,
+          visited: !isCurrentlyVisited
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save visited status:', error);
+      // Revert local state on error
+      setVisitedItems(visitedItems);
+    }
+  };
+
+  const clearAllVisited = async () => {
+    if (confirm('Are you sure you want to clear all visited markers?')) {
+      try {
+        const res = await fetch('/api/inventory/visited', {
+          method: 'DELETE',
+          headers: {
+            'x-api-key': 'dev-secret',
+          }
+        });
+        
+        if (res.ok) {
+          setVisitedItems(new Set());
+          console.log('All visited items cleared successfully');
+        } else {
+          throw new Error('Failed to clear visited items');
+        }
+      } catch (error) {
+        console.error('Failed to clear visited items:', error);
+        alert('Failed to clear visited items: ' + error.message);
+      }
     }
   };
 
@@ -466,11 +543,21 @@ export default function InventoryPage() {
         >
           {loading ? "🔄 Refreshing..." : "🔄 Refresh"}
         </Button>
+        <Button
+          onClick={clearAllVisited}
+          style={{
+            backgroundColor: "#e67e22",
+            marginLeft: "0.5rem"
+          }}
+        >
+          🗑️ Clear All Visited
+        </Button>
       </FilterContainer>
 
       <Table>
         <thead>
           <tr>
+            <th style={{ width: '60px', textAlign: 'center' }}>✓</th>
             <th>Name</th>
             <th>Product ID/Barcode</th>
             <th>Category</th>
@@ -484,6 +571,20 @@ export default function InventoryPage() {
         <tbody>
           {filteredInventory.map((item) => (
             <tr key={item.id}>
+              <td style={{ textAlign: 'center' }}>
+                <input
+                  type="checkbox"
+                  checked={visitedItems.has(item.id)}
+                  onChange={() => toggleVisited(item.id)}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    accentColor: '#3498db',
+                    cursor: 'pointer'
+                  }}
+                  title="Mark as visited/reviewed"
+                />
+              </td>
               <td>{item.name}</td>
               <td>
                 <span

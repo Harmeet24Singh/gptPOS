@@ -947,6 +947,59 @@ async function endTill(tillId, endData) {
   }
 }
 
+// Visited Items Management Functions
+async function getVisitedItems() {
+  try {
+    const db = await connect();
+    const visitedCollection = db.collection("visitedItems");
+    
+    const visitedItems = await visitedCollection.find({}).toArray();
+    return visitedItems.map(item => item.itemId);
+  } catch (error) {
+    console.error("Error getting visited items:", error);
+    throw error;
+  }
+}
+
+async function setVisitedItem(itemId, visited) {
+  try {
+    const db = await connect();
+    const visitedCollection = db.collection("visitedItems");
+    
+    if (visited) {
+      // Add to visited items
+      await visitedCollection.updateOne(
+        { itemId: Number(itemId) },
+        { 
+          $set: { 
+            itemId: Number(itemId),
+            visitedAt: new Date()
+          }
+        },
+        { upsert: true }
+      );
+    } else {
+      // Remove from visited items
+      await visitedCollection.deleteOne({ itemId: Number(itemId) });
+    }
+  } catch (error) {
+    console.error("Error setting visited item:", error);
+    throw error;
+  }
+}
+
+async function clearAllVisitedItems() {
+  try {
+    const db = await connect();
+    const visitedCollection = db.collection("visitedItems");
+    
+    await visitedCollection.deleteMany({});
+  } catch (error) {
+    console.error("Error clearing all visited items:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   connect,
   getAllInventory,
@@ -975,4 +1028,7 @@ module.exports = {
   getTillHistory,
   startTill,
   endTill,
+  getVisitedItems,
+  setVisitedItem,
+  clearAllVisitedItems,
 };
