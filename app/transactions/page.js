@@ -171,65 +171,48 @@ export default function TransactionsPage() {
     };
   }, [showPreferencesDropdown]);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch("/api/transaction");
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : [];
-        
-        // Debug: Log transaction data to identify the issue
-        console.log('Loaded transactions:', list.length);
-        list.forEach((tx, index) => {
-          const shortId = (tx.id || tx._id || '').toString().slice(-8);
-          if (shortId === '4cefa6aa') {
-            console.log('🔍 Found transaction #4cefa6aa:', {
-              id: tx.id,
-              _id: tx._id,
-              items: tx.items,
-              itemsIsArray: Array.isArray(tx.items),
-              itemsLength: tx.items ? tx.items.length : 'N/A',
-              total: tx.total,
-              subtotal: tx.subtotal
-            });
-          }
-        });
-        
-        setTransactions(list.reverse());
-        setFilteredTransactions(list.reverse());
-      } catch (err) {
-        console.error("Failed to load transactions from server", err);
-        const savedTransactions = JSON.parse(
-          localStorage.getItem("transactions") || "[]"
-        );
-        
-        // Debug localStorage transactions too
-        console.log('Loaded from localStorage:', savedTransactions.length);
-        savedTransactions.forEach((tx, index) => {
-          const shortId = (tx.id || tx._id || '').toString().slice(-8);
-          if (shortId === '4cefa6aa') {
-            console.log('🔍 Found localStorage transaction #4cefa6aa:', {
-              id: tx.id,
-              _id: tx._id,
-              items: tx.items,
-              itemsIsArray: Array.isArray(tx.items),
-              itemsLength: tx.items ? tx.items.length : 'N/A',
-              total: tx.total,
-              subtotal: tx.subtotal
-            });
-          }
-        });
-        
-        setTransactions(savedTransactions.reverse());
-        setFilteredTransactions(savedTransactions.reverse());
+  // Function to load transactions with date filtering
+  const loadTransactions = async () => {
+    try {
+      // Build URL with date filter parameters
+      const params = new URLSearchParams({ limit: '1000' });
+      if (dateFilter && dateFilter !== 'all') {
+        params.set('dateFilter', dateFilter);
+        if (dateFilter === 'specific' && selectedDate) {
+          params.set('selectedDate', selectedDate);
+        }
       }
-    };
-    load();
-  }, []);
+      
+      console.log('Fetching transactions with params:', params.toString());
+      const res = await fetch(`/api/transaction?${params.toString()}`);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      
+      console.log('Loaded transactions:', list.length);
+      
+      setTransactions(list);
+      setFilteredTransactions(list);
+    } catch (err) {
+      console.error("Failed to load transactions from server", err);
+      const savedTransactions = JSON.parse(
+        localStorage.getItem("transactions") || "[]"
+      );
+      
+      console.log('Loaded from localStorage:', savedTransactions.length);
+      setTransactions(savedTransactions);
+      setFilteredTransactions(savedTransactions);
+    }
+  };
 
+  // Load transactions on component mount and when date filter changes
+  useEffect(() => {
+    loadTransactions();
+  }, [dateFilter, selectedDate]);
+
+  // Filter by transaction type only (date filtering is now done server-side)
   useEffect(() => {
     filterTransactions();
-  }, [dateFilter, selectedDate, transactions, transactionTypeFilter]);
+  }, [transactions, transactionTypeFilter]);
 
   // Function to handle card click filtering
   const handleCardFilter = (filterType) => {
@@ -257,12 +240,8 @@ export default function TransactionsPage() {
       });
 
       if (response.ok) {
-        // Refresh transactions list by calling the load function from useEffect
-        const res = await fetch('/api/transaction');
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : [];
-        setTransactions(list.reverse());
-        setFilteredTransactions(list.reverse());
+        // Refresh transactions list
+        await loadTransactions();
         alert('Transaction deleted successfully');
       } else {
         const error = await response.json();
@@ -277,34 +256,7 @@ export default function TransactionsPage() {
   const filterTransactions = () => {
     let filtered = [...transactions];
 
-    // First, filter by date
-    if (dateFilter === "today") {
-      const today = new Date().toDateString();
-      filtered = transactions.filter(
-        (t) => new Date(t.timestamp).toDateString() === today
-      );
-    } else if (dateFilter === "yesterday") {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      filtered = transactions.filter(
-        (t) => new Date(t.timestamp).toDateString() === yesterday.toDateString()
-      );
-    } else if (dateFilter === "specific") {
-      const selectedDay = new Date(selectedDate).toDateString();
-      filtered = transactions.filter(
-        (t) => new Date(t.timestamp).toDateString() === selectedDay
-      );
-    } else if (dateFilter === "week") {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      filtered = transactions.filter((t) => new Date(t.timestamp) >= weekAgo);
-    } else if (dateFilter === "month") {
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      filtered = transactions.filter((t) => new Date(t.timestamp) >= monthAgo);
-    }
-
-    // Then, filter by transaction type
+    // Filter by transaction type (date filtering is now done server-side)
     if (transactionTypeFilter !== "all") {
       if (transactionTypeFilter === "unpaid") {
         filtered = filtered.filter(t => 

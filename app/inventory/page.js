@@ -565,9 +565,12 @@ export default function InventoryPage() {
           🗑️ Clear All Visited
         </Button>
         <Button
-          onClick={() => setCategoryFilter(categoryFilter === "Tobacco" ? "" : "Tobacco")}
+          onClick={() =>
+            setCategoryFilter(categoryFilter === "Tobacco" ? "" : "Tobacco")
+          }
           style={{
-            backgroundColor: categoryFilter === "Tobacco" ? "#8e44ad" : "#9b59b6",
+            backgroundColor:
+              categoryFilter === "Tobacco" ? "#8e44ad" : "#9b59b6",
             marginLeft: "0.5rem",
             fontWeight: categoryFilter === "Tobacco" ? "bold" : "normal",
           }}
@@ -575,9 +578,14 @@ export default function InventoryPage() {
           🚬 Tobacco
         </Button>
         <Button
-          onClick={() => setCategoryFilter(categoryFilter === "Lotto instant" ? "" : "Lotto instant")}
+          onClick={() =>
+            setCategoryFilter(
+              categoryFilter === "Lotto instant" ? "" : "Lotto instant"
+            )
+          }
           style={{
-            backgroundColor: categoryFilter === "Lotto instant" ? "#8e44ad" : "#9b59b6",
+            backgroundColor:
+              categoryFilter === "Lotto instant" ? "#8e44ad" : "#9b59b6",
             marginLeft: "0.5rem",
             fontWeight: categoryFilter === "Lotto instant" ? "bold" : "normal",
           }}

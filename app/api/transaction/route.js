@@ -24,6 +24,8 @@ export async function GET(req) {
     const url = new URL(req.url);
     const limit = Number(url.searchParams.get("limit") || 100);
     const stats = url.searchParams.get("stats") === "true";
+    const dateFilter = url.searchParams.get("dateFilter");
+    const selectedDate = url.searchParams.get("selectedDate");
     
     if (stats) {
       // Return transaction statistics by type
@@ -80,8 +82,8 @@ export async function GET(req) {
         } : null
       });
     } else {
-      // Return regular transaction list
-      const rows = await mongo.getTransactions(limit);
+      // Return regular transaction list with date filtering
+      const rows = await mongo.getTransactions(limit, dateFilter, selectedDate);
       return NextResponse.json(rows);
     }
   } catch (err) {

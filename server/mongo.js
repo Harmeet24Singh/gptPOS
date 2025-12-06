@@ -424,11 +424,68 @@ async function saveTransaction(txObj) {
   return insertedId;
 }
 
-async function getTransactions(limit = 100) {
+async function getTransactions(limit = 100, dateFilter = null, selectedDate = null) {
   const db = await connect();
+  
+  // Build date filter query
+  let dateQuery = {};
+  
+  if (dateFilter && dateFilter !== 'all') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (dateFilter === 'today') {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      dateQuery = {
+        timestamp: {
+          $gte: today,
+          $lt: tomorrow
+        }
+      };
+    } else if (dateFilter === 'yesterday') {
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      dateQuery = {
+        timestamp: {
+          $gte: yesterday,
+          $lt: today
+        }
+      };
+    } else if (dateFilter === 'specific' && selectedDate) {
+      // Parse the date in local timezone to avoid UTC conversion issues
+      const dateParts = selectedDate.split('-');
+      const year = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+      const day = parseInt(dateParts[2]);
+      
+      const specDate = new Date(year, month, day, 0, 0, 0, 0);
+      const nextDay = new Date(year, month, day + 1, 0, 0, 0, 0);
+      
+      dateQuery = {
+        timestamp: {
+          $gte: specDate,
+          $lt: nextDay
+        }
+      };
+    } else if (dateFilter === 'week') {
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      dateQuery = {
+        timestamp: { $gte: weekAgo }
+      };
+    } else if (dateFilter === 'month') {
+      const monthAgo = new Date(today);
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      dateQuery = {
+        timestamp: { $gte: monthAgo }
+      };
+    }
+  }
+  
   const cursor = db
     .collection("transactions")
-    .find({})
+    .find(dateQuery)
     .sort({ _id: -1 })
     .limit(Number(limit));
   const rows = await cursor.toArray();
