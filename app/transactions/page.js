@@ -707,30 +707,236 @@ export default function TransactionsPage() {
     }
   };
 
+  const printSummaryReport = async () => {
+    // Use HTML print directly for manual printer selection
+    try {
+      printSummaryReportHTML();
+    } catch (error) {
+      console.error('❌ HTML printing failed:', error);
+      alert('❌ Failed to generate print preview. Error: ' + error.message);
+    }
+  };
+
+  const printSummaryReportHTML = () => {
+    try {
+      const totalSales = getTotalSales() || 0;
+      const totalTransactions = getTotalTransactions() || 0;
+      const averageSale = totalTransactions > 0 ? getAverageTransaction() || 0 : 0;
+      const paymentBreakdown = getPaymentMethodBreakdown() || {};
+      const { cashTotal = 0, cardTotal = 0, cashTransactionCount = 0, cardTransactionCount = 0 } = paymentBreakdown;
+      const lotteryBreakdown = getLotteryBreakdown() || {};
+      const { lottoTotal = 0, lottoTransactionCount = 0 } = lotteryBreakdown;
+      const unpaidAmounts = getUnpaidAmounts() || { unpaidTotal: 0, unpaidTransactionCount: 0 };
+      const dailyBreakdown = getDailyBreakdown() || [];
+
+    const printWindow = window.open('', '_blank');
+    
+    if (!printWindow) {
+      alert('❌ Popup blocked! Please allow popups for this site and try again.');
+      return;
+    }
+
+    const summaryContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Sales Summary Report</title>
+          <style>
+            body {
+              font-family: 'Courier New', monospace;
+              font-size: 12px;
+              margin: 0;
+              padding: 20px;
+              max-width: 400px;
+              color: #000000;
+              font-weight: bold;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 10px;
+            }
+            .store-name {
+              font-size: 16px;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .summary-item {
+              display: flex;
+              justify-content: space-between;
+              margin: 3px 0;
+              padding: 2px 0;
+            }
+            .summary-section {
+              margin: 15px 0;
+              border-top: 1px solid #000;
+              padding-top: 10px;
+            }
+            .section-title {
+              font-weight: 900;
+              margin-bottom: 8px;
+              text-align: center;
+              color: #000000;
+            }
+            .total-line {
+              font-weight: bold;
+              border-top: 1px solid #000;
+              padding-top: 5px;
+              margin-top: 5px;
+              font-size: 14px;
+            }
+            hr {
+              border: none;
+              border-top: 1px solid #000;
+              margin: 10px 0;
+            }
+            .center {
+              text-align: center;
+            }
+            @media print {
+              body { 
+                margin: 0; 
+                padding: 10px;
+                page-break-after: always;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="store-name">KENNEDY CONVENIENCE</div>
+            <div>SALES SUMMARY REPORT</div>
+            <div>${new Date().toLocaleString()}</div>
+            <div>Period: ${dateFilter === 'today' ? 'Today' : 
+                         dateFilter === 'yesterday' ? 'Yesterday' :
+                         dateFilter === 'week' ? 'Last 7 Days' :
+                         dateFilter === 'month' ? 'Last 30 Days' :
+                         dateFilter === 'specific' ? selectedDate : 'All Time'}</div>
+          </div>
+          
+          <div class="summary-section">
+            <div class="section-title">OVERALL SUMMARY</div>
+            <div class="summary-item">
+              <span>Total Sales:</span>
+              <span>$${totalSales.toFixed(2)}</span>
+            </div>
+            <div class="summary-item">
+              <span>Total Transactions:</span>
+              <span>${totalTransactions}</span>
+            </div>
+            <div class="summary-item">
+              <span>Average Sale:</span>
+              <span>$${averageSale.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div class="summary-section">
+            <div class="section-title">PAYMENT METHODS</div>
+            <div class="summary-item">
+              <span>Cash Sales:</span>
+              <span>$${cashTotal.toFixed(2)}</span>
+            </div>
+            <div class="summary-item">
+              <span>Cash Transactions:</span>
+              <span>${cashTransactionCount}</span>
+            </div>
+            <div class="summary-item">
+              <span>Card Sales:</span>
+              <span>$${cardTotal.toFixed(2)}</span>
+            </div>
+            <div class="summary-item">
+              <span>Card Transactions:</span>
+              <span>${cardTransactionCount}</span>
+            </div>
+          </div>
+
+          ${lottoTotal > 0 ? `
+          <div class="summary-section">
+            <div class="section-title">LOTTERY</div>
+            <div class="summary-item">
+              <span>Lottery Sales:</span>
+              <span>$${lottoTotal.toFixed(2)}</span>
+            </div>
+            <div class="summary-item">
+              <span>Lottery Transactions:</span>
+              <span>${lottoTransactionCount}</span>
+            </div>
+          </div>
+          ` : ''}
+
+          ${unpaidAmounts.unpaidTotal > 0 ? `
+          <div class="summary-section">
+            <div class="section-title">UNPAID AMOUNTS</div>
+            <div class="summary-item">
+              <span>Unpaid Total:</span>
+              <span>$${unpaidAmounts.unpaidTotal.toFixed(2)}</span>
+            </div>
+            <div class="summary-item">
+              <span>Unpaid Transactions:</span>
+              <span>${unpaidAmounts.unpaidTransactionCount}</span>
+            </div>
+          </div>
+          ` : ''}
+
+          ${dailyBreakdown.length > 0 ? `
+          <div class="summary-section">
+            <div class="section-title">DAILY BREAKDOWN</div>
+            ${dailyBreakdown.slice(0, 5).map(day => `
+              <div style="margin-bottom: 8px;">
+                <div style="font-weight: bold;">${new Date(day.date).toLocaleDateString()}</div>
+                <div class="summary-item">
+                  <span>Sales:</span>
+                  <span>$${day.totalSales.toFixed(2)}</span>
+                </div>
+                <div class="summary-item">
+                  <span>Transactions:</span>
+                  <span>${day.transactionCount}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          ` : ''}
+
+          <hr>
+          <div class="center">End of Report</div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(() => {
+                window.close();
+              }, 1000);
+            }
+          </script>
+        </body>
+      </html>
+    `;
+
+      try {
+        printWindow.document.write(summaryContent);
+        printWindow.document.close();
+      } catch (writeError) {
+        printWindow.close();
+        throw new Error('Failed to write to print window: ' + writeError.message);
+      }
+    } catch (error) {
+      console.error('❌ HTML print generation failed:', error);
+      alert('❌ Failed to generate print preview. Error: ' + error.message);
+    }
+  };
+
   const printTransactionReceipt = async (transaction) => {
     if (!transaction) return;
 
-    try {
-      // Try thermal printing first
-      const { ThermalPrinter } = await import('../lib/thermalPrinter');
-      const printer = new ThermalPrinter();
-      
-      const result = await printer.printThermalReceipt(transaction);
-      
-      if (result.success) {
-        if (result.method === 'file') {
-          alert('Receipt file downloaded! Send this file to your Citizen S2000 printer.');
-        } else if (result.method === 'webserial') {
-          alert('Receipt sent to thermal printer successfully!');
-        }
-        return;
-      }
-    } catch (error) {
-      console.error('Thermal printing failed, falling back to regular print:', error);
-    }
-    
-    // Fallback to regular HTML printing
+    // Use HTML print directly for manual printer selection
     const printWindow = window.open('', '_blank');
+    
+    if (!printWindow) {
+      alert('❌ Popup blocked! Please allow popups for this site and try again.');
+      return;
+    }
+
     const receiptContent = `
       <!DOCTYPE html>
       <html>
@@ -743,6 +949,8 @@ export default function TransactionsPage() {
               margin: 0;
               padding: 20px;
               max-width: 300px;
+              color: #000000;
+              font-weight: bold;
             }
             .header {
               text-align: center;
@@ -750,8 +958,9 @@ export default function TransactionsPage() {
             }
             .store-name {
               font-size: 16px;
-              font-weight: bold;
+              font-weight: 900;
               margin-bottom: 5px;
+              color: #000000;
             }
             .receipt-item {
               display: flex;
@@ -762,10 +971,11 @@ export default function TransactionsPage() {
               margin-top: 10px;
             }
             .total {
-              font-weight: bold;
-              border-top: 1px solid #000;
+              font-weight: 900;
+              border-top: 2px solid #000;
               padding-top: 5px;
               margin-top: 5px;
+              color: #000000;
             }
             hr {
               border: none;
@@ -782,7 +992,7 @@ export default function TransactionsPage() {
         </head>
         <body>
           <div class="header">
-            <div class="store-name">CONVENIENCE STORE</div>
+            <div class="store-name">KENNEDY CONVENIENCE</div>
             <div>Scarborough, Ontario</div>
             <div>Transaction #${(transaction.id || transaction._id || 'N/A').toString().slice(-8)}</div>
             <div>${new Date(transaction.timestamp).toLocaleString()}</div>
@@ -868,8 +1078,14 @@ export default function TransactionsPage() {
       </html>
     `;
     
-    printWindow.document.write(receiptContent);
-    printWindow.document.close();
+    try {
+      printWindow.document.write(receiptContent);
+      printWindow.document.close();
+    } catch (error) {
+      console.error('❌ Failed to write receipt to print window:', error);
+      printWindow.close();
+      alert('❌ Failed to generate receipt print preview. Error: ' + error.message);
+    }
   };
 
   const getLotteryBreakdown = () => {
@@ -1430,6 +1646,16 @@ export default function TransactionsPage() {
               </button>
             </div>
           )}
+          <Button
+            onClick={printSummaryReport}
+            style={{ 
+              backgroundColor: "#9b59b6", 
+              color: "white",
+              marginRight: "0.5rem"
+            }}
+          >
+            🖨️ Print Summary
+          </Button>
           <Link href="/pos">
             <Button>New Sale</Button>
           </Link>

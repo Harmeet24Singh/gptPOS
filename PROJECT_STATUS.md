@@ -157,6 +157,7 @@ A Next.js 14.2.0 based Point of Sale (POS) system with React components, MongoDB
 - ✅ **Proper Receipt Cutting** - Automatic paper feed control and cutting
 - ✅ **Printer Settings Page** - Configuration for USB, network, and file printing
 - ✅ **Multiple Print Methods** - Web Serial API, network printing, and file download fallbacks
+- ✅ **Print Summary Reports** - Comprehensive sales summary printing for transactions page
 
 ### Printer Integration Details
 - **Supported Printer**: Citizen S2000 (thermal receipt printer)
@@ -167,6 +168,11 @@ A Next.js 14.2.0 based Point of Sale (POS) system with React components, MongoDB
 - **ESC/POS Commands**: Full command set for formatting, cutting, and paper control
 - **Paper Control**: Proper line feeding and automatic cutting to prevent long paper feeds
 - **Settings Management**: Browser-based configuration with localStorage persistence
+- **Print Types**: 
+  - Individual transaction receipts
+  - Comprehensive sales summary reports
+  - Daily/weekly/monthly breakdowns
+  - Payment method analysis
 
 ## Next Development Priorities
 - [ ] **Barcode Scanning** - Product lookup via barcode

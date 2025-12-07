@@ -58,7 +58,7 @@ export class ThermalPrinter {
     receipt += this.commands.ALIGN_CENTER;
     receipt += this.commands.BOLD_ON;
     receipt += this.commands.FONT_SIZE_DOUBLE_HEIGHT;
-    receipt += 'CONVENIENCE STORE\n';
+    receipt += 'KENNEDY CONVENIENCE\n';
     receipt += this.commands.FONT_SIZE_NORMAL;
     receipt += this.commands.BOLD_OFF;
     receipt += 'Scarborough, Ontario\n';
@@ -155,6 +155,133 @@ export class ThermalPrinter {
     return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
   }
 
+  // Format summary report for thermal printing
+  formatSummaryReport(summaryData) {
+    try {
+      let report = '';
+      const data = summaryData?.reportData;
+      
+      if (!data) {
+        throw new Error('No report data provided');
+      }
+      
+      // Initialize printer
+      report += this.commands.INIT;
+    
+    // Header
+    report += this.commands.ALIGN_CENTER;
+    report += this.commands.BOLD_ON;
+    report += this.commands.FONT_SIZE_DOUBLE_HEIGHT;
+    report += 'KENNEDY CONVENIENCE\n';
+    report += this.commands.FONT_SIZE_NORMAL;
+    report += 'SALES SUMMARY REPORT\n';
+    report += this.commands.BOLD_OFF;
+    report += `${new Date().toLocaleString()}\n`;
+    report += `Period: ${data.dateRange}\n`;
+    report += this.commands.FEED_LINE;
+    
+    report += this.commands.ALIGN_LEFT;
+    report += this.printLine('=', 32);
+    
+    // Overall Summary
+    report += this.commands.BOLD_ON;
+    report += 'OVERALL SUMMARY\n';
+    report += this.commands.BOLD_OFF;
+    report += this.printLine('-', 32);
+    report += this.formatLine('Total Sales:', `$${data.totalSales.toFixed(2)}`, 32);
+    report += this.formatLine('Total Transactions:', data.totalTransactions.toString(), 32);
+    report += this.formatLine('Average Sale:', `$${data.averageSale.toFixed(2)}`, 32);
+    report += this.commands.FEED_LINE;
+    
+    // Payment Methods
+    report += this.commands.BOLD_ON;
+    report += 'PAYMENT METHODS\n';
+    report += this.commands.BOLD_OFF;
+    report += this.printLine('-', 32);
+    report += this.formatLine('Cash Sales:', `$${data.cashTotal.toFixed(2)}`, 32);
+    report += this.formatLine('Cash Transactions:', data.cashTransactionCount.toString(), 32);
+    report += this.formatLine('Card Sales:', `$${data.cardTotal.toFixed(2)}`, 32);
+    report += this.formatLine('Card Transactions:', data.cardTransactionCount.toString(), 32);
+    report += this.commands.FEED_LINE;
+    
+    // Lottery (if any)
+    if (data.lottoTotal > 0) {
+      report += this.commands.BOLD_ON;
+      report += 'LOTTERY\n';
+      report += this.commands.BOLD_OFF;
+      report += this.printLine('-', 32);
+      report += this.formatLine('Lottery Sales:', `$${data.lottoTotal.toFixed(2)}`, 32);
+      report += this.formatLine('Lottery Transactions:', data.lottoTransactionCount.toString(), 32);
+      report += this.commands.FEED_LINE;
+    }
+    
+    // Unpaid Amounts (if any)
+    if (data.unpaidTotal > 0) {
+      report += this.commands.BOLD_ON;
+      report += 'UNPAID AMOUNTS\n';
+      report += this.commands.BOLD_OFF;
+      report += this.printLine('-', 32);
+      report += this.formatLine('Unpaid Total:', `$${data.unpaidTotal.toFixed(2)}`, 32);
+      report += this.formatLine('Unpaid Transactions:', data.unpaidTransactionCount.toString(), 32);
+      report += this.commands.FEED_LINE;
+    }
+    
+    // Daily Breakdown (last 5 days)
+    if (data.dailyBreakdown && data.dailyBreakdown.length > 0) {
+      report += this.commands.BOLD_ON;
+      report += 'DAILY BREAKDOWN\n';
+      report += this.commands.BOLD_OFF;
+      report += this.printLine('-', 32);
+      
+      data.dailyBreakdown.forEach(day => {
+        const date = new Date(day.date).toLocaleDateString();
+        report += this.commands.BOLD_ON;
+        report += `${date}\n`;
+        report += this.commands.BOLD_OFF;
+        report += this.formatLine('  Sales:', `$${day.totalSales.toFixed(2)}`, 32);
+        report += this.formatLine('  Transactions:', day.transactionCount.toString(), 32);
+        report += this.commands.FEED_LINE;
+      });
+    }
+    
+    // Footer
+    report += this.printLine('=', 32);
+    report += this.commands.ALIGN_CENTER;
+    report += 'END OF REPORT\n';
+    report += this.commands.ALIGN_LEFT;
+    
+    // Feed lines before cut
+    report += this.commands.FEED_LINES(3);
+    
+    // Cut paper
+    report += this.commands.CUT_FULL_WITH_FEED;
+    
+    return report;
+    } catch (error) {
+      console.error('Error formatting summary report:', error);
+      throw new Error(`Failed to format summary report: ${error.message}`);
+    }
+  }
+
+  // Print summary report to thermal printer
+  async printSummaryReport(summaryData) {
+    const reportData = this.formatSummaryReport(summaryData);
+    
+    try {
+      // Check if Web Serial API is available
+      if ('serial' in navigator) {
+        return await this.printViaWebSerial(reportData);
+      }
+      
+      // Fallback: Create a text file for manual printing
+      return this.printViaTextFile(reportData, 'summary_report');
+      
+    } catch (error) {
+      console.error('Thermal printing error:', error);
+      throw error;
+    }
+  }
+
   // Print to thermal printer via browser
   async printThermalReceipt(transaction) {
     const receiptData = this.formatReceipt(transaction);
@@ -204,17 +331,27 @@ export class ThermalPrinter {
       return { success: true, method: 'webserial' };
     } catch (error) {
       console.error('Web Serial printing failed:', error);
-      throw error;
+      
+      // Provide more user-friendly error messages
+      if (error.message.includes('No port selected')) {
+        throw new Error('No printer port selected. Please connect your Citizen S2000 printer and select the correct port when prompted.');
+      } else if (error.name === 'NotFoundError') {
+        throw new Error('No compatible printers found. Please check that your Citizen S2000 is connected via USB.');
+      } else if (error.name === 'SecurityError') {
+        throw new Error('Permission denied. Please allow access to serial ports in your browser settings.');
+      } else {
+        throw error;
+      }
     }
   }
 
   // Fallback: Create downloadable text file with ESC/POS commands
-  printViaTextFile(receiptData) {
+  printViaTextFile(receiptData, fileType = 'receipt') {
     const blob = new Blob([receiptData], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `receipt_${Date.now()}.txt`;
+    link.download = `${fileType}_${Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -223,7 +360,7 @@ export class ThermalPrinter {
     return { 
       success: true, 
       method: 'file',
-      message: 'Receipt file downloaded. Send this file to your printer or copy to printer software.'
+      message: `${fileType} file downloaded. Send this file to your printer or copy to printer software.`
     };
   }
 
@@ -249,3 +386,5 @@ export class ThermalPrinter {
     }
   }
 }
+
+export default ThermalPrinter;
