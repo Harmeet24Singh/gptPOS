@@ -162,12 +162,12 @@ async function generateTransactionsForDate() {
     let totalSales = 0;
     const targetSales = 3200;
     
-    // Generate transactions from 7 AM to 11 PM (16 hours)
-    const startHour = 7;
-    const endHour = 23;
+    // Generate transactions from 9 AM to 9 PM (Store Hours)
+    const startHour = 9;
+    const endHour = 21; // Sometimes open until 10 PM, but usually close at 9 PM
     
     while (totalSales < targetSales * 0.95) { // Generate until we're close to target
-      // Random hour between 7 AM and 11 PM
+      // Random hour between 9 AM and 9 PM
       const hour = startHour + Math.floor(Math.random() * (endHour - startHour));
       const minute = Math.floor(Math.random() * 60);
       const second = Math.floor(Math.random() * 60);

@@ -26,6 +26,9 @@ export async function GET(req) {
     const stats = url.searchParams.get("stats") === "true";
     const dateFilter = url.searchParams.get("dateFilter");
     const selectedDate = url.searchParams.get("selectedDate");
+    const startDate = url.searchParams.get("startDate");
+    const endDate = url.searchParams.get("endDate");
+    const monthFilter = url.searchParams.get("monthFilter");
     
     if (stats) {
       // Return transaction statistics by type
@@ -83,7 +86,7 @@ export async function GET(req) {
       });
     } else {
       // Return regular transaction list with date filtering
-      const rows = await mongo.getTransactions(limit, dateFilter, selectedDate);
+      const rows = await mongo.getTransactions(limit, dateFilter, selectedDate, startDate, endDate, monthFilter);
       return NextResponse.json(rows);
     }
   } catch (err) {

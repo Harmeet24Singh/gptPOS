@@ -424,7 +424,7 @@ async function saveTransaction(txObj) {
   return insertedId;
 }
 
-async function getTransactions(limit = 100, dateFilter = null, selectedDate = null) {
+async function getTransactions(limit = 100, dateFilter = null, selectedDate = null, startDate = null, endDate = null, monthFilter = null) {
   const db = await connect();
   
   // Build date filter query
@@ -468,17 +468,45 @@ async function getTransactions(limit = 100, dateFilter = null, selectedDate = nu
           $lt: nextDay
         }
       };
+    } else if (dateFilter === 'range' && startDate && endDate) {
+      // Parse start and end dates in local timezone
+      const startParts = startDate.split('-');
+      const endParts = endDate.split('-');
+      
+      const startYear = parseInt(startParts[0]);
+      const startMonth = parseInt(startParts[1]) - 1;
+      const startDay = parseInt(startParts[2]);
+      
+      const endYear = parseInt(endParts[0]);
+      const endMonth = parseInt(endParts[1]) - 1;
+      const endDay = parseInt(endParts[2]);
+      
+      const rangeStart = new Date(startYear, startMonth, startDay, 0, 0, 0, 0);
+      const rangeEnd = new Date(endYear, endMonth, endDay + 1, 0, 0, 0, 0); // Include end date
+      
+      dateQuery = {
+        timestamp: {
+          $gte: rangeStart,
+          $lt: rangeEnd
+        }
+      };
+    } else if (dateFilter === 'month' && monthFilter) {
+      // monthFilter format: "2025-12" for December 2025
+      const [year, month] = monthFilter.split('-');
+      const monthStart = new Date(parseInt(year), parseInt(month) - 1, 1, 0, 0, 0, 0);
+      const monthEnd = new Date(parseInt(year), parseInt(month), 1, 0, 0, 0, 0); // First day of next month
+      
+      dateQuery = {
+        timestamp: {
+          $gte: monthStart,
+          $lt: monthEnd
+        }
+      };
     } else if (dateFilter === 'week') {
       const weekAgo = new Date(today);
       weekAgo.setDate(weekAgo.getDate() - 7);
       dateQuery = {
         timestamp: { $gte: weekAgo }
-      };
-    } else if (dateFilter === 'month') {
-      const monthAgo = new Date(today);
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      dateQuery = {
-        timestamp: { $gte: monthAgo }
       };
     }
   }

@@ -76,6 +76,9 @@ export default function TransactionsPage() {
   }, [user, router]);
   const [dateFilter, setDateFilter] = useState("today");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [monthFilter, setMonthFilter] = useState("");
   const [viewMode, setViewMode] = useState("list"); // "list" or "daily"
   const [expandedTransaction, setExpandedTransaction] = useState(null);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState("all"); // "all", "cash", "card", "credit", "lotto", "unpaid"
@@ -180,6 +183,11 @@ export default function TransactionsPage() {
         params.set('dateFilter', dateFilter);
         if (dateFilter === 'specific' && selectedDate) {
           params.set('selectedDate', selectedDate);
+        } else if (dateFilter === 'range' && startDate && endDate) {
+          params.set('startDate', startDate);
+          params.set('endDate', endDate);
+        } else if (dateFilter === 'month' && monthFilter) {
+          params.set('monthFilter', monthFilter);
         }
       }
       
@@ -207,7 +215,7 @@ export default function TransactionsPage() {
   // Load transactions on component mount and when date filter changes
   useEffect(() => {
     loadTransactions();
-  }, [dateFilter, selectedDate]);
+  }, [dateFilter, selectedDate, startDate, endDate, monthFilter]);
 
   // Filter by transaction type only (date filtering is now done server-side)
   useEffect(() => {
@@ -811,8 +819,12 @@ export default function TransactionsPage() {
             <div>Period: ${dateFilter === 'today' ? 'Today' : 
                          dateFilter === 'yesterday' ? 'Yesterday' :
                          dateFilter === 'week' ? 'Last 7 Days' :
-                         dateFilter === 'month' ? 'Last 30 Days' :
-                         dateFilter === 'specific' ? selectedDate : 'All Time'}</div>
+                         dateFilter === 'specific' ? selectedDate :
+                         dateFilter === 'range' && startDate && endDate ? 
+                           `${startDate} to ${endDate}` :
+                         dateFilter === 'month' && monthFilter ? 
+                           new Date(monthFilter + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) :
+                         'All Time'}</div>
           </div>
           
           <div class="summary-section">
@@ -1572,7 +1584,7 @@ export default function TransactionsPage() {
       {/* Payment Method Breakdown - Now consolidated in CompactCardGrid above */}
 
       <FilterContainer style={{ flexWrap: "wrap", gap: "1rem" }}>
-        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
           <Select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
@@ -1580,8 +1592,9 @@ export default function TransactionsPage() {
             <option value="today">Today</option>
             <option value="yesterday">Yesterday</option>
             <option value="specific">Specific Date</option>
+            <option value="range">Date Range</option>
+            <option value="month">Monthly View</option>
             <option value="week">Last 7 Days</option>
-            <option value="month">Last 30 Days</option>
             <option value="all">All Time</option>
           </Select>
 
@@ -1597,6 +1610,49 @@ export default function TransactionsPage() {
                 fontSize: "1rem"
               }}
             />
+          )}
+
+          {dateFilter === "range" && (
+            <>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                placeholder="Start Date"
+                style={{
+                  padding: "0.6rem",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "1rem"
+                }}
+              />
+              <span style={{ color: "#7f8c8d" }}>to</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                placeholder="End Date"
+                style={{
+                  padding: "0.6rem",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "1rem"
+                }}
+              />
+            </>
+          )}
+
+          {dateFilter === "month" && (
+            <Select
+              value={monthFilter}
+              onChange={(e) => setMonthFilter(e.target.value)}
+              style={{ minWidth: "160px" }}
+            >
+              <option value="">Select Month</option>
+              <option value="2025-12">December 2025 (This Month)</option>
+              <option value="2025-11">November 2025 (Last Month)</option>
+              <option value="2025-10">October 2025</option>
+            </Select>
           )}
 
           <Select

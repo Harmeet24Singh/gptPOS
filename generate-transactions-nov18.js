@@ -77,26 +77,21 @@ const transactionTypeWeights = {
   lotto: 3  // Lottery redemption transactions
 };
 
-// Hourly distribution weights for Nov 18 (Monday) - typical convenience store pattern
+// Hourly distribution weights for Nov 18 (Monday) - Store Hours: 9 AM to 9 PM
 const hourlyWeights = {
-  6: 5,   // Early morning
-  7: 15,  // Morning rush
-  8: 20,  // Peak morning
-  9: 12,
-  10: 8,
-  11: 10,
-  12: 18, // Lunch rush
-  13: 15, // Lunch continuation
-  14: 8,
-  15: 10,
-  16: 12,
-  17: 20, // Evening rush
-  18: 18, // Peak evening
-  19: 15,
-  20: 12,
-  21: 8,
-  22: 5,
-  23: 3
+  9: 25,  // Opening rush
+  10: 15,
+  11: 12,
+  12: 22, // Lunch rush peak
+  13: 18, // Lunch continuation
+  14: 10,
+  15: 12,
+  16: 15,
+  17: 25, // Evening rush peak
+  18: 20, // Peak evening
+  19: 18,
+  20: 15,
+  21: 8   // Closing hour (sometimes open until 10 PM)
 };
 
 function getRandomItem(items, weights = null) {
