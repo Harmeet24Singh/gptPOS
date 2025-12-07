@@ -91,6 +91,9 @@ export default function Navigation() {
               <NavLink>
                 <Link href="/credit-management">Credit Management</Link>
               </NavLink>
+              <NavLink>
+                <Link href="/printer-settings">🖨️ Printer</Link>
+              </NavLink>
             </>
           ) : (
             <NavLink>

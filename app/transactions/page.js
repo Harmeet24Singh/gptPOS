@@ -707,9 +707,29 @@ export default function TransactionsPage() {
     }
   };
 
-  const printTransactionReceipt = (transaction) => {
+  const printTransactionReceipt = async (transaction) => {
     if (!transaction) return;
+
+    try {
+      // Try thermal printing first
+      const { ThermalPrinter } = await import('../lib/thermalPrinter');
+      const printer = new ThermalPrinter();
+      
+      const result = await printer.printThermalReceipt(transaction);
+      
+      if (result.success) {
+        if (result.method === 'file') {
+          alert('Receipt file downloaded! Send this file to your Citizen S2000 printer.');
+        } else if (result.method === 'webserial') {
+          alert('Receipt sent to thermal printer successfully!');
+        }
+        return;
+      }
+    } catch (error) {
+      console.error('Thermal printing failed, falling back to regular print:', error);
+    }
     
+    // Fallback to regular HTML printing
     const printWindow = window.open('', '_blank');
     const receiptContent = `
       <!DOCTYPE html>

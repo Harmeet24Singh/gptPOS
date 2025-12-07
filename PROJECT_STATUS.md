@@ -152,14 +152,30 @@ A Next.js 14.2.0 based Point of Sale (POS) system with React components, MongoDB
 - Client-side error boundaries for React components
 - Detailed logging for debugging and monitoring
 
+## Recently Added Features
+- ✅ **Thermal Printer Integration** - Citizen S2000 support with ESC/POS commands
+- ✅ **Proper Receipt Cutting** - Automatic paper feed control and cutting
+- ✅ **Printer Settings Page** - Configuration for USB, network, and file printing
+- ✅ **Multiple Print Methods** - Web Serial API, network printing, and file download fallbacks
+
+### Printer Integration Details
+- **Supported Printer**: Citizen S2000 (thermal receipt printer)
+- **Connection Methods**: 
+  - USB/Serial via Web Serial API
+  - Network printing via IP address
+  - File download for manual printing
+- **ESC/POS Commands**: Full command set for formatting, cutting, and paper control
+- **Paper Control**: Proper line feeding and automatic cutting to prevent long paper feeds
+- **Settings Management**: Browser-based configuration with localStorage persistence
+
 ## Next Development Priorities
-- [ ] **Receipt Printing** - Integration with thermal printers
 - [ ] **Barcode Scanning** - Product lookup via barcode
 - [ ] **Advanced Reporting** - Detailed sales analytics and trends
 - [ ] **Multi-location Support** - Support for multiple store locations
 - [ ] **Real-time Sync** - Live updates across multiple terminals
 - [ ] **Mobile App** - React Native companion app
 - [ ] **Advanced Inventory** - Automatic reordering, supplier management
+- [ ] **Cash Drawer Integration** - Automatic drawer opening with receipts
 
 ## Contact & Support
 - Repository: gptPOS by Harmeet24Singh

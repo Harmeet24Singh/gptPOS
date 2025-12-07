@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"app\\\\transactions\\\\page.js -> ../lib/thermalPrinter\":{\"id\":\"app\\\\transactions\\\\page.js -> ../lib/thermalPrinter\",\"files\":[\"static/chunks/_app-pages-browser_app_lib_thermalPrinter_js.js\"]}}"
