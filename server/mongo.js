@@ -404,14 +404,25 @@ async function saveTransaction(txObj) {
   const res = await db.collection("transactions").insertOne(doc);
   const insertedId = res.insertedId;
 
-  // Deduct stock for each item (best-effort)
+  // Deduct stock for each item with validation
   for (const it of doc.items) {
     if (!it.product_id) continue;
     const cur = await db
       .collection("inventory")
       .findOne({ id: Number(it.product_id) });
     if (cur) {
-      const newStock = (cur.stock || 0) - (it.quantity || 0);
+      const currentStock = cur.stock || 0;
+      const quantityToDeduct = it.quantity || 0;
+      const newStock = currentStock - quantityToDeduct;
+      
+      // Log stock change for debugging
+      console.log(`Stock update for ${cur.name} (ID: ${cur.id}): ${currentStock} - ${quantityToDeduct} = ${newStock}`);
+      
+      // Always update stock, but warn if going negative
+      if (newStock < 0) {
+        console.warn(`WARNING: Item "${cur.name}" stock went negative: ${newStock}. Current: ${currentStock}, Sold: ${quantityToDeduct}`);
+      }
+      
       await db
         .collection("inventory")
         .updateOne(
