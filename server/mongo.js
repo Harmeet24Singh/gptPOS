@@ -181,6 +181,7 @@ async function getUsers() {
     const defaultUsers = [
       {
         id: "admin",
+        username: "admin",
         pwd: "admin123",
         role: "Admin",
         email: "admin@pos.local",
@@ -199,6 +200,7 @@ async function getUsers() {
       },
       {
         id: "cashier",
+        username: "cashier",
         pwd: "cashier1",
         role: "Cashier",
         email: "cashier@pos.local",
@@ -241,7 +243,7 @@ async function getUsers() {
   // Map database fields to frontend expected fields
   return users.map((user) => ({
     ...user,
-    username: user.id, // Map id to username for frontend
+    username: user.username || user.id, // Use username field if exists, fallback to id
     password: user.pwd || user.password, // Map pwd to password for frontend
   }));
 }
@@ -258,7 +260,7 @@ async function getUserByUsername(username) {
     // Map database fields to frontend expected fields
     return {
       ...user,
-      username: user.id || user.username,
+      username: user.username || user.id,
       password: user.pwd || user.password || "",
     };
   }
@@ -273,6 +275,7 @@ async function upsertUser(body) {
     {
       $set: {
         id,
+        username: body.username || body.id || id, // Store username field separately
         email: body.email || "",
         pwd: body.password || body.pwd || "", // Store as pwd in database
         role: body.role || "user",
@@ -293,6 +296,7 @@ async function replaceAllUsers(users) {
   if (users.length > 0) {
     const formattedUsers = users.map((user) => ({
       id: user.id || user.username,
+      username: user.username || user.id, // Store username field separately
       email: user.email || "",
       pwd: user.password || user.pwd || "", // Store as pwd in database
       role: user.role || "user",
@@ -311,7 +315,7 @@ async function deleteUserById(id) {
   const user = await db.collection("users").findOne({ id: id });
   if (
     user &&
-    (user.role === "admin" || user.role === "Admin" || user.id === "admin")
+    (user.role === "admin" || user.role === "Admin" || user.role === "super_admin" || user.id === "admin")
   ) {
     throw new Error(
       "Admin users cannot be deleted - this is a protected super role"

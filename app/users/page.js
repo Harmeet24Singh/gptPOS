@@ -260,7 +260,7 @@ export default function UsersPage() {
 
     if (editingUser) {
       // Prevent logged-in admin from removing their own Admin role
-      if (editingUser.id === auth.user.id && newUser.role !== "Admin") {
+      if (editingUser.id === auth.user.id && newUser.role !== "Admin" && newUser.role !== "super_admin") {
         alert(
           "You cannot remove your own Admin role. Ask another Admin to change your role."
         );
@@ -268,7 +268,7 @@ export default function UsersPage() {
       }
       
       // Prevent changing admin role for super admin (admin user)
-      if (editingUser.id === 'admin' && newUser.role !== 'Admin' && newUser.role !== 'admin') {
+      if (editingUser.id === 'admin' && newUser.role !== 'Admin' && newUser.role !== 'admin' && newUser.role !== 'super_admin') {
         alert(
           "⚠️ The 'admin' user must maintain Admin role.\n\nThis is a super role protection to ensure system access is maintained."
         );
@@ -353,7 +353,7 @@ export default function UsersPage() {
 
   const handleDelete = async (userToDelete) => {
     // Prevent deletion of admin users (super role protection)
-    if (userToDelete.role === 'Admin' || userToDelete.role === 'admin' || userToDelete.id === 'admin') {
+    if (userToDelete.role === 'Admin' || userToDelete.role === 'admin' || userToDelete.role === 'super_admin' || userToDelete.id === 'admin') {
       alert('⚠️ Admin users cannot be deleted.\n\nAdmins have super role protection and are essential for system management.');
       return;
     }
@@ -410,13 +410,13 @@ export default function UsersPage() {
     );
   }
 
-  if (auth.user.role !== "Admin") {
+  if (auth.user.role !== "Admin" && auth.user.role !== "super_admin") {
     return (
       <Container>
         <Header>
           <Title>User Management</Title>
         </Header>
-        <p>Access denied. You must be an Admin to manage users.</p>
+        <p>Access denied. You must be an Admin or Super Admin to manage users.</p>
       </Container>
     );
   }
@@ -432,7 +432,7 @@ export default function UsersPage() {
         <h3>
           {editingUser ? `Edit User: ${editingUser.username}` : "Add New User"}
         </h3>
-        {editingUser && (editingUser.role === 'Admin' || editingUser.role === 'admin' || editingUser.id === 'admin') && (
+        {editingUser && (editingUser.role === 'Admin' || editingUser.role === 'admin' || editingUser.role === 'super_admin' || editingUser.id === 'admin') && (
           <div style={{
             background: "#fff3cd",
             border: "1px solid #ffeaa7",
@@ -591,7 +591,7 @@ export default function UsersPage() {
             <Card key={user.id}>
               <div style={{ fontWeight: 700 }}>
                 {user.username}{" "}
-                {(user.role === "Admin" || user.role === "admin") && (
+                {(user.role === "Admin" || user.role === "admin" || user.role === "super_admin") && (
                   <span
                     style={{
                       color: "#27ae60",
@@ -613,7 +613,7 @@ export default function UsersPage() {
               </div>
               <div style={{ marginTop: "0.5rem" }}>
                 Role: {user.role}
-                {(user.role === "Admin" || user.role === "admin") && (
+                {(user.role === "Admin" || user.role === "admin" || user.role === "super_admin") && (
                   <span style={{ 
                     color: "#27ae60", 
                     fontSize: "0.8rem", 
@@ -644,7 +644,7 @@ export default function UsersPage() {
               </div>
               <Actions>
                 <Button onClick={() => handleEdit(user)}>Edit</Button>
-                {(user.role === 'Admin' || user.role === 'admin' || user.id === 'admin') ? (
+                {(user.role === 'Admin' || user.role === 'admin' || user.role === 'super_admin' || user.id === 'admin') ? (
                   <Button
                     style={{ 
                       background: "#95a5a6", 

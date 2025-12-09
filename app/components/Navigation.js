@@ -67,33 +67,45 @@ export default function Navigation() {
               <NavLink>
                 <Link href="/inventory">Inventory</Link>
               </NavLink>
-              <NavLink>
-                <Link href="/categories">Categories</Link>
-              </NavLink>
-              <NavLink>
-                <Link href="/users">Users</Link>
-              </NavLink>
-              <NavLink>
-                <Link href="/inventory/add">Add Item</Link>
-              </NavLink>
+              {/* Categories - Hidden from Cashiers */}
+              {auth.user.role !== "Cashier" && (
+                <NavLink>
+                  <Link href="/categories">Categories</Link>
+                </NavLink>
+              )}
+              {/* Users - Hidden from Cashiers */}
+              {auth.user.role !== "Cashier" && (
+                <NavLink>
+                  <Link href="/users">Users</Link>
+                </NavLink>
+              )}
+              {/* Add Item - Hidden from Cashiers */}
+              {auth.user.role !== "Cashier" && (
+                <NavLink>
+                  <Link href="/inventory/add">Add Item</Link>
+                </NavLink>
+              )}
               <NavLink>
                 <Link href="/transactions">Transactions</Link>
               </NavLink>
               <NavLink>
                 <Link href="/till-count">💰 Till Count</Link>
               </NavLink>
-              <NavLink>
-                <Link href="/reports">Reports</Link>
-              </NavLink>
-              <NavLink>
-                <Link href="/credit">Credit Sales</Link>
-              </NavLink>
+              {/* Reports - Hidden from Cashiers */}
+              {auth.user.role !== "Cashier" && (
+                <NavLink>
+                  <Link href="/reports">Reports</Link>
+                </NavLink>
+              )}
               <NavLink>
                 <Link href="/credit-management">Credit Management</Link>
               </NavLink>
-              <NavLink>
-                <Link href="/printer-settings">🖨️ Printer</Link>
-              </NavLink>
+              {/* Printer Settings - Hidden from Cashiers */}
+              {auth.user.role !== "Cashier" && (
+                <NavLink>
+                  <Link href="/printer-settings">🖨️ Printer</Link>
+                </NavLink>
+              )}
             </>
           ) : (
             <NavLink>
