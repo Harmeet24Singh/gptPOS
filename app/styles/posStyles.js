@@ -12,9 +12,9 @@ const colors = {
 };
 
 export const Container = styled.div`
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial;
   color: #243746;
@@ -27,8 +27,8 @@ export const Container = styled.div`
 
 export const POSGrid = styled.div`
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1rem;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 2rem;
   flex: 1;
   align-items: start;
   overflow: hidden;
@@ -59,13 +59,21 @@ export const ProductsPanel = styled.div`
 
   .products-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.8rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.2rem;
     flex: 1;
     overflow-y: auto;
     padding-right: 0.5rem;
-    min-height: 200px;
-    max-height: 300px;
+    min-height: 300px;
+    max-height: 450px;
+
+    @media (max-width: 1400px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 `;
 
@@ -134,15 +142,16 @@ export const CheckoutPanel = styled.div`
 export const ProductItem = styled.div`
   background: linear-gradient(180deg, #ffffff, #fbfdff);
   border: 1px solid rgba(36, 55, 70, 0.04);
-  border-radius: 10px;
-  padding: 0.9rem 0.9rem;
+  border-radius: 12px;
+  padding: 1.2rem 1rem;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  height: 120px;
+  gap: 0.6rem;
+  height: 140px;
   justify-content: space-between;
+  min-height: 140px;
 
   &:hover {
     transform: translateY(-6px);
@@ -152,8 +161,8 @@ export const ProductItem = styled.div`
   h4 {
     color: ${colors.primary};
     margin: 0;
-    font-size: 0.95rem;
-    line-height: 1.1;
+    font-size: 1.1rem;
+    line-height: 1.2;
     font-weight: 600;
   }
 
@@ -167,11 +176,12 @@ export const ProductItem = styled.div`
   .price {
     font-weight: 700;
     color: ${colors.accent};
+    font-size: 1.1rem;
   }
 
   .stock {
     color: ${colors.muted};
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -208,25 +218,26 @@ export const CartItem = styled.div`
   .quantity-controls {
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.5rem;
 
     button {
-      width: 24px;
-      height: 24px;
-      border-radius: 4px;
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
       border: none;
       background: ${colors.primary};
       color: white;
       cursor: pointer;
       font-weight: 700;
-      font-size: 0.8rem;
+      font-size: 1rem;
+      touch-action: manipulation;
     }
 
     span {
-      min-width: 24px;
+      min-width: 36px;
       text-align: center;
       font-weight: 700;
-      font-size: 0.85rem;
+      font-size: 1rem;
     }
   }
 
@@ -248,12 +259,14 @@ export const CartItem = styled.div`
 
 export const SearchBar = styled.input`
   flex: 1;
-  padding: 0.75rem 0.9rem;
+  padding: 1rem 1.2rem;
   border: 1px solid rgba(36, 55, 70, 0.06);
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
   background: #fff;
   box-shadow: inset 0 1px 2px rgba(36, 55, 70, 0.02);
+  min-height: 48px;
+  touch-action: manipulation;
 
   &:focus {
     outline: none;
@@ -263,12 +276,14 @@ export const SearchBar = styled.input`
 `;
 
 export const CategoryFilter = styled.select`
-  padding: 0.75rem;
+  padding: 1rem;
   border: 2px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
   background: white;
-  min-width: 150px;
+  min-width: 180px;
+  min-height: 48px;
+  touch-action: manipulation;
 
   &:focus {
     outline: none;
@@ -279,13 +294,15 @@ export const CategoryFilter = styled.select`
 export const Button = styled.button`
   background: ${colors.primary};
   color: white;
-  padding: 0.65rem 1rem;
+  padding: 1rem 1.5rem;
   border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
+  min-height: 48px;
+  touch-action: manipulation;
 
   &:hover {
     transform: translateY(-2px);
@@ -320,14 +337,16 @@ export const Total = styled.div`
 export const CheckoutButton = styled.button`
   background: ${colors.accent};
   color: white;
-  padding: 0.7rem;
+  padding: 1.2rem;
   border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  border-radius: 12px;
+  font-size: 1.2rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
   width: 100%;
+  min-height: 56px;
+  touch-action: manipulation;
 
   &:hover {
     transform: translateY(-2px);

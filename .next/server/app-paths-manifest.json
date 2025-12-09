@@ -1,1 +1,8 @@
-{}
+{
+  "/till-count/page": "app/till-count/page.js",
+  "/pos/page": "app/pos/page.js",
+  "/api/till-count/route": "app/api/till-count/route.js",
+  "/transactions/page": "app/transactions/page.js",
+  "/api/transaction/route": "app/api/transaction/route.js",
+  "/api/dashboard-preferences/route": "app/api/dashboard-preferences/route.js"
+}

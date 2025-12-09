@@ -2107,6 +2107,7 @@ function POSContent() {
                 marginBottom: "1.5rem",
                 maxHeight: "200px",
                 overflowX: "auto",
+                minHeight:"180px",
               }}
             >
               {[
@@ -3423,10 +3424,11 @@ function POSContent() {
                       {/* Credit Sale Section */}
                       <div
                         style={{
-                          padding: "1rem",
-                          backgroundColor: "#fff3cd",
-                          border: "2px solid #ffc107",
+                          padding: isCreditSale ? "1rem" : "0.5rem",
+                          backgroundColor: isCreditSale ? "#fff3cd" : "#f8f9fa",
+                          border: isCreditSale ? "2px solid #ffc107" : "1px solid #dee2e6",
                           borderRadius: "8px",
+                          transition: "all 0.2s ease",
                         }}
                       >
                         {/* Credit Sale Toggle */}
@@ -3436,9 +3438,9 @@ function POSContent() {
                             alignItems: "center",
                             gap: "0.5rem",
                             cursor: "pointer",
-                            fontWeight: "600",
-                            fontSize: "1.1rem",
-                            color: "#856404",
+                            fontWeight: isCreditSale ? "600" : "500",
+                            fontSize: isCreditSale ? "1.1rem" : "1rem",
+                            color: isCreditSale ? "#856404" : "#495057",
                             marginBottom: isCreditSale ? "0.75rem" : "0",
                             justifyContent: "center",
                           }}
