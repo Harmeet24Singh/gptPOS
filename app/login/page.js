@@ -75,36 +75,7 @@ export default function LoginPage() {
       return;
     }
 
-    // Try to authenticate with username and password using new auth API
-    try {
-      const authRes = await fetch("/api/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (authRes.ok) {
-        const { user } = await authRes.json();
-        if (user) {
-          // Store user and redirect
-          localStorage.setItem("currentUser", JSON.stringify(user));
-          const ok = await auth.login(user.username || user.id, password);
-          if (ok) {
-            router.push("/");
-            return;
-          }
-        }
-      } else {
-        const errorData = await authRes.json();
-        console.error("Auth API error:", errorData.error);
-      }
-    } catch (e) {
-      console.error("Authentication request failed:", e);
-    }
-
-    // Fallback: Try direct authentication with username and password
+    // Authenticate with username and password
     try {
       const ok = await auth.login(username, password);
       if (ok) {
@@ -112,7 +83,7 @@ export default function LoginPage() {
         return;
       }
     } catch (e) {
-      console.error("Fallback authentication failed:", e);
+      console.error("Authentication failed:", e);
     }
 
     setError("Invalid username or password");

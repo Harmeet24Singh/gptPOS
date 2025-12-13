@@ -13,6 +13,7 @@ export const processPayment = createAsyncThunk(
           quantity: c.quantity,
           price: c.price,
           applyTax: c.applyTax,
+          category: c.category,
         })),
         ...paymentData
       };

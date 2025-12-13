@@ -401,6 +401,7 @@ async function saveTransaction(txObj) {
           quantity: Number(it.quantity || 0),
           price: Number(it.price || 0),
           applyTax: !!it.applyTax,
+          category: it.category || null,
         }))
       : [],
   };

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alcohol Sales Card Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 20px 0;
+        }
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .card.active {
+            border-color: #3498db;
+            background-color: #f8f9fa;
+        }
+        .card h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            color: #2c3e50;
+        }
+        .card .amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+        .card .details {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        .card .filtered {
+            font-size: 0.75rem;
+            color: #3498db;
+            margin-top: 0.5rem;
+            font-weight: 600;
+        }
+        
+        /* Card specific colors */
+        .total-sales .amount { color: #27ae60; }
+        .cash-earnings .amount { color: #27ae60; }
+        .card-earnings .amount { color: #3498db; }
+        .credit-sales .amount { color: #e74c3c; }
+        .lottery-redeem .amount { color: #9b59b6; }
+        .alcohol-sales .amount { color: #e67e22; } /* Orange color for alcohol */
+        .unpaid-amounts .amount { color: #e74c3c; }
+
+        .highlight {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍺 Alcohol Sales Card - Transactions Page Demo</h1>
+        
+        <div class="info">
+            <h3>📍 Location in Transactions Page</h3>
+            <p>The alcohol sales card appears in the <strong>CompactCardGrid</strong> section, positioned after the <strong>Lottery Redeem card</strong> and before the <strong>Unpaid Amounts card</strong>.</p>
+            <p><strong>Visibility:</strong> The card only appears when there are transactions containing items with <code>category === 'Alcohol'</code></p>
+        </div>
+
+        <h2>💳 Transaction Dashboard Cards</h2>
+        <div class="card-grid">
+            
+            <!-- Total Sales Card -->
+            <div class="card total-sales">
+                <h3>💰 Total Sales</h3>
+                <p class="amount">$1,234.56</p>
+                <p class="details">All transactions today</p>
+            </div>
+
+            <!-- Cash Earnings Card -->
+            <div class="card cash-earnings">
+                <h3>💵 Cash Earnings</h3>
+                <p class="amount">$567.89</p>
+                <p class="details">15 transactions</p>
+            </div>
+
+            <!-- Card Earnings Card -->
+            <div class="card card-earnings">
+                <h3>💳 Card Earnings</h3>
+                <p class="amount">$432.10</p>
+                <p class="details">8 transactions</p>
+            </div>
+
+            <!-- Credit Sales Card -->
+            <div class="card credit-sales">
+                <h3>📝 Credit Sales</h3>
+                <p class="amount">$89.45</p>
+                <p class="details">3 credit sales</p>
+            </div>
+
+            <!-- Lottery Redeem Card -->
+            <div class="card lottery-redeem">
+                <h3>🎰 Lottery Redeem</h3>
+                <p class="amount">$125.00</p>
+                <p class="details">2 winnings paid</p>
+            </div>
+
+            <!-- 🍺 ALCOHOL SALES CARD - THIS IS THE NEW CARD YOU REQUESTED! -->
+            <div class="card alcohol-sales highlight">
+                <h3>🍺 Alcohol Sales</h3>
+                <p class="amount">$156.75</p>
+                <p class="details">7 transactions</p>
+                <div class="filtered">🔍 Click to filter alcohol sales</div>
+            </div>
+
+            <!-- Unpaid Amounts Card -->
+            <div class="card unpaid-amounts">
+                <h3>⏳ Unpaid Amounts</h3>
+                <p class="amount">$0.00</p>
+                <p class="details">All paid</p>
+            </div>
+
+        </div>
+
+        <div class="info">
+            <h3>✨ Features of the Alcohol Sales Card</h3>
+            <ul>
+                <li><strong>🍺 Icon:</strong> Beer emoji to represent alcohol</li>
+                <li><strong>Orange Color:</strong> Uses <code>#e67e22</code> for distinction</li>
+                <li><strong>Click to Filter:</strong> Shows only transactions with alcohol items</li>
+                <li><strong>Dynamic Data:</strong> Calculates total alcohol revenue and transaction count</li>
+                <li><strong>Smart Visibility:</strong> Only appears when alcohol sales exist</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <h3>🔧 How it Works</h3>
+            <p><strong>Function:</strong> <code>getAlcoholSalesBreakdown()</code> scans all transactions for items with <code>category === 'Alcohol'</code></p>
+            <p><strong>Filtering:</strong> When clicked, shows only transactions containing alcohol items</p>
+            <p><strong>Data:</strong> Tracks total revenue, transaction count, and item count for alcohol sales</p>
+        </div>
+
+        <h3>🎯 To See the Card in Your Live System:</h3>
+        <ol>
+            <li>Go to <strong>POS System</strong> and create a sale with alcohol items</li>
+            <li>Make sure the items have <code>category: "Alcohol"</code></li>
+            <li>Return to <strong>Transactions Page</strong></li>
+            <li>The alcohol card will appear automatically!</li>
+        </ol>
+
+    </div>
+
+    <script>
+        // Add click functionality to cards
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Remove active class from all cards
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked card
+                this.classList.add('active');
+                
+                // Add filtered indicator if not already there
+                if (!this.querySelector('.filtered')) {
+                    const filtered = document.createElement('div');
+                    filtered.className = 'filtered';
+                    filtered.textContent = '🔍 Filtered';
+                    this.appendChild(filtered);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

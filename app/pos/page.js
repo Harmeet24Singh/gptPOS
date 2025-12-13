@@ -237,12 +237,29 @@ function POSContent() {
   const [manualItem, setManualItem] = useState({
     name: "",
     price: "",
-    category: categories.length > 0 ? categories[0] : "grocery-taxable",
+    category: categories.length > 0 ? categories[0] : "Uncategorized",
     quantity: 1,
   });
 
   // Use Redux-managed inventory with smart filtering
   const filteredInventory = getFilteredInventory(searchTerm, categoryFilter);
+
+  // Debug function to check inventory categories
+  useEffect(() => {
+    if (inventory.length > 0) {
+      const itemsWithoutCategory = inventory.filter(item => !item.category);
+      if (itemsWithoutCategory.length > 0) {
+        console.warn('🚨 Items without categories found:', itemsWithoutCategory.map(item => item.name));
+      }
+      console.log('📦 Inventory category distribution:', 
+        inventory.reduce((acc, item) => {
+          const cat = item.category || 'Uncategorized';
+          acc[cat] = (acc[cat] || 0) + 1;
+          return acc;
+        }, {})
+      );
+    }
+  }, [inventory]);
 
   const addToCart = (product) => {
     // For manual items, find existing item by name, price, and category instead of ID
@@ -284,10 +301,15 @@ function POSContent() {
         );
       }
     } else {
-      setCart([
-        ...cart,
-        { ...product, quantity: 1, applyTax: product.taxable === true },
-      ]);
+      // Ensure every item has a category - use product category or default to "Uncategorized"
+      const itemWithCategory = {
+        ...product,
+        quantity: 1,
+        applyTax: product.taxable === true,
+        category: product.category || "Uncategorized"
+      };
+      
+      setCart([...cart, itemWithCategory]);
 
       // Update inventory stock immediately (optimistic update)
       if (!product.isManual && product.id) {
@@ -532,7 +554,7 @@ function POSContent() {
     setManualItem({
       name: "",
       price: "",
-      category: categories.length > 0 ? categories[0] : "grocery-taxable",
+      category: categories.length > 0 ? categories[0] : "Uncategorized",
       quantity: 1,
     });
     setShowManualEntry(false);
@@ -2466,7 +2488,7 @@ function POSContent() {
                         category:
                           categories.length > 0
                             ? categories[0]
-                            : "grocery-taxable",
+                            : "Uncategorized",
                         quantity: 1,
                       });
                     }
@@ -2572,8 +2594,8 @@ function POSContent() {
                       ) : (
                         // Fallback to hardcoded options if no categories loaded
                         <>
-                          <option value="grocery-taxable">
-                            Grocery (Taxable)
+                          <option value="Uncategorized">
+                            Uncategorized
                           </option>
                           <option value="grocery-non-taxable">
                             Grocery (Non-Taxable)
@@ -2629,7 +2651,7 @@ function POSContent() {
                           category:
                             categories.length > 0
                               ? categories[0]
-                              : "grocery-taxable",
+                              : "Uncategorized",
                           quantity: 1,
                         });
                       }}

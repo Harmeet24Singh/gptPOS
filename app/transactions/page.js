@@ -271,6 +271,107 @@ export default function TransactionsPage() {
           (t.isCreditSale && t.creditStatus === 'unpaid') ||
           (t.isPartialPayment && t.creditBalance > 0)
         );
+      } else if (transactionTypeFilter === "alcohol") {
+        filtered = filtered.filter(t => {
+          // Check if transaction contains alcohol items
+          if (t.items && Array.isArray(t.items)) {
+            return t.items.some(item => {
+              // Check by category
+              if (item.category === 'Alcohol') {
+                return true;
+              }
+              // Check by name patterns
+              if (item.name) {
+                const itemNameLower = item.name.toLowerCase();
+                const alcoholKeywords = ['beer', 'bud', 'budweiser', 'corona', 'heineken', 'molson', 'labatt', 'blue', 'wine', 'vodka', 'rum', 'whiskey', 'dab', 'maibock'];
+                return alcoholKeywords.some(keyword => itemNameLower.includes(keyword));
+              }
+              return false;
+            });
+          }
+          return false;
+        });
+      } else if (transactionTypeFilter === "grocery") {
+        filtered = filtered.filter(t => {
+          // Check if transaction contains grocery items (everything except excluded categories)
+          if (t.items && Array.isArray(t.items)) {
+            return t.items.some(item => {
+              // Excluded categories and keywords
+              const excludedCategories = ['Alcohol', 'Tobacco', 'Lotto', 'lotto', 'Uhaul'];
+              const excludedKeywords = [
+                'beer', 'bud', 'budweiser', 'corona', 'heineken', 'molson', 'labatt', 'blue', 'wine', 'vodka', 'rum', 'whiskey',
+                'cigarette', 'cigar', 'tobacco', 'marlboro', 'camel', 'newport',
+                'lotto', 'lottery', 'scratch', 'ticket', 'powerball', 'instant',
+                'uhaul', 'u-haul', 'truck', 'rental', 'moving'
+              ];
+              
+              // Exclude specific categories
+              if (item.category && excludedCategories.some(cat => 
+                item.category.toLowerCase().includes(cat.toLowerCase())
+              )) {
+                return false;
+              }
+              
+              // Exclude items with excluded keywords in name
+              if (item.name) {
+                const itemNameLower = item.name.toLowerCase();
+                const hasExcludedKeyword = excludedKeywords.some(keyword => 
+                  itemNameLower.includes(keyword.toLowerCase())
+                );
+                if (hasExcludedKeyword) {
+                  return false;
+                }
+              }
+              
+              // Everything else is considered grocery
+              return true;
+            });
+          }
+          return false;
+        });
+      } else if (transactionTypeFilter === "tobacco") {
+        filtered = filtered.filter(t => {
+          // Check if transaction contains tobacco items
+          if (t.items && Array.isArray(t.items)) {
+            return t.items.some(item => {
+              // Check by category
+              if (item.category && item.category.toLowerCase().includes('tobacco')) {
+                return true;
+              }
+              // Check by name patterns
+              if (item.name) {
+                const itemNameLower = item.name.toLowerCase();
+                const tobaccoKeywords = ['cigarette', 'cigar', 'tobacco', 'marlboro', 'camel', 'newport', 'kool', 'parliament', 'american spirit', 'pall mall', 'winston', 'menthol', 'chewing tobacco', 'snuff', 'snus', 'dip'];
+                return tobaccoKeywords.some(keyword => itemNameLower.includes(keyword));
+              }
+              return false;
+            });
+          }
+          return false;
+        });
+      } else if (transactionTypeFilter === "lottery") {
+        filtered = filtered.filter(t => {
+          // Check if transaction contains lottery items
+          if (t.items && Array.isArray(t.items)) {
+            return t.items.some(item => {
+              // Check by category
+              if (item.category && (
+                item.category.toLowerCase().includes('lotto') || 
+                item.category.toLowerCase().includes('lottery')
+              )) {
+                return true;
+              }
+              // Check by name patterns
+              if (item.name) {
+                const itemNameLower = item.name.toLowerCase();
+                const lotteryKeywords = ['lotto', 'lottery', 'scratch', 'ticket', 'powerball', 'mega millions', 'instant', 'draw', 'pick', 'daily', 'max', 'keno', 'poker lotto', 'encore'];
+                return lotteryKeywords.some(keyword => itemNameLower.includes(keyword));
+              }
+              return false;
+            });
+          }
+          return false;
+        });
       } else {
         filtered = filtered.filter(t => t.transactionType === transactionTypeFilter);
       }
@@ -1196,6 +1297,277 @@ export default function TransactionsPage() {
     return { creditTotal, creditTransactionCount };
   };
 
+  const getAlcoholSalesBreakdown = () => {
+    let alcoholTotal = 0;
+    let alcoholTransactionCount = 0;
+    let alcoholItemCount = 0;
+
+
+    
+    // Check if we should show simulated data when no transactions exist
+    if (filteredTransactions.length === 0) {
+      return {
+        alcoholTotal: 0,
+        alcoholTransactionCount: 0,
+        alcoholItemCount: 0
+      };
+    }
+
+    // Alcohol keywords to detect alcohol items when category is missing
+    const alcoholKeywords = [
+      'beer', 'bud', 'budweiser', 'corona', 'heineken', 'molson', 'canadian', 
+      'miller', 'lite', 'labatt', 'blue', 'pilsner', 'stella', 'artois',
+      'smirnoff', 'ice', 'twisted', 'tea', 'sapporo', 'white', 'claw',
+      'wine', 'vodka', 'rum', 'whiskey', 'gin', 'tequila', 'brandy',
+      'dab', 'maibock'
+    ];
+
+    const isAlcoholItem = (item) => {
+      // First check if category exists and is Alcohol
+      if (item.category === 'Alcohol') {
+        return true;
+      }
+      
+      // Check name for alcohol keywords (works with or without category)
+      if (item.name) {
+        const itemNameLower = item.name.toLowerCase();
+        const foundKeyword = alcoholKeywords.find(keyword => itemNameLower.includes(keyword));
+        if (foundKeyword) {
+          return true;
+        }
+      }
+      
+      return false;
+    };
+
+    filteredTransactions.forEach((transaction, index) => {
+      let hasAlcohol = false;
+      let alcoholAmountInTransaction = 0;
+
+      if (transaction.items && Array.isArray(transaction.items)) {
+        transaction.items.forEach((item, itemIndex) => {
+          if (isAlcoholItem(item)) {
+            hasAlcohol = true;
+            alcoholAmountInTransaction += (item.price * item.quantity);
+            alcoholItemCount += item.quantity;
+          }
+        });
+      }
+
+      if (hasAlcohol) {
+        alcoholTotal += alcoholAmountInTransaction;
+        alcoholTransactionCount++;
+      }
+    });
+
+    return { alcoholTotal, alcoholTransactionCount, alcoholItemCount };
+  };
+
+  const getGrocerySalesBreakdown = () => {
+    let groceryTotal = 0;
+    let groceryTransactionCount = 0;
+    let groceryItemCount = 0;
+
+    if (filteredTransactions.length === 0) {
+      return {
+        groceryTotal: 0,
+        groceryTransactionCount: 0,
+        groceryItemCount: 0
+      };
+    }
+
+    // Excluded categories and keywords (everything except these is considered grocery)
+    const excludedCategories = ['Alcohol', 'Tobacco', 'Lotto', 'lotto', 'Uhaul'];
+    const excludedKeywords = [
+      // Alcohol
+      'beer', 'bud', 'budweiser', 'corona', 'heineken', 'molson', 'canadian', 
+      'miller', 'lite', 'labatt', 'blue', 'pilsner', 'stella', 'artois',
+      'smirnoff', 'ice', 'twisted', 'tea', 'sapporo', 'white', 'claw',
+      'wine', 'vodka', 'rum', 'whiskey', 'gin', 'tequila', 'brandy',
+      // Tobacco
+      'cigarette', 'cigar', 'tobacco', 'marlboro', 'camel', 'newport',
+      // Lotto
+      'lotto', 'lottery', 'scratch', 'ticket', 'powerball', 'mega millions',
+      'instant', 'draw', 'pick', 'daily', 'max',
+      // Uhaul
+      'uhaul', 'u-haul', 'truck', 'rental', 'moving'
+    ];
+
+    const isGroceryItem = (item) => {
+      // Exclude specific categories
+      if (item.category && excludedCategories.some(cat => 
+        item.category.toLowerCase().includes(cat.toLowerCase())
+      )) {
+        return false;
+      }
+      
+      // Exclude items with excluded keywords in name
+      if (item.name) {
+        const itemNameLower = item.name.toLowerCase();
+        const hasExcludedKeyword = excludedKeywords.some(keyword => 
+          itemNameLower.includes(keyword.toLowerCase())
+        );
+        if (hasExcludedKeyword) {
+          return false;
+        }
+      }
+      
+      // Everything else is considered grocery
+      return true;
+    };
+
+    filteredTransactions.forEach((transaction, index) => {
+      let hasGrocery = false;
+      let groceryAmountInTransaction = 0;
+
+      if (transaction.items && Array.isArray(transaction.items)) {
+        transaction.items.forEach((item, itemIndex) => {
+          if (isGroceryItem(item)) {
+            hasGrocery = true;
+            groceryAmountInTransaction += (item.price * item.quantity);
+            groceryItemCount += item.quantity;
+          }
+        });
+      }
+
+      if (hasGrocery) {
+        groceryTotal += groceryAmountInTransaction;
+        groceryTransactionCount++;
+      }
+    });
+
+    return { groceryTotal, groceryTransactionCount, groceryItemCount };
+  };
+
+  const getTobaccoSalesBreakdown = () => {
+    let tobaccoTotal = 0;
+    let tobaccoTransactionCount = 0;
+    let tobaccoItemCount = 0;
+
+    if (filteredTransactions.length === 0) {
+      return {
+        tobaccoTotal: 0,
+        tobaccoTransactionCount: 0,
+        tobaccoItemCount: 0
+      };
+    }
+
+    // Tobacco keywords to detect tobacco items
+    const tobaccoKeywords = [
+      'cigarette', 'cigar', 'tobacco', 'marlboro', 'camel', 'newport', 'kool',
+      'parliament', 'american spirit', 'pall mall', 'winston', 'lucky strike',
+      'chesterfield', 'virginia slims', 'menthol', 'light', 'ultra light',
+      'pipe tobacco', 'chewing tobacco', 'snuff', 'snus', 'dip', 'copenhagen',
+      'grizzly', 'skoal', 'kodiak', 'red man'
+    ];
+
+    const isTobaccoItem = (item) => {
+      // First check if category exists and is Tobacco
+      if (item.category && item.category.toLowerCase().includes('tobacco')) {
+        return true;
+      }
+      
+      // Check name for tobacco keywords
+      if (item.name) {
+        const itemNameLower = item.name.toLowerCase();
+        const foundKeyword = tobaccoKeywords.find(keyword => itemNameLower.includes(keyword));
+        if (foundKeyword) {
+          return true;
+        }
+      }
+      
+      return false;
+    };
+
+    filteredTransactions.forEach((transaction, index) => {
+      let hasTobacco = false;
+      let tobaccoAmountInTransaction = 0;
+
+      if (transaction.items && Array.isArray(transaction.items)) {
+        transaction.items.forEach((item, itemIndex) => {
+          if (isTobaccoItem(item)) {
+            hasTobacco = true;
+            tobaccoAmountInTransaction += (item.price * item.quantity);
+            tobaccoItemCount += item.quantity;
+          }
+        });
+      }
+
+      if (hasTobacco) {
+        tobaccoTotal += tobaccoAmountInTransaction;
+        tobaccoTransactionCount++;
+      }
+    });
+
+    return { tobaccoTotal, tobaccoTransactionCount, tobaccoItemCount };
+  };
+
+  const getLotterySalesBreakdown = () => {
+    let lotteryTotal = 0;
+    let lotteryTransactionCount = 0;
+    let lotteryItemCount = 0;
+
+    if (filteredTransactions.length === 0) {
+      return {
+        lotteryTotal: 0,
+        lotteryTransactionCount: 0,
+        lotteryItemCount: 0
+      };
+    }
+
+    // Lottery keywords to detect lottery items
+    const lotteryKeywords = [
+      'lotto', 'lottery', 'scratch', 'ticket', 'powerball', 'mega millions',
+      'instant', 'draw', 'pick', 'daily', 'max', 'win for life', 'cash for life',
+      'scratch off', 'scratcher', 'quick pick', 'lotto max', 'lotto 649',
+      'super 7', 'daily grand', 'keno', 'poker lotto', 'sports select',
+      'pro line', 'point spread', 'over under', 'pools', 'encore'
+    ];
+
+    const isLotteryItem = (item) => {
+      // First check if category exists and is Lottery/Lotto
+      if (item.category && (
+        item.category.toLowerCase().includes('lotto') || 
+        item.category.toLowerCase().includes('lottery')
+      )) {
+        return true;
+      }
+      
+      // Check name for lottery keywords
+      if (item.name) {
+        const itemNameLower = item.name.toLowerCase();
+        const foundKeyword = lotteryKeywords.find(keyword => itemNameLower.includes(keyword));
+        if (foundKeyword) {
+          return true;
+        }
+      }
+      
+      return false;
+    };
+
+    filteredTransactions.forEach((transaction, index) => {
+      let hasLottery = false;
+      let lotteryAmountInTransaction = 0;
+
+      if (transaction.items && Array.isArray(transaction.items)) {
+        transaction.items.forEach((item, itemIndex) => {
+          if (isLotteryItem(item)) {
+            hasLottery = true;
+            lotteryAmountInTransaction += (item.price * item.quantity);
+            lotteryItemCount += item.quantity;
+          }
+        });
+      }
+
+      if (hasLottery) {
+        lotteryTotal += lotteryAmountInTransaction;
+        lotteryTransactionCount++;
+      }
+    });
+
+    return { lotteryTotal, lotteryTransactionCount, lotteryItemCount };
+  };
+
   const getUnpaidAmounts = () => {
     let unpaidTotal = 0;
     let unpaidTransactionCount = 0;
@@ -1492,6 +1864,78 @@ export default function TransactionsPage() {
             )}
           </ClickableCard>
         )}
+
+        {/* Alcohol Sales */}
+        <ClickableCard 
+          isActive={transactionTypeFilter === "alcohol"}
+          onClick={() => handleCardFilter("alcohol")}
+        >
+          <h3>🍺 Alcohol Sales</h3>
+          <p style={{ fontWeight: "bold", color: "#e67e22" }}>
+            ${getAlcoholSalesBreakdown().alcoholTotal.toFixed(2)}
+          </p>
+          <p>{getAlcoholSalesBreakdown().alcoholTransactionCount} transactions</p>
+
+          {transactionTypeFilter === "alcohol" && (
+            <div style={{ fontSize: "0.75rem", color: "#3498db", marginTop: "0.5rem", fontWeight: "600" }}>
+              🔍 Filtered
+            </div>
+          )}
+        </ClickableCard>
+
+        {/* Grocery Sales */}
+        <ClickableCard 
+          isActive={transactionTypeFilter === "grocery"}
+          onClick={() => handleCardFilter("grocery")}
+        >
+          <h3>🛒 Grocery Sales</h3>
+          <p style={{ fontWeight: "bold", color: "#27ae60" }}>
+            ${getGrocerySalesBreakdown().groceryTotal.toFixed(2)}
+          </p>
+          <p>{getGrocerySalesBreakdown().groceryTransactionCount} transactions</p>
+
+          {transactionTypeFilter === "grocery" && (
+            <div style={{ fontSize: "0.75rem", color: "#3498db", marginTop: "0.5rem", fontWeight: "600" }}>
+              🔍 Filtered
+            </div>
+          )}
+        </ClickableCard>
+
+        {/* Tobacco Sales */}
+        <ClickableCard 
+          isActive={transactionTypeFilter === "tobacco"}
+          onClick={() => handleCardFilter("tobacco")}
+        >
+          <h3>🚬 Tobacco Sales</h3>
+          <p style={{ fontWeight: "bold", color: "#8b4513" }}>
+            ${getTobaccoSalesBreakdown().tobaccoTotal.toFixed(2)}
+          </p>
+          <p>{getTobaccoSalesBreakdown().tobaccoTransactionCount} transactions</p>
+
+          {transactionTypeFilter === "tobacco" && (
+            <div style={{ fontSize: "0.75rem", color: "#3498db", marginTop: "0.5rem", fontWeight: "600" }}>
+              🔍 Filtered
+            </div>
+          )}
+        </ClickableCard>
+
+        {/* Lottery Sales */}
+        <ClickableCard 
+          isActive={transactionTypeFilter === "lottery"}
+          onClick={() => handleCardFilter("lottery")}
+        >
+          <h3>🎫 Lottery Sales</h3>
+          <p style={{ fontWeight: "bold", color: "#9b59b6" }}>
+            ${getLotterySalesBreakdown().lotteryTotal.toFixed(2)}
+          </p>
+          <p>{getLotterySalesBreakdown().lotteryTransactionCount} transactions</p>
+
+          {transactionTypeFilter === "lottery" && (
+            <div style={{ fontSize: "0.75rem", color: "#3498db", marginTop: "0.5rem", fontWeight: "600" }}>
+              🔍 Filtered
+            </div>
+          )}
+        </ClickableCard>
 
         {/* Fourth priority: Unpaid Amounts */}
         <ClickableCard 

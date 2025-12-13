@@ -1,10 +1,6 @@
 {
-  "/reports/page": "app/reports/page.js",
-  "/inventory/add/page": "app/inventory/add/page.js",
-  "/users/page": "app/users/page.js",
   "/transactions/page": "app/transactions/page.js",
   "/page": "app/page.js",
   "/pos/page": "app/pos/page.js",
-  "/credit-management/page": "app/credit-management/page.js",
-  "/api/categories/route": "app/api/categories/route.js"
+  "/inventory/page": "app/inventory/page.js"
 }

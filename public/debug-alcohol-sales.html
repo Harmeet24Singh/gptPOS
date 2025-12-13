@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alcohol Sales Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .transaction { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; }
+        .item { margin: 5px 0; padding: 5px; background: white; border-radius: 4px; }
+        .alcohol-item { background: #ffeaa7 !important; font-weight: bold; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🍺 Alcohol Sales Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h2>🔍 Debug Controls</h2>
+        <button onclick="fetchTransactions()">Fetch Transactions</button>
+        <button onclick="checkAlcoholSales()">Check Alcohol Sales</button>
+        <button onclick="createTestAlcoholTransaction()">Create Test Alcohol Transaction</button>
+        <button onclick="showTransactionStructure()">Show Transaction Structure</button>
+    </div>
+
+    <div id="results" class="debug-section">
+        <h3>Results will appear here...</h3>
+    </div>
+
+    <div id="transactionData" class="debug-section" style="display: none;">
+        <h3>📋 Transaction Data</h3>
+        <div id="transactionList"></div>
+    </div>
+
+    <script>
+        let transactions = [];
+
+        async function fetchTransactions() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>🔄 Fetching transactions...</h3>';
+            
+            try {
+                const response = await fetch('/api/transaction?limit=50');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                transactions = await response.json();
+                results.innerHTML = `
+                    <div class="success">
+                        <h3>✅ Fetched ${transactions.length} transactions</h3>
+                        <p>Click "Check Alcohol Sales" to analyze them</p>
+                    </div>
+                `;
+                
+                showTransactionStructure();
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Failed to fetch transactions</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function checkAlcoholSales() {
+            const results = document.getElementById('results');
+            
+            if (transactions.length === 0) {
+                results.innerHTML = `
+                    <div class="warning">
+                        <h3>⚠️ No transactions loaded</h3>
+                        <p>Click "Fetch Transactions" first</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let alcoholTotal = 0;
+            let alcoholTransactionCount = 0;
+            let alcoholItemCount = 0;
+            const alcoholTransactions = [];
+            const allCategories = new Set();
+
+            transactions.forEach((transaction, index) => {
+                let hasAlcohol = false;
+                let alcoholAmountInTransaction = 0;
+                let transactionItems = [];
+
+                if (transaction.items && Array.isArray(transaction.items)) {
+                    transaction.items.forEach(item => {
+                        if (item.category) {
+                            allCategories.add(item.category);
+                        }
+                        
+                        transactionItems.push({
+                            name: item.name || 'Unknown',
+                            category: item.category || 'No Category',
+                            price: item.price || 0,
+                            quantity: item.quantity || 0,
+                            isAlcohol: item.category === 'Alcohol'
+                        });
+
+                        if (item.category === 'Alcohol') {
+                            hasAlcohol = true;
+                            alcoholAmountInTransaction += (item.price * item.quantity);
+                            alcoholItemCount += item.quantity;
+                        }
+                    });
+                }
+
+                if (hasAlcohol) {
+                    alcoholTotal += alcoholAmountInTransaction;
+                    alcoholTransactionCount++;
+                    alcoholTransactions.push({
+                        index,
+                        id: transaction.id || transaction._id,
+                        timestamp: transaction.timestamp,
+                        total: transaction.total,
+                        alcoholAmount: alcoholAmountInTransaction,
+                        items: transactionItems.filter(item => item.isAlcohol)
+                    });
+                }
+            });
+
+            results.innerHTML = `
+                <div class="${alcoholTransactionCount > 0 ? 'success' : 'warning'}">
+                    <h3>🍺 Alcohol Sales Analysis</h3>
+                    <p><strong>Total Alcohol Revenue:</strong> $${alcoholTotal.toFixed(2)}</p>
+                    <p><strong>Transactions with Alcohol:</strong> ${alcoholTransactionCount}</p>
+                    <p><strong>Total Alcohol Items Sold:</strong> ${alcoholItemCount}</p>
+                    <p><strong>All Categories Found:</strong> ${Array.from(allCategories).join(', ') || 'None'}</p>
+                    
+                    ${alcoholTransactionCount > 0 ? 
+                        '<p>✅ <strong>Card SHOULD be visible</strong></p>' : 
+                        '<p>❌ <strong>Card will NOT be visible</strong> (no alcohol transactions)</p>'
+                    }
+                </div>
+                
+                ${alcoholTransactions.length > 0 ? `
+                    <h4>🍺 Alcohol Transactions:</h4>
+                    ${alcoholTransactions.map(t => `
+                        <div class="transaction">
+                            <strong>Transaction ${t.index + 1}</strong> (ID: ${t.id})<br>
+                            Date: ${new Date(t.timestamp).toLocaleString()}<br>
+                            Alcohol Amount: $${t.alcoholAmount.toFixed(2)}<br>
+                            Items: ${t.items.map(item => `${item.name} (${item.quantity}x $${item.price})`).join(', ')}
+                        </div>
+                    `).join('')}
+                ` : ''}
+            `;
+        }
+
+        function showTransactionStructure() {
+            const transactionData = document.getElementById('transactionData');
+            const transactionList = document.getElementById('transactionList');
+            
+            if (transactions.length === 0) return;
+
+            const sample = transactions.slice(0, 3);
+            transactionList.innerHTML = `
+                <h4>📋 Sample Transaction Structure (First 3):</h4>
+                ${sample.map((t, i) => `
+                    <div class="transaction">
+                        <h5>Transaction ${i + 1}:</h5>
+                        <div class="item">
+                            <strong>ID:</strong> ${t.id || t._id || 'No ID'}<br>
+                            <strong>Total:</strong> $${t.total || 'No total'}<br>
+                            <strong>Timestamp:</strong> ${t.timestamp || 'No timestamp'}<br>
+                            <strong>Has Items:</strong> ${t.items ? 'Yes' : 'No'} (${t.items?.length || 0} items)
+                        </div>
+                        ${t.items && t.items.length > 0 ? `
+                            <h6>Items:</h6>
+                            ${t.items.map(item => `
+                                <div class="item ${item.category === 'Alcohol' ? 'alcohol-item' : ''}">
+                                    <strong>${item.name || 'Unnamed Item'}</strong><br>
+                                    Category: <strong>${item.category || 'No Category'}</strong><br>
+                                    Price: $${item.price || 0} x ${item.quantity || 0}
+                                </div>
+                            `).join('')}
+                        ` : '<p>No items in this transaction</p>'}
+                    </div>
+                `).join('')}
+            `;
+            
+            transactionData.style.display = 'block';
+        }
+
+        async function createTestAlcoholTransaction() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>🔄 Creating test alcohol transaction...</h3>';
+            
+            const testTransaction = {
+                items: [
+                    {
+                        barcode: "TEST001",
+                        name: "Corona Beer",
+                        price: 4.99,
+                        quantity: 2,
+                        category: "Alcohol",
+                        totalPrice: 9.98
+                    },
+                    {
+                        barcode: "TEST002", 
+                        name: "Red Wine Bottle",
+                        price: 12.50,
+                        quantity: 1,
+                        category: "Alcohol",
+                        totalPrice: 12.50
+                    }
+                ],
+                paymentBreakdown: [
+                    {
+                        method: "cash",
+                        amount: 22.48
+                    }
+                ],
+                transactionType: "regular",
+                total: 22.48,
+                finalTotal: 22.48,
+                timestamp: new Date().toISOString(),
+                cashier: "admin"
+            };
+
+            try {
+                const response = await fetch('/api/transaction', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': 'dev-secret'
+                    },
+                    body: JSON.stringify(testTransaction)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    results.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Test alcohol transaction created!</h3>
+                            <p>Transaction ID: ${result.id || result._id}</p>
+                            <p>Now refresh the transactions page to see the alcohol card!</p>
+                        </div>
+                    `;
+                    // Refresh transactions
+                    setTimeout(() => fetchTransactions(), 1000);
+                } else {
+                    const error = await response.json();
+                    results.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Failed to create test transaction</h3>
+                            <pre>${JSON.stringify(error, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error creating test transaction</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-load transactions on page load
+        window.onload = () => fetchTransactions();
+    </script>
+</body>
+</html>
