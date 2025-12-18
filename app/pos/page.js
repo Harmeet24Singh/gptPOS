@@ -31,8 +31,7 @@ const POSWrapper = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  max-height: 100vh;
-  overflow: hidden;
+  overflow: auto;
 `;
 
 const KeyboardArea = styled.div`
@@ -247,13 +246,17 @@ function POSContent() {
   // Debug function to check inventory categories
   useEffect(() => {
     if (inventory.length > 0) {
-      const itemsWithoutCategory = inventory.filter(item => !item.category);
+      const itemsWithoutCategory = inventory.filter((item) => !item.category);
       if (itemsWithoutCategory.length > 0) {
-        console.warn('🚨 Items without categories found:', itemsWithoutCategory.map(item => item.name));
+        console.warn(
+          "🚨 Items without categories found:",
+          itemsWithoutCategory.map((item) => item.name)
+        );
       }
-      console.log('📦 Inventory category distribution:', 
+      console.log(
+        "📦 Inventory category distribution:",
         inventory.reduce((acc, item) => {
-          const cat = item.category || 'Uncategorized';
+          const cat = item.category || "Uncategorized";
           acc[cat] = (acc[cat] || 0) + 1;
           return acc;
         }, {})
@@ -306,9 +309,9 @@ function POSContent() {
         ...product,
         quantity: 1,
         applyTax: product.taxable === true,
-        category: product.category || "Uncategorized"
+        category: product.category || "Uncategorized",
       };
-      
+
       setCart([...cart, itemWithCategory]);
 
       // Update inventory stock immediately (optimistic update)
@@ -1253,6 +1256,22 @@ function POSContent() {
     // Reset card fee states
     setCardType("debit");
     setCardFeeEnabled(false);
+    // Reset customer states (fixes lotto winnings focus issue)
+    setSelectedCustomer(null);
+    setCustomerBalance(0);
+    setShowPaymentOptions(false);
+    setShowCustomerSuggestions(false);
+    // Reset virtual keyboard states (fixes focus persistence)
+    setShowKeyboard(false);
+    setActiveInputRef(null);
+    setKeyboardMode("numeric");
+    setLastEdited(null);
+    // Focus back on search input (default state)
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 100);
   };
 
   // Credit customer management functions
@@ -1970,12 +1989,11 @@ function POSContent() {
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
+                justifyContent: "flex-end",
                 alignItems: "center",
                 marginBottom: "1rem",
               }}
             >
-              <h2>Products</h2>
               <div
                 style={{
                   fontSize: "0.75rem",
@@ -2124,12 +2142,12 @@ function POSContent() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-                gap: "0.8rem",
+                gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                gap: "0.6rem",
                 marginBottom: "1.5rem",
-                maxHeight: "200px",
+                maxHeight: "150px",
                 overflowX: "auto",
-                minHeight:"180px",
+                minHeight: "140px",
               }}
             >
               {[
@@ -2341,7 +2359,7 @@ function POSContent() {
                   style={{
                     background: `linear-gradient(135deg, ${category.color}, ${category.color}dd)`,
                     color: "white",
-                    padding: "0.8rem",
+                    padding: "0.6rem",
                     borderRadius: "10px",
                     cursor: "pointer",
                     textAlign: "center",
@@ -2594,9 +2612,7 @@ function POSContent() {
                       ) : (
                         // Fallback to hardcoded options if no categories loaded
                         <>
-                          <option value="Uncategorized">
-                            Uncategorized
-                          </option>
+                          <option value="Uncategorized">Uncategorized</option>
                           <option value="grocery-non-taxable">
                             Grocery (Non-Taxable)
                           </option>
@@ -2801,39 +2817,6 @@ function POSContent() {
           </ProductsPanel>
 
           <CheckoutPanel>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "0.5rem",
-              }}
-            >
-              <h2 style={{ margin: 0 }}>Current Sale</h2>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <Button
-                  onClick={() => {
-                    setIsCreditSale(!isCreditSale);
-                    if (isCreditSale) {
-                      setCreditCustomerName("");
-                      setCreditAmount(0);
-                      setSelectedCustomer(null);
-                      setCustomerBalance(0);
-                    }
-                  }}
-                  style={{
-                    background: isCreditSale ? "#28a745" : "#6c757d",
-                    color: "white",
-                    padding: "0.5rem 0.75rem",
-                    fontSize: "0.8rem",
-                    fontWeight: "600",
-                  }}
-                >
-                  💳 Credit
-                </Button>
-              </div>
-            </div>
-
             {/* Credit Sale Status Indicator */}
             {isCreditSale && (
               <div
@@ -2891,22 +2874,6 @@ function POSContent() {
                     <div className="item-details">
                       <h4>{item.name}</h4>
                       <p>${item.price.toFixed(2)} each</p>
-                      <button
-                        onClick={() => toggleItemTax(item.id)}
-                        style={{
-                          fontSize: "0.75rem",
-                          padding: "0.25rem 0.5rem",
-                          borderRadius: "12px",
-                          border: "none",
-                          background:
-                            item.applyTax === true ? "#27ae60" : "#95a5a6",
-                          color: "white",
-                          cursor: "pointer",
-                          marginTop: "0.25rem",
-                        }}
-                      >
-                        {item.applyTax === true ? "HST ON" : "HST OFF"}
-                      </button>
                     </div>
                     <div className="quantity-controls">
                       <button
@@ -2937,12 +2904,37 @@ function POSContent() {
                         </div>
                       )}
                     </div>
-                    <button
-                      className="remove-btn"
-                      onClick={() => removeFromCart(item.id)}
-                    >
-                      ×
-                    </button>
+                    <div className="item-buttons">
+                      <button
+                        onClick={() => toggleItemTax(item.id)}
+                        style={{
+                          fontSize: "0.75rem",
+                          padding: "0.25rem 0.5rem",
+                          borderRadius: "12px",
+                          border: "none",
+                          background:
+                            item.applyTax === true ? "#27ae60" : "#95a5a6",
+                          color: "white",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {item.applyTax === true ? "HST ON" : "HST OFF"}
+                      </button>
+                      <button
+                        className="remove-btn"
+                        onClick={() => removeFromCart(item.id)}
+                        style={{
+                          background: "#e74c3c",
+                          borderRadius: "6px",
+                          padding: "0.25rem 0.5rem",
+                          color: "white",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </CartItem>
                 ))
               )}
@@ -2950,6 +2942,226 @@ function POSContent() {
 
             {/* Scrollable checkout sections */}
             <div className="checkout-sections">
+              {/* Lotto Winnings */}
+              <div
+                style={{
+                  margin: "0.5rem 0",
+                  padding: "0.5rem",
+                  backgroundColor: "#e8f5e8",
+                  border: "1px solid #c3e6c3",
+                  borderRadius: "6px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <label
+                    style={{
+                      minWidth: "140px",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    🎰 Lotto Winnings Amount:
+                  </label>
+                  <input
+                    ref={lottoWinningsRef}
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\.?[0-9]*"
+                    value={lottoWinnings}
+                    onFocus={() => handleInputFocus(lottoWinningsRef)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow empty, numbers, and decimal point
+                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                        setLottoWinnings(value);
+                      }
+                    }}
+                    style={{
+                      padding: "0.4rem",
+                      flex: 1,
+                      borderRadius: "4px",
+                      border: "1px solid #ddd",
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                {(Number(lottoWinnings) || 0) > 0 && (
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      fontSize: "0.8rem",
+                      color: "#28a745",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    💰 Customer won ${(Number(lottoWinnings) || 0).toFixed(2)}{" "}
+                    in lottery
+                  </div>
+                )}
+              </div>
+
+              {/* Enhanced Card Fee Section */}
+              <div
+                style={{
+                  margin: "0.5rem 0",
+                  padding: "0.5rem",
+                  backgroundColor: "#f8f4ff",
+                  border: "1px solid #d4c5f9",
+                  borderRadius: "6px",
+                }}
+              >
+                {/* Card Fee Enable/Disable */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    marginBottom: cardFeeEnabled ? "0.5rem" : "0",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={cardFeeEnabled}
+                      onChange={(e) => {
+                        const isEnabled = e.target.checked;
+                        setCardFeeEnabled(isEnabled);
+
+                        const currentCardAmount = Number(
+                          parseFloat(cardAmount) || 0
+                        );
+                        const currentCashAmount = Number(
+                          parseFloat(cashAmount) || 0
+                        );
+
+                        if (isEnabled) {
+                          // When enabling, add card fee to total
+                          const totalAmount =
+                            currentCardAmount +
+                            currentCashAmount +
+                            CARD_FEE_AMOUNT;
+                          setCardAmount(String(totalAmount.toFixed(2)));
+                          setCashAmount("0");
+                          setLastEdited("card");
+                        } else {
+                          // When disabling, remove card fee from total
+                          if (currentCardAmount >= CARD_FEE_AMOUNT) {
+                            const newCardAmount = Math.max(
+                              0,
+                              currentCardAmount - CARD_FEE_AMOUNT
+                            );
+                            setCardAmount(String(newCardAmount.toFixed(2)));
+                          }
+                        }
+                      }}
+                      style={{
+                        marginRight: "0.25rem",
+                        transform: "scale(1.1)",
+                      }}
+                    />
+                    💳 Card Fees - Apply fee (+${CARD_FEE_AMOUNT.toFixed(2)})
+                  </label>
+                </div>
+
+                {/* Fee Status Display */}
+                {cardFeeEnabled && (
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      padding: "0.25rem 0.5rem",
+                      backgroundColor: "#fff3cd",
+                      border: "1px solid #ffeaa7",
+                      borderRadius: "4px",
+                      fontSize: "0.8rem",
+                      color: "#856404",
+                    }}
+                  >
+                    💰 Card processing fee: ${CARD_FEE_AMOUNT.toFixed(2)} added
+                    to total
+                  </div>
+                )}
+              </div>
+
+              {/* Discount */}
+              <div
+                style={{
+                  margin: "0.5rem 0",
+                  padding: "0.5rem",
+                  backgroundColor: "#fff3e0",
+                  border: "1px solid #ffcc80",
+                  borderRadius: "6px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                  }}
+                >
+                  <label
+                    style={{
+                      minWidth: "120px",
+                      fontSize: "0.9rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    💰 Discount Amount:
+                  </label>
+                  <input
+                    ref={discountRef}
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\.?[0-9]*"
+                    value={discountAmount}
+                    onFocus={() => handleInputFocus(discountRef)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow empty, numbers, and decimal point
+                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                        setDiscountAmount(value);
+                      }
+                    }}
+                    style={{
+                      padding: "0.4rem",
+                      flex: 1,
+                      borderRadius: "4px",
+                      border: "1px solid #ddd",
+                    }}
+                    placeholder="0.00"
+                  />
+                </div>
+                {(Number(discountAmount) || 0) > 0 && (
+                  <div
+                    style={{
+                      marginTop: "0.5rem",
+                      fontSize: "0.8rem",
+                      color: "#e65100",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    💸 Customer saves $
+                    {(Number(discountAmount) || 0).toFixed(2)}
+                  </div>
+                )}
+              </div>
+
               {/* Cashback Option */}
               <div
                 style={{
@@ -3083,248 +3295,6 @@ function POSContent() {
                   </>
                 )}
               </div>
-
-              {/* Discount */}
-              <div
-                style={{
-                  margin: "0.5rem 0",
-                  padding: "0.5rem",
-                  backgroundColor: "#fff3e0",
-                  border: "1px solid #ffcc80",
-                  borderRadius: "6px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  <span>💰 Discount</span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <label style={{ minWidth: "70px", fontSize: "0.9rem" }}>
-                    Amount:
-                  </label>
-                  <input
-                    ref={discountRef}
-                    type="text"
-                    inputMode="decimal"
-                    pattern="[0-9]*\.?[0-9]*"
-                    value={discountAmount}
-                    onFocus={() => handleInputFocus(discountRef)}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Allow empty, numbers, and decimal point
-                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                        setDiscountAmount(value);
-                      }
-                    }}
-                    style={{
-                      padding: "0.4rem",
-                      flex: 1,
-                      borderRadius: "4px",
-                      border: "1px solid #ddd",
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-                {(Number(discountAmount) || 0) > 0 && (
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      fontSize: "0.8rem",
-                      color: "#e65100",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    💸 Customer saves $
-                    {(Number(discountAmount) || 0).toFixed(2)}
-                  </div>
-                )}
-              </div>
-
-              {/* Enhanced Card Fee Section */}
-              <div
-                style={{
-                  margin: "0.5rem 0",
-                  padding: "0.5rem",
-                  backgroundColor: "#f8f4ff",
-                  border: "1px solid #d4c5f9",
-                  borderRadius: "6px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    marginBottom: "0.5rem",
-                    fontWeight: "500",
-                  }}
-                >
-                  <span>💳 Card Fees</span>
-                </div>
-
-                {/* Card Fee Enable/Disable */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    marginBottom: cardFeeEnabled ? "0.5rem" : "0",
-                  }}
-                >
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: "pointer",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={cardFeeEnabled}
-                      onChange={(e) => {
-                        const isEnabled = e.target.checked;
-                        setCardFeeEnabled(isEnabled);
-
-                        const currentCardAmount = Number(
-                          parseFloat(cardAmount) || 0
-                        );
-                        const currentCashAmount = Number(
-                          parseFloat(cashAmount) || 0
-                        );
-
-                        if (isEnabled) {
-                          // When enabling, add card fee to total
-                          const totalAmount =
-                            currentCardAmount +
-                            currentCashAmount +
-                            CARD_FEE_AMOUNT;
-                          setCardAmount(String(totalAmount.toFixed(2)));
-                          setCashAmount("0");
-                          setLastEdited("card");
-                        } else {
-                          // When disabling, remove card fee from total
-                          if (currentCardAmount >= CARD_FEE_AMOUNT) {
-                            const newCardAmount = Math.max(
-                              0,
-                              currentCardAmount - CARD_FEE_AMOUNT
-                            );
-                            setCardAmount(String(newCardAmount.toFixed(2)));
-                          }
-                        }
-                      }}
-                      style={{
-                        marginRight: "0.25rem",
-                        transform: "scale(1.1)",
-                      }}
-                    />
-                    Apply card fee (+${CARD_FEE_AMOUNT.toFixed(2)})
-                  </label>
-                </div>
-
-                {/* Fee Status Display */}
-                {cardFeeEnabled && (
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      padding: "0.25rem 0.5rem",
-                      backgroundColor: "#fff3cd",
-                      border: "1px solid #ffeaa7",
-                      borderRadius: "4px",
-                      fontSize: "0.8rem",
-                      color: "#856404",
-                    }}
-                  >
-                    💰 Card processing fee: ${CARD_FEE_AMOUNT.toFixed(2)} added
-                    to total
-                  </div>
-                )}
-              </div>
-
-              {/* Lotto Winnings */}
-              <div
-                style={{
-                  margin: "0.5rem 0",
-                  padding: "0.5rem",
-                  backgroundColor: "#e8f5e8",
-                  border: "1px solid #c3e6c3",
-                  borderRadius: "6px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    fontWeight: "500",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  <span>🎰 Lotto Winnings</span>
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                  }}
-                >
-                  <label style={{ minWidth: "70px", fontSize: "0.9rem" }}>
-                    Amount:
-                  </label>
-                  <input
-                    ref={lottoWinningsRef}
-                    type="text"
-                    inputMode="decimal"
-                    pattern="[0-9]*\.?[0-9]*"
-                    value={lottoWinnings}
-                    onFocus={() => handleInputFocus(lottoWinningsRef)}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Allow empty, numbers, and decimal point
-                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                        setLottoWinnings(value);
-                      }
-                    }}
-                    style={{
-                      padding: "0.4rem",
-                      flex: 1,
-                      borderRadius: "4px",
-                      border: "1px solid #ddd",
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-
-                {(Number(lottoWinnings) || 0) > 0 && (
-                  <div
-                    style={{
-                      marginTop: "0.5rem",
-                      fontSize: "0.8rem",
-                      color: "#28a745",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    💰 Customer won ${(Number(lottoWinnings) || 0).toFixed(2)}{" "}
-                    in lottery
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="checkout-summary">
@@ -3448,7 +3418,9 @@ function POSContent() {
                         style={{
                           padding: isCreditSale ? "1rem" : "0.5rem",
                           backgroundColor: isCreditSale ? "#fff3cd" : "#f8f9fa",
-                          border: isCreditSale ? "2px solid #ffc107" : "1px solid #dee2e6",
+                          border: isCreditSale
+                            ? "2px solid #ffc107"
+                            : "1px solid #dee2e6",
                           borderRadius: "8px",
                           transition: "all 0.2s ease",
                         }}

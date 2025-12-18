@@ -195,7 +195,7 @@ export default function CategoriesPage() {
   // Redirect to POS if not logged in
   useEffect(() => {
     if (!user) {
-      router.push('/pos');
+      router.push("/pos");
     }
   }, [user, router]);
 
@@ -242,11 +242,11 @@ export default function CategoriesPage() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await fetch("/api/categories");
       const data = await response.json();
       setCategories(data);
     } catch (error) {
-      console.error('Failed to load categories from server:', error);
+      console.error("Failed to load categories from server:", error);
       // Fallback to localStorage
       const savedCategories = localStorage.getItem("categories");
       if (savedCategories) {
@@ -260,11 +260,11 @@ export default function CategoriesPage() {
 
   const loadInventory = async () => {
     try {
-      const response = await fetch('/api/inventory');
+      const response = await fetch("/api/inventory");
       const data = await response.json();
       setInventory(data);
     } catch (error) {
-      console.error('Failed to load inventory from server:', error);
+      console.error("Failed to load inventory from server:", error);
       // Fallback to localStorage
       const savedInventory = localStorage.getItem("inventory");
       if (savedInventory) {
@@ -299,26 +299,26 @@ export default function CategoriesPage() {
     };
 
     try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(category)
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(category),
       });
 
       if (response.ok) {
         const savedCategory = await response.json();
         setCategories([...categories, savedCategory]);
         setNewCategory({ name: "", description: "" });
-        
+
         // Also update localStorage as backup
         const updatedCategories = [...categories, savedCategory];
         localStorage.setItem("categories", JSON.stringify(updatedCategories));
       } else {
-        alert('Failed to save category');
+        alert("Failed to save category");
       }
     } catch (error) {
-      console.error('Error saving category:', error);
-      alert('Failed to save category');
+      console.error("Error saving category:", error);
+      alert("Failed to save category");
     }
   };
 
@@ -361,10 +361,10 @@ export default function CategoriesPage() {
     };
 
     try {
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedCategory)
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedCategory),
       });
 
       if (response.ok) {
@@ -373,7 +373,7 @@ export default function CategoriesPage() {
           cat.id === editingCategory.id ? savedCategory : cat
         );
         setCategories(updatedCategories);
-        
+
         // Update localStorage as backup
         localStorage.setItem("categories", JSON.stringify(updatedCategories));
 
@@ -387,11 +387,11 @@ export default function CategoriesPage() {
         setEditingCategory(null);
         setNewCategory({ name: "", description: "" });
       } else {
-        alert('Failed to update category');
+        alert("Failed to update category");
       }
     } catch (error) {
-      console.error('Error updating category:', error);
-      alert('Failed to update category');
+      console.error("Error updating category:", error);
+      alert("Failed to update category");
     }
   };
 
@@ -413,16 +413,19 @@ export default function CategoriesPage() {
     }
 
     try {
-      const response = await fetch(`/api/categories?id=${categoryToDelete.id}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `/api/categories?id=${categoryToDelete.id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (response.ok) {
         const updatedCategories = categories.filter(
           (cat) => cat.id !== categoryToDelete.id
         );
         setCategories(updatedCategories);
-        
+
         // Update localStorage as backup
         localStorage.setItem("categories", JSON.stringify(updatedCategories));
 
@@ -431,11 +434,11 @@ export default function CategoriesPage() {
           loadInventory(); // Reload to get updated data
         }
       } else {
-        alert('Failed to delete category');
+        alert("Failed to delete category");
       }
     } catch (error) {
-      console.error('Error deleting category:', error);
-      alert('Failed to delete category');
+      console.error("Error deleting category:", error);
+      alert("Failed to delete category");
     }
   };
 
@@ -445,7 +448,11 @@ export default function CategoriesPage() {
   };
 
   const handleMigrateCategories = async () => {
-    if (!confirm('This will populate your database with 20+ standard convenience store categories and preserve any existing localStorage categories. Continue?')) {
+    if (
+      !confirm(
+        "This will populate your database with 20+ standard convenience store categories and preserve any existing localStorage categories. Continue?"
+      )
+    ) {
       return;
     }
 
@@ -459,25 +466,27 @@ export default function CategoriesPage() {
           localStorageCategories = JSON.parse(savedCategories);
         }
       } catch (e) {
-        console.log('No localStorage categories found');
+        console.log("No localStorage categories found");
       }
 
-      const response = await fetch('/api/migrate/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ localStorageCategories })
+      const response = await fetch("/api/migrate/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ localStorageCategories }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        alert(`Categories migration completed successfully!\n\nAdded: ${result.added}\nUpdated: ${result.updated}\nTotal: ${result.total}`);
+        alert(
+          `Categories migration completed successfully!\n\nAdded: ${result.added}\nUpdated: ${result.updated}\nTotal: ${result.total}`
+        );
         loadCategories(); // Reload to show new categories
       } else {
-        alert('Failed to migrate categories');
+        alert("Failed to migrate categories");
       }
     } catch (error) {
-      console.error('Error migrating categories:', error);
-      alert('Failed to migrate categories: ' + error.message);
+      console.error("Error migrating categories:", error);
+      alert("Failed to migrate categories: " + error.message);
     } finally {
       setIsMigrating(false);
     }
@@ -487,17 +496,17 @@ export default function CategoriesPage() {
     <Container>
       <Header>
         <Title>Category Management</Title>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
           <Button
             onClick={handleMigrateCategories}
             disabled={isMigrating}
             style={{
-              background: isMigrating ? '#95a5a6' : '#e74c3c',
-              padding: '0.5rem 1rem',
-              fontSize: '0.9rem'
+              background: isMigrating ? "#95a5a6" : "#e74c3c",
+              padding: "0.5rem 1rem",
+              fontSize: "0.9rem",
             }}
           >
-            {isMigrating ? 'Migrating...' : '🔄 Populate All Categories'}
+            {isMigrating ? "Migrating..." : "🔄 Populate All Categories"}
           </Button>
           <BackButton href="/inventory">← Back to Inventory</BackButton>
         </div>

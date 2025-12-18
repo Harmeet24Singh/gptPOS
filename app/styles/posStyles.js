@@ -14,7 +14,7 @@ const colors = {
 export const Container = styled.div`
   max-width: 1800px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 0 1.5rem;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial;
   color: #243746;
@@ -64,8 +64,8 @@ export const ProductsPanel = styled.div`
     flex: 1;
     overflow-y: auto;
     padding-right: 0.5rem;
-    min-height: 300px;
-    max-height: 450px;
+    min-height: 100px;
+    max-height: 220px;
 
     @media (max-width: 1400px) {
       grid-template-columns: repeat(3, 1fr);
@@ -108,22 +108,24 @@ export const CheckoutPanel = styled.div`
     overflow-y: auto;
     padding-right: 0.5rem;
     margin-bottom: 0.5rem;
-    
+    min-height: 150px;
+    max-height: 200px;
+
     /* Custom scrollbar */
     &::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: #f1f1f1;
       border-radius: 3px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: #c1c1c1;
       border-radius: 3px;
     }
-    
+
     &::-webkit-scrollbar-thumb:hover {
       background: #a8a8a8;
     }
@@ -131,7 +133,6 @@ export const CheckoutPanel = styled.div`
 
   .checkout-summary {
     flex: 0 0 auto;
-    margin-top: auto;
     padding-top: 0.75rem;
     border-top: 2px solid rgba(36, 55, 70, 0.08);
     background: ${colors.card};
@@ -143,15 +144,15 @@ export const ProductItem = styled.div`
   background: linear-gradient(180deg, #ffffff, #fbfdff);
   border: 1px solid rgba(36, 55, 70, 0.04);
   border-radius: 12px;
-  padding: 1.2rem 1rem;
+  padding: 0.8rem 0.7rem;
   cursor: pointer;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  height: 140px;
+  gap: 0.4rem;
+  height: 110px;
   justify-content: space-between;
-  min-height: 140px;
+  min-height: 110px;
 
   &:hover {
     transform: translateY(-6px);
@@ -187,7 +188,7 @@ export const ProductItem = styled.div`
 
 export const CartItem = styled.div`
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   gap: 0.5rem;
   align-items: center;
   padding: 0.6rem 0.4rem;
@@ -247,13 +248,19 @@ export const CartItem = styled.div`
     color: ${colors.accent};
   }
 
+  .item-buttons {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
   .remove-btn {
-    margin-left: 0.5rem;
     background: ${colors.danger};
     border-radius: 6px;
     padding: 0.25rem 0.5rem;
     color: white;
     border: none;
+    cursor: pointer;
   }
 `;
 

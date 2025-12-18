@@ -315,7 +315,10 @@ async function deleteUserById(id) {
   const user = await db.collection("users").findOne({ id: id });
   if (
     user &&
-    (user.role === "admin" || user.role === "Admin" || user.role === "super_admin" || user.id === "admin")
+    (user.role === "admin" ||
+      user.role === "Admin" ||
+      user.role === "super_admin" ||
+      user.id === "admin")
   ) {
     throw new Error(
       "Admin users cannot be deleted - this is a protected super role"
@@ -419,15 +422,19 @@ async function saveTransaction(txObj) {
       const currentStock = cur.stock || 0;
       const quantityToDeduct = it.quantity || 0;
       const newStock = currentStock - quantityToDeduct;
-      
+
       // Log stock change for debugging
-      console.log(`Stock update for ${cur.name} (ID: ${cur.id}): ${currentStock} - ${quantityToDeduct} = ${newStock}`);
-      
+      console.log(
+        `Stock update for ${cur.name} (ID: ${cur.id}): ${currentStock} - ${quantityToDeduct} = ${newStock}`
+      );
+
       // Always update stock, but warn if going negative
       if (newStock < 0) {
-        console.warn(`WARNING: Item "${cur.name}" stock went negative: ${newStock}. Current: ${currentStock}, Sold: ${quantityToDeduct}`);
+        console.warn(
+          `WARNING: Item "${cur.name}" stock went negative: ${newStock}. Current: ${currentStock}, Sold: ${quantityToDeduct}`
+        );
       }
-      
+
       await db
         .collection("inventory")
         .updateOne(
@@ -440,93 +447,116 @@ async function saveTransaction(txObj) {
   return insertedId;
 }
 
-async function getTransactions(limit = 100, dateFilter = null, selectedDate = null, startDate = null, endDate = null, monthFilter = null) {
+async function getTransactions(
+  limit = 100,
+  dateFilter = null,
+  selectedDate = null,
+  startDate = null,
+  endDate = null,
+  monthFilter = null
+) {
   const db = await connect();
-  
+
   // Build date filter query
   let dateQuery = {};
-  
-  if (dateFilter && dateFilter !== 'all') {
+
+  if (dateFilter && dateFilter !== "all") {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    if (dateFilter === 'today') {
+
+    if (dateFilter === "today") {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
       dateQuery = {
         timestamp: {
           $gte: today,
-          $lt: tomorrow
-        }
+          $lt: tomorrow,
+        },
       };
-    } else if (dateFilter === 'yesterday') {
+    } else if (dateFilter === "yesterday") {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       dateQuery = {
         timestamp: {
           $gte: yesterday,
-          $lt: today
-        }
+          $lt: today,
+        },
       };
-    } else if (dateFilter === 'specific' && selectedDate) {
+    } else if (dateFilter === "specific" && selectedDate) {
       // Parse the date in local timezone to avoid UTC conversion issues
-      const dateParts = selectedDate.split('-');
+      const dateParts = selectedDate.split("-");
       const year = parseInt(dateParts[0]);
       const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
       const day = parseInt(dateParts[2]);
-      
+
       const specDate = new Date(year, month, day, 0, 0, 0, 0);
       const nextDay = new Date(year, month, day + 1, 0, 0, 0, 0);
-      
+
       dateQuery = {
         timestamp: {
           $gte: specDate,
-          $lt: nextDay
-        }
+          $lt: nextDay,
+        },
       };
-    } else if (dateFilter === 'range' && startDate && endDate) {
+    } else if (dateFilter === "range" && startDate && endDate) {
       // Parse start and end dates in local timezone
-      const startParts = startDate.split('-');
-      const endParts = endDate.split('-');
-      
+      const startParts = startDate.split("-");
+      const endParts = endDate.split("-");
+
       const startYear = parseInt(startParts[0]);
       const startMonth = parseInt(startParts[1]) - 1;
       const startDay = parseInt(startParts[2]);
-      
+
       const endYear = parseInt(endParts[0]);
       const endMonth = parseInt(endParts[1]) - 1;
       const endDay = parseInt(endParts[2]);
-      
+
       const rangeStart = new Date(startYear, startMonth, startDay, 0, 0, 0, 0);
       const rangeEnd = new Date(endYear, endMonth, endDay + 1, 0, 0, 0, 0); // Include end date
-      
+
       dateQuery = {
         timestamp: {
           $gte: rangeStart,
-          $lt: rangeEnd
-        }
+          $lt: rangeEnd,
+        },
       };
-    } else if (dateFilter === 'month' && monthFilter) {
+    } else if (dateFilter === "month" && monthFilter) {
       // monthFilter format: "2025-12" for December 2025
-      const [year, month] = monthFilter.split('-');
-      const monthStart = new Date(parseInt(year), parseInt(month) - 1, 1, 0, 0, 0, 0);
-      const monthEnd = new Date(parseInt(year), parseInt(month), 1, 0, 0, 0, 0); // First day of next month
-      
+      const [year, month] = monthFilter.split("-");
+      const monthStart = `${year}-${month.padStart(2, "0")}-01T00:00:00.000Z`;
+      const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
+      const nextYear =
+        parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
+      const monthEnd = `${nextYear}-${nextMonth
+        .toString()
+        .padStart(2, "0")}-01T00:00:00.000Z`;
+
+      // Handle both string timestamps and Date objects
       dateQuery = {
-        timestamp: {
-          $gte: monthStart,
-          $lt: monthEnd
-        }
+        $or: [
+          {
+            timestamp: {
+              $gte: monthStart,
+              $lt: monthEnd,
+            },
+          },
+          {
+            timestamp: {
+              $gte: new Date(monthStart),
+              $lt: new Date(monthEnd),
+            },
+          },
+        ],
       };
-    } else if (dateFilter === 'week') {
+    } else if (dateFilter === "week") {
       const weekAgo = new Date(today);
       weekAgo.setDate(weekAgo.getDate() - 7);
       dateQuery = {
-        timestamp: { $gte: weekAgo }
+        timestamp: { $gte: weekAgo },
       };
     }
   }
-  
+
   const cursor = db
     .collection("transactions")
     .find(dateQuery)
