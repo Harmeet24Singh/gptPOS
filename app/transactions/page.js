@@ -1186,18 +1186,21 @@ export default function TransactionsPage() {
           <div class="summary-section">
             <div class="section-title">DAILY BREAKDOWN</div>
             ${dailyBreakdown
-              .slice(0, 5)
               .map(
                 (day) => `
-              <div style="margin-bottom: 8px;">
-                <div style="font-weight: bold;">${new Date(
+              <div style="margin-bottom: 6px;">
+                <div style="font-weight: bold; font-size: 11px;">${new Date(
                   day.date
-                ).toLocaleDateString()}</div>
-                <div class="summary-item">
+                ).toLocaleDateString("en-US", { 
+                  weekday: "short", 
+                  month: "short", 
+                  day: "numeric" 
+                })}</div>
+                <div class="summary-item" style="font-size: 10px;">
                   <span>Sales:</span>
                   <span>$${day.totalSales.toFixed(2)}</span>
                 </div>
-                <div class="summary-item">
+                <div class="summary-item" style="font-size: 10px;">
                   <span>Transactions:</span>
                   <span>${day.transactionCount}</span>
                 </div>
@@ -1637,7 +1640,7 @@ export default function TransactionsPage() {
         transaction.items.forEach((item, itemIndex) => {
           if (isAlcoholItem(item)) {
             hasAlcohol = true;
-            alcoholAmountInTransaction += item.price * item.quantity;
+            alcoholAmountInTransaction += item.total || (item.price * item.quantity);
             alcoholItemCount += item.quantity;
           }
         });
@@ -1668,16 +1671,30 @@ export default function TransactionsPage() {
     filteredTransactions.forEach((transaction) => {
       let hasAlcohol = false;
       let alcoholAmountInTransaction = 0;
+      let isAlcoholOnly = true;
 
       if (transaction.items && Array.isArray(transaction.items)) {
+        // First check if this is a pure alcohol transaction
         transaction.items.forEach((item) => {
-          // Only check by category - no name pattern matching
           if (item.category === "Alcohol") {
             hasAlcohol = true;
-            alcoholAmountInTransaction += item.price * item.quantity;
             alcoholItemCount += item.quantity;
+          } else if (item.category && item.category !== "Alcohol") {
+            isAlcoholOnly = false;
           }
         });
+
+        // If this is a pure alcohol transaction, use the full transaction total
+        // Otherwise, sum only the alcohol items
+        if (hasAlcohol && isAlcoholOnly) {
+          alcoholAmountInTransaction = transaction.total;
+        } else if (hasAlcohol) {
+          transaction.items.forEach((item) => {
+            if (item.category === "Alcohol") {
+              alcoholAmountInTransaction += item.total || (item.price * item.quantity);
+            }
+          });
+        }
       }
 
       if (hasAlcohol) {
@@ -1687,6 +1704,97 @@ export default function TransactionsPage() {
     });
 
     return { alcoholTotal, alcoholTransactionCount, alcoholItemCount };
+  };
+
+  const getAlcoholPaymentBreakdown = () => {
+    let cashTotal = 0;
+    let cardTotal = 0;
+    let cashCount = 0;
+    let cardCount = 0;
+
+    if (filteredTransactions.length === 0) {
+      return { cashTotal: 0, cardTotal: 0, cashCount: 0, cardCount: 0 };
+    }
+
+    // Filter to only alcohol transactions (same logic as alcohol-category filter)
+    const alcoholTransactions = filteredTransactions.filter((t) => {
+      if (t.items && Array.isArray(t.items)) {
+        return t.items.some((item) => item.category === "Alcohol");
+      }
+      return false;
+    });
+
+    alcoholTransactions.forEach((transaction) => {
+      // Check if transaction has only alcohol items for full transaction total
+      const isAlcoholOnly = transaction.items.every(item => item.category === "Alcohol");
+      
+      if (isAlcoholOnly && transaction.paymentBreakdown && Array.isArray(transaction.paymentBreakdown)) {
+        // Use paymentBreakdown array for pure alcohol transactions
+        transaction.paymentBreakdown.forEach((payment) => {
+          if (payment.method === "cash") {
+            cashTotal += payment.amount;
+          } else if (payment.method === "card") {
+            cardTotal += payment.amount;
+          }
+        });
+        
+        // Count transaction based on primary payment method
+        if (transaction.paymentMethod === "cash") {
+          cashCount++;
+        } else if (transaction.paymentMethod === "mixed") {
+          // For mixed payments, count as both but split proportionally
+          const cashPortion = transaction.paymentBreakdown.find(p => p.method === "cash");
+          const cardPortion = transaction.paymentBreakdown.find(p => p.method === "card");
+          
+          if (cashPortion && cashPortion.amount > 0) cashCount++;
+          if (cardPortion && cardPortion.amount > 0) cardCount++;
+        } else {
+          cardCount++;
+        }
+      } else if (isAlcoholOnly) {
+        // Fallback for transactions without paymentBreakdown
+        if (transaction.paymentMethod === "cash") {
+          cashTotal += transaction.total;
+          cashCount++;
+        } else {
+          cardTotal += transaction.total;
+          cardCount++;
+        }
+      } else {
+        // For mixed transactions, calculate alcohol portion and apply payment breakdown
+        let alcoholAmount = 0;
+        transaction.items.forEach((item) => {
+          if (item.category === "Alcohol") {
+            alcoholAmount += item.total || (item.price * item.quantity);
+          }
+        });
+        
+        // Distribute alcohol amount across payment methods proportionally
+        if (transaction.paymentBreakdown && Array.isArray(transaction.paymentBreakdown) && alcoholAmount > 0) {
+          const totalPaid = transaction.paymentBreakdown.reduce((sum, p) => sum + p.amount, 0);
+          
+          transaction.paymentBreakdown.forEach((payment) => {
+            const proportion = payment.amount / totalPaid;
+            const alcoholPortionForMethod = alcoholAmount * proportion;
+            
+            if (payment.method === "cash") {
+              cashTotal += alcoholPortionForMethod;
+            } else if (payment.method === "card") {
+              cardTotal += alcoholPortionForMethod;
+            }
+          });
+          
+          // Count transaction once based on primary payment method
+          if (transaction.paymentMethod === "cash") {
+            cashCount++;
+          } else {
+            cardCount++;
+          }
+        }
+      }
+    });
+
+    return { cashTotal, cardTotal, cashCount, cardCount };
   };
 
   const getGrocerySalesBreakdown = () => {
@@ -1829,7 +1937,7 @@ export default function TransactionsPage() {
       };
     }
 
-    // Tobacco keywords to detect tobacco items
+    // Tobacco keywords to detect tobacco items (specific brands only, no generic terms)
     const tobaccoKeywords = [
       "cigarette",
       "cigar",
@@ -1845,14 +1953,10 @@ export default function TransactionsPage() {
       "lucky strike",
       "chesterfield",
       "virginia slims",
-      "menthol",
-      "light",
-      "ultra light",
       "pipe tobacco",
       "chewing tobacco",
       "snuff",
       "snus",
-      "dip",
       "copenhagen",
       "grizzly",
       "skoal",
@@ -1861,12 +1965,17 @@ export default function TransactionsPage() {
     ];
 
     const isTobaccoItem = (item) => {
-      // First check if category exists and is Tobacco
-      if (item.category && item.category.toLowerCase().includes("tobacco")) {
+      // First check if category exists and is exactly "Tobacco"
+      if (item.category === "Tobacco") {
         return true;
       }
 
-      // Check name for tobacco keywords
+      // Skip name-based detection if item already has "Alcohol" category to avoid false matches
+      if (item.category === "Alcohol") {
+        return false;
+      }
+
+      // Check name for tobacco keywords (only if category is not Alcohol)
       if (item.name) {
         const itemNameLower = item.name.toLowerCase();
         const foundKeyword = tobaccoKeywords.find((keyword) =>
@@ -1888,7 +1997,7 @@ export default function TransactionsPage() {
         transaction.items.forEach((item, itemIndex) => {
           if (isTobaccoItem(item)) {
             hasTobacco = true;
-            tobaccoAmountInTransaction += item.price * item.quantity;
+            tobaccoAmountInTransaction += item.total || (item.price * item.quantity);
             tobaccoItemCount += item.quantity;
           }
         });
@@ -2407,15 +2516,37 @@ export default function TransactionsPage() {
           </p>
 
           {transactionTypeFilter === "alcohol-category" && (
-            <div
-              style={{
-                fontSize: "0.75rem",
-                color: "#3498db",
-                marginTop: "0.5rem",
-                fontWeight: "600",
-              }}
-            >
-              🔍 Category Only
+            <div>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#3498db",
+                  marginTop: "0.5rem",
+                  fontWeight: "600",
+                }}
+              >
+                🔍 Category Only
+              </div>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  marginTop: "0.5rem",
+                  padding: "0.5rem",
+                  backgroundColor: "#f8f9fa",
+                  borderRadius: "4px",
+                  border: "1px solid #e9ecef",
+                }}
+              >
+                <div style={{ fontWeight: "600", marginBottom: "0.3rem" }}>Payment Methods:</div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
+                  <span>💵 Cash:</span>
+                  <span>${getAlcoholPaymentBreakdown().cashTotal.toFixed(2)} ({getAlcoholPaymentBreakdown().cashCount})</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>💳 Card:</span>
+                  <span>${getAlcoholPaymentBreakdown().cardTotal.toFixed(2)} ({getAlcoholPaymentBreakdown().cardCount})</span>
+                </div>
+              </div>
             </div>
           )}
         </ClickableCard>
@@ -2613,32 +2744,6 @@ export default function TransactionsPage() {
           </p>
         </CompactCard>
 
-        {/* Alcohol Sales */}
-        <ClickableCard
-          isActive={transactionTypeFilter === "alcohol"}
-          onClick={() => handleCardFilter("alcohol")}
-        >
-          <h3>🍺 Alcohol Sales</h3>
-          <p style={{ fontWeight: "bold", color: "#e67e22" }}>
-            ${getAlcoholSalesBreakdown().alcoholTotal.toFixed(2)}
-          </p>
-          <p>
-            {getAlcoholSalesBreakdown().alcoholTransactionCount} transactions
-          </p>
-
-          {transactionTypeFilter === "alcohol" && (
-            <div
-              style={{
-                fontSize: "0.75rem",
-                color: "#3498db",
-                marginTop: "0.5rem",
-                fontWeight: "600",
-              }}
-            >
-              🔍 Filtered
-            </div>
-          )}
-        </ClickableCard>
       </CompactCardGrid>
 
       {/* Payment Method Breakdown - Now consolidated in CompactCardGrid above */}
@@ -2719,6 +2824,9 @@ export default function TransactionsPage() {
               <option value="2025-12">December 2025 (This Month)</option>
               <option value="2025-11">November 2025 (Last Month)</option>
               <option value="2025-10">October 2025</option>
+              <option value="2025-09">September 2025</option>
+              <option value="2025-08">August 2025</option>
+              <option value="2025-07">July 2025</option>
             </Select>
           )}
 
