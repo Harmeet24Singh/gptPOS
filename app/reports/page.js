@@ -15,7 +15,7 @@ export default function ReportsPage() {
   // Redirect to POS if not logged in
   useEffect(() => {
     if (!user) {
-      router.push('/pos');
+      router.push("/pos");
     }
   }, [user, router]);
   const [stats, setStats] = useState({
@@ -31,8 +31,13 @@ export default function ReportsPage() {
     topSellingItem: null,
     totalTaxCollected: 0,
   });
-  
+
   const [categorySales, setCategorySales] = useState({});
+  const [grocerySales, setGrocerySales] = useState({
+    totalSales: 0,
+    totalTransactions: 0,
+    itemsSold: 0,
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -123,22 +128,38 @@ export default function ReportsPage() {
         totalTaxCollected,
       });
 
-      // Calculate category-wise sales for today and recent days (last 7 days for testing)
+      // Calculate category-wise sales for current month (November 2025)
+      const currentMonth = 11; // November
+      const currentYear = 2025;
+
       const todayTransactions = savedTransactions.filter(
         (t) => new Date(t.timestamp).toDateString() === today
       );
 
-      // If no transactions today, use last 7 days for demonstration
-      const recentTransactions = savedTransactions.filter((t) => {
+      // Get November 2025 transactions for category sales
+      const monthlyTransactions = savedTransactions.filter((t) => {
         const transactionDate = new Date(t.timestamp);
-        const daysDiff = (new Date() - transactionDate) / (1000 * 60 * 60 * 24);
-        return daysDiff <= 7;
+        return (
+          transactionDate.getMonth() + 1 === currentMonth &&
+          transactionDate.getFullYear() === currentYear
+        );
       });
 
-      const transactionsToUse = todayTransactions.length > 0 ? todayTransactions : recentTransactions;
+      // Use monthly transactions if available, otherwise use today's, otherwise recent
+      const transactionsToUse =
+        monthlyTransactions.length > 0
+          ? monthlyTransactions
+          : todayTransactions.length > 0
+          ? todayTransactions
+          : savedTransactions.filter((t) => {
+              const transactionDate = new Date(t.timestamp);
+              const daysDiff =
+                (new Date() - transactionDate) / (1000 * 60 * 60 * 24);
+              return daysDiff <= 7;
+            });
 
       console.log("Today's transactions:", todayTransactions.length);
-      console.log("Recent transactions (7 days):", recentTransactions.length);
+      console.log("November 2025 transactions:", monthlyTransactions.length);
       console.log("Using transactions:", transactionsToUse.length);
       console.log("Sample transaction:", transactionsToUse[0]);
       if (transactionsToUse[0] && transactionsToUse[0].items) {
@@ -151,12 +172,12 @@ export default function ReportsPage() {
         console.log(`Transaction ${index + 1}:`, {
           id: transaction._id,
           itemCount: items.length,
-          items: items.map(item => ({
+          items: items.map((item) => ({
             name: item.name,
             category: item.category,
             price: item.price,
-            quantity: item.quantity
-          }))
+            quantity: item.quantity,
+          })),
         });
 
         items.forEach((item) => {
@@ -164,47 +185,103 @@ export default function ReportsPage() {
             console.log("Skipping null item");
             return;
           }
-          
+
           if (!item.category) {
             console.log("Item without category:", item.name);
             return;
           }
-          
+
           const category = item.category;
-          const itemTotal = (item.price || 0) * (item.quantity || 0);
-          
-          console.log(`Processing: ${item.name} - Category: ${category} - Total: $${itemTotal}`);
-          
+          // FIXED: Use proportional share of transaction total (includes tax)
+          const itemSubtotal = (item.price || 0) * (item.quantity || 0);
+
+          console.log(
+            `Processing: ${item.name} - Category: ${category} - Subtotal: $${itemSubtotal}`
+          );
+
           if (!categorySalesData[category]) {
             categorySalesData[category] = {
               totalSales: 0,
               itemsSold: 0,
-              transactions: 0
+              transactions: 0,
+              subtotal: 0,
             };
           }
-          
-          categorySalesData[category].totalSales += itemTotal;
+
+          // Store subtotal for proportional calculation later
+          categorySalesData[category].subtotal += itemSubtotal;
           categorySalesData[category].itemsSold += item.quantity || 0;
         });
       });
 
-      // Count transactions per category
+      // Count transactions per category and calculate proportional totals
       transactionsToUse.forEach((transaction) => {
         const categoriesInTransaction = new Set();
+        const categorySubtotals = {};
+        let totalTransactionSubtotal = 0;
+
+        // Calculate subtotals by category in this transaction
         (transaction.items || []).forEach((item) => {
           if (item && item.category) {
             categoriesInTransaction.add(item.category);
+            const itemSubtotal = (item.price || 0) * (item.quantity || 0);
+            categorySubtotals[item.category] =
+              (categorySubtotals[item.category] || 0) + itemSubtotal;
+            totalTransactionSubtotal += itemSubtotal;
           }
         });
-        
+
+        // Distribute transaction total (including tax) proportionally
         categoriesInTransaction.forEach((category) => {
           if (categorySalesData[category]) {
             categorySalesData[category].transactions++;
+
+            // Calculate this category's proportional share of the transaction total
+            const categoryProportion =
+              totalTransactionSubtotal > 0
+                ? (categorySubtotals[category] || 0) / totalTransactionSubtotal
+                : 1 / categoriesInTransaction.size;
+
+            const categoryTransactionTotal =
+              categoryProportion * (transaction.total || 0);
+            categorySalesData[category].totalSales += categoryTransactionTotal;
           }
         });
       });
 
       setCategorySales(categorySalesData);
+
+      // Calculate dedicated grocery sales (separate from category breakdown)
+      const novemberGroceryTransactions =
+        monthlyTransactions.length > 0
+          ? savedTransactions.filter((t) => {
+              const transactionDate = new Date(t.timestamp);
+              return (
+                transactionDate.getMonth() + 1 === 11 &&
+                transactionDate.getFullYear() === 2025 &&
+                t.items &&
+                t.items.some((item) => item.category === "Grocery")
+              );
+            })
+          : [];
+
+      const groceryData = {
+        totalSales: novemberGroceryTransactions.reduce(
+          (sum, t) => sum + t.total,
+          0
+        ),
+        totalTransactions: novemberGroceryTransactions.length,
+        itemsSold: novemberGroceryTransactions.reduce(
+          (sum, t) =>
+            sum +
+            (t.items || [])
+              .filter((item) => item.category === "Grocery")
+              .reduce((itemSum, item) => itemSum + (item.quantity || 0), 0),
+          0
+        ),
+      };
+
+      setGrocerySales(groceryData);
     };
 
     load();
@@ -233,7 +310,7 @@ export default function ReportsPage() {
             <p
               style={{ fontSize: "2rem", fontWeight: "bold", color: "#27ae60" }}
             >
-              ${salesStats.totalSales.toFixed(2)}
+              ${(salesStats.totalSales || 0).toFixed(2)}
             </p>
             <p>All time revenue</p>
           </Card>
@@ -243,7 +320,7 @@ export default function ReportsPage() {
             <p
               style={{ fontSize: "2rem", fontWeight: "bold", color: "#3498db" }}
             >
-              ${salesStats.todaySales.toFixed(2)}
+              ${(salesStats.todaySales || 0).toFixed(2)}
             </p>
             <p>Revenue today</p>
           </Card>
@@ -253,7 +330,7 @@ export default function ReportsPage() {
             <p
               style={{ fontSize: "2rem", fontWeight: "bold", color: "#9b59b6" }}
             >
-              {salesStats.totalTransactions}
+              {salesStats.totalTransactions || 0}
             </p>
             <p>Total completed sales</p>
           </Card>
@@ -271,15 +348,29 @@ export default function ReportsPage() {
             </p>
             <p>Most sold product</p>
           </Card>
+
+          <Card>
+            <h3>Grocery Sales</h3>
+            <p
+              style={{ fontSize: "2rem", fontWeight: "bold", color: "#2ecc71" }}
+            >
+              ${(grocerySales.totalSales || 0).toFixed(2)}
+            </p>
+            <p>
+              {grocerySales.totalTransactions || 0} transactions •{" "}
+              {grocerySales.itemsSold || 0} items
+            </p>
+          </Card>
         </CardGrid>
       </div>
 
       <div style={{ marginBottom: "3rem" }}>
         <h2 style={{ marginBottom: "1rem", color: "#2c3e50" }}>
-          {Object.keys(categorySales).length > 0 && 
-           Object.values(categorySales).some(cat => cat.totalSales > 0) 
-           ? "Recent Category-wise Sales (Last 7 Days)" 
-           : "Today's Category-wise Sales"}
+          {monthlyTransactions.length > 0
+            ? "November 2025 Category-wise Sales"
+            : todayTransactions.length > 0
+            ? "Today's Category-wise Sales"
+            : "Recent Category-wise Sales (Last 7 Days)"}
         </h2>
         <Table>
           <thead>
@@ -294,7 +385,10 @@ export default function ReportsPage() {
           <tbody>
             {Object.keys(categorySales).length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: "center", color: "#7f8c8d" }}>
+                <td
+                  colSpan="5"
+                  style={{ textAlign: "center", color: "#7f8c8d" }}
+                >
                   No sales data for today
                 </td>
               </tr>
@@ -305,32 +399,61 @@ export default function ReportsPage() {
                   <tr key={category}>
                     <td style={{ fontWeight: "bold" }}>{category}</td>
                     <td style={{ color: "#27ae60", fontWeight: "bold" }}>
-                      ${data.totalSales.toFixed(2)}
+                      ${(data.totalSales || 0).toFixed(2)}
                     </td>
-                    <td>{data.itemsSold}</td>
-                    <td>{data.transactions}</td>
+                    <td>{data.itemsSold || 0}</td>
+                    <td>{data.transactions || 0}</td>
                     <td>
-                      ${data.transactions > 0 ? (data.totalSales / data.transactions).toFixed(2) : "0.00"}
+                      $
+                      {(data.transactions || 0) > 0 &&
+                      (data.totalSales || 0) > 0
+                        ? (
+                            (data.totalSales || 0) / (data.transactions || 0)
+                          ).toFixed(2)
+                        : "0.00"}
                     </td>
                   </tr>
                 ))
             )}
           </tbody>
         </Table>
-        
+
         {Object.keys(categorySales).length > 0 && (
-          <div style={{ marginTop: "1rem", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+          <div
+            style={{
+              marginTop: "1rem",
+              display: "flex",
+              gap: "2rem",
+              flexWrap: "wrap",
+            }}
+          >
             {Object.entries(categorySales)
               .sort((a, b) => b[1].totalSales - a[1].totalSales)
               .slice(0, 4)
               .map(([category, data]) => (
                 <Card key={category} style={{ minWidth: "200px", flex: "1" }}>
-                  <h4 style={{ margin: "0 0 0.5rem 0", color: "#2c3e50" }}>{category}</h4>
-                  <p style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#27ae60", margin: "0.5rem 0" }}>
-                    ${data.totalSales.toFixed(2)}
+                  <h4 style={{ margin: "0 0 0.5rem 0", color: "#2c3e50" }}>
+                    {category}
+                  </h4>
+                  <p
+                    style={{
+                      fontSize: "1.5rem",
+                      fontWeight: "bold",
+                      color: "#27ae60",
+                      margin: "0.5rem 0",
+                    }}
+                  >
+                    ${(data.totalSales || 0).toFixed(2)}
                   </p>
-                  <p style={{ margin: "0", fontSize: "0.9rem", color: "#7f8c8d" }}>
-                    {data.itemsSold} items • {data.transactions} transactions
+                  <p
+                    style={{
+                      margin: "0",
+                      fontSize: "0.9rem",
+                      color: "#7f8c8d",
+                    }}
+                  >
+                    {data.itemsSold || 0} items • {data.transactions || 0}{" "}
+                    transactions
                   </p>
                 </Card>
               ))}

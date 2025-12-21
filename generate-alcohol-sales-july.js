@@ -177,17 +177,19 @@ function getSalesMultiplier(dayOfWeek, date) {
     5: 1.7, // Friday - summer weekend start
     6: 1.8, // Saturday - peak summer day
   };
-  
+
   // Special July events boost (Canada Day July 1st, summer long weekend, etc.)
   const day = date.getDate();
   let eventMultiplier = 1.0;
-  
-  if (day === 1) { // Canada Day
+
+  if (day === 1) {
+    // Canada Day
     eventMultiplier = 2.2;
-  } else if (day >= 28 && day <= 31) { // End of July summer events
+  } else if (day >= 28 && day <= 31) {
+    // End of July summer events
     eventMultiplier = 1.4;
   }
-  
+
   return (baseMultipliers[dayOfWeek] || 1.0) * eventMultiplier;
 }
 
@@ -208,7 +210,14 @@ function generateTransactionTime(date) {
 
 function generateTransaction(date, transactionId) {
   const items = [];
-  const itemCount = Math.random() < 0.65 ? 1 : Math.random() < 0.85 ? 2 : Math.random() < 0.95 ? 3 : 4;
+  const itemCount =
+    Math.random() < 0.65
+      ? 1
+      : Math.random() < 0.85
+      ? 2
+      : Math.random() < 0.95
+      ? 3
+      : 4;
 
   let subtotal = 0;
 
@@ -268,9 +277,7 @@ async function generateJulyAlcoholSales() {
     });
 
     if (existingCount > 0) {
-      console.log(
-        `Found ${existingCount} existing July alcohol transactions.`
-      );
+      console.log(`Found ${existingCount} existing July alcohol transactions.`);
       if (existingCount > 50) {
         console.log(
           "Significant alcohol sales data already exists. Skipping generation."
@@ -375,12 +382,15 @@ async function generateJulyAlcoholSales() {
       });
 
       // Special events breakdown
-      const canadaDay = transactions.filter(t => t.timestamp.getDate() === 1);
+      const canadaDay = transactions.filter((t) => t.timestamp.getDate() === 1);
       const canadaDayTotal = canadaDay.reduce((sum, t) => sum + t.total, 0);
-      
+
       console.log("\n🇨🇦 Special Events:");
-      console.log(`Canada Day (July 1): $${canadaDayTotal.toFixed(2)} from ${canadaDay.length} transactions`);
-      
+      console.log(
+        `Canada Day (July 1): $${canadaDayTotal.toFixed(2)} from ${
+          canadaDay.length
+        } transactions`
+      );
     } else {
       console.log("No transactions to insert");
     }

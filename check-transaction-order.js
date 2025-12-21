@@ -16,19 +16,27 @@ async function checkTransactionOrder() {
     const collection = db.collection("transactions");
 
     // Get July transactions ordered by transactionId to see the pattern
-    const julyTransactions = await collection.find({
-      timestamp: {
-        $gte: new Date("2025-07-01T00:00:00.000Z"),
-        $lt: new Date("2025-08-01T00:00:00.000Z"),
-      }
-    }).sort({ transactionId: 1 }).limit(50).toArray();
+    const julyTransactions = await collection
+      .find({
+        timestamp: {
+          $gte: new Date("2025-07-01T00:00:00.000Z"),
+          $lt: new Date("2025-08-01T00:00:00.000Z"),
+        },
+      })
+      .sort({ transactionId: 1 })
+      .limit(50)
+      .toArray();
 
     console.log(`\n📋 First 50 July transactions payment method order:`);
     console.log(`Transaction ID | Payment Method | Total`);
     console.log(`-------------- | -------------- | -----`);
-    
+
     julyTransactions.forEach((t, idx) => {
-      console.log(`${t.transactionId.toString().padEnd(13)} | ${t.paymentMethod.padEnd(13)} | $${t.total.toFixed(2)}`);
+      console.log(
+        `${t.transactionId.toString().padEnd(13)} | ${t.paymentMethod.padEnd(
+          13
+        )} | $${t.total.toFixed(2)}`
+      );
     });
 
     // Show distribution in first 50 vs last 50
@@ -39,16 +47,22 @@ async function checkTransactionOrder() {
 
     console.log(`\n📊 Payment method distribution in first 50 transactions:`);
     Object.entries(firstPaymentMethods).forEach(([method, count]) => {
-      console.log(`${method}: ${count} transactions (${(count/50*100).toFixed(1)}%)`);
+      console.log(
+        `${method}: ${count} transactions (${((count / 50) * 100).toFixed(1)}%)`
+      );
     });
 
     // Check last 50 transactions
-    const lastTransactions = await collection.find({
-      timestamp: {
-        $gte: new Date("2025-07-01T00:00:00.000Z"),
-        $lt: new Date("2025-08-01T00:00:00.000Z"),
-      }
-    }).sort({ transactionId: -1 }).limit(50).toArray();
+    const lastTransactions = await collection
+      .find({
+        timestamp: {
+          $gte: new Date("2025-07-01T00:00:00.000Z"),
+          $lt: new Date("2025-08-01T00:00:00.000Z"),
+        },
+      })
+      .sort({ transactionId: -1 })
+      .limit(50)
+      .toArray();
 
     const lastPaymentMethods = lastTransactions.reduce((acc, t) => {
       acc[t.paymentMethod] = (acc[t.paymentMethod] || 0) + 1;
@@ -57,9 +71,10 @@ async function checkTransactionOrder() {
 
     console.log(`\n📊 Payment method distribution in last 50 transactions:`);
     Object.entries(lastPaymentMethods).forEach(([method, count]) => {
-      console.log(`${method}: ${count} transactions (${(count/50*100).toFixed(1)}%)`);
+      console.log(
+        `${method}: ${count} transactions (${((count / 50) * 100).toFixed(1)}%)`
+      );
     });
-
   } catch (error) {
     console.error("Error checking transaction order:", error);
   } finally {

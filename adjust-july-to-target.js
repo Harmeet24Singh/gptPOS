@@ -16,12 +16,15 @@ async function adjustJulyToTarget() {
     const collection = db.collection("transactions");
 
     // Get current July transactions
-    const julyTransactions = await collection.find({
-      timestamp: {
-        $gte: new Date("2025-07-01T00:00:00.000Z"),
-        $lt: new Date("2025-08-01T00:00:00.000Z"),
-      },
-    }).sort({ total: -1 }).toArray();
+    const julyTransactions = await collection
+      .find({
+        timestamp: {
+          $gte: new Date("2025-07-01T00:00:00.000Z"),
+          $lt: new Date("2025-08-01T00:00:00.000Z"),
+        },
+      })
+      .sort({ total: -1 })
+      .toArray();
 
     const currentTotal = julyTransactions.reduce((sum, t) => sum + t.total, 0);
     const target = 13650;
@@ -39,47 +42,54 @@ async function adjustJulyToTarget() {
     // Remove transactions starting with highest value ones
     let totalToRemove = 0;
     const transactionsToRemove = [];
-    
+
     for (const transaction of julyTransactions) {
       if (totalToRemove < excess) {
         transactionsToRemove.push(transaction.transactionId);
         totalToRemove += transaction.total;
-        
+
         if (totalToRemove >= excess) {
           break;
         }
       }
     }
 
-    console.log(`🗑️  Removing ${transactionsToRemove.length} high-value transactions`);
+    console.log(
+      `🗑️  Removing ${transactionsToRemove.length} high-value transactions`
+    );
     console.log(`💰 Total value to remove: $${totalToRemove.toFixed(2)}`);
 
     // Remove the selected transactions
     const deleteResult = await collection.deleteMany({
-      transactionId: { $in: transactionsToRemove }
+      transactionId: { $in: transactionsToRemove },
     });
 
     console.log(`✅ Removed ${deleteResult.deletedCount} transactions`);
 
     // Verify final result
-    const finalTransactions = await collection.find({
-      timestamp: {
-        $gte: new Date("2025-07-01T00:00:00.000Z"),
-        $lt: new Date("2025-08-01T00:00:00.000Z"),
-      },
-    }).toArray();
+    const finalTransactions = await collection
+      .find({
+        timestamp: {
+          $gte: new Date("2025-07-01T00:00:00.000Z"),
+          $lt: new Date("2025-08-01T00:00:00.000Z"),
+        },
+      })
+      .toArray();
 
     const finalTotal = finalTransactions.reduce((sum, t) => sum + t.total, 0);
-    
-    console.log(`\n📊 FINAL July 2025 Alcohol Sales: $${finalTotal.toFixed(2)}`);
+
+    console.log(
+      `\n📊 FINAL July 2025 Alcohol Sales: $${finalTotal.toFixed(2)}`
+    );
     console.log(`🎯 Target was: $${target.toFixed(2)}`);
     console.log(`📈 Difference: $${(finalTotal - target).toFixed(2)}`);
     console.log(`📋 Final transaction count: ${finalTransactions.length}`);
 
     // Final payment method breakdown
     const paymentBreakdown = {};
-    finalTransactions.forEach(t => {
-      paymentBreakdown[t.paymentMethod] = (paymentBreakdown[t.paymentMethod] || 0) + 1;
+    finalTransactions.forEach((t) => {
+      paymentBreakdown[t.paymentMethod] =
+        (paymentBreakdown[t.paymentMethod] || 0) + 1;
     });
 
     console.log(`\n💳 Final payment method distribution:`);
@@ -93,7 +103,6 @@ async function adjustJulyToTarget() {
     console.log(`🍺🍷 ONLY beer and wine (no hard liquor)`);
     console.log(`💰 ~70% cash payment distribution`);
     console.log(`🎯 Target amount: $${finalTotal.toFixed(2)}`);
-
   } catch (error) {
     console.error("Error adjusting July to target:", error);
   } finally {

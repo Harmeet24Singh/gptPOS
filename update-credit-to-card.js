@@ -16,20 +16,24 @@ async function updateCreditToCard() {
     const collection = db.collection("transactions");
 
     // Find July transactions with credit payments
-    const julyTransactions = await collection.find({
-      timestamp: {
-        $gte: new Date("2025-07-01T00:00:00.000Z"),
-        $lt: new Date("2025-08-01T00:00:00.000Z"),
-      },
-      $or: [
-        { paymentMethod: "credit" },
-        { paymentMethod: "debit" },
-        { "paymentBreakdown.method": "credit" },
-        { "paymentBreakdown.method": "debit" }
-      ]
-    }).toArray();
+    const julyTransactions = await collection
+      .find({
+        timestamp: {
+          $gte: new Date("2025-07-01T00:00:00.000Z"),
+          $lt: new Date("2025-08-01T00:00:00.000Z"),
+        },
+        $or: [
+          { paymentMethod: "credit" },
+          { paymentMethod: "debit" },
+          { "paymentBreakdown.method": "credit" },
+          { "paymentBreakdown.method": "debit" },
+        ],
+      })
+      .toArray();
 
-    console.log(`\n📋 Found ${julyTransactions.length} July transactions with credit/debit payments to update`);
+    console.log(
+      `\n📋 Found ${julyTransactions.length} July transactions with credit/debit payments to update`
+    );
 
     let updateCount = 0;
 
@@ -39,13 +43,16 @@ async function updateCreditToCard() {
       let newPaymentBreakdown = [...transaction.paymentBreakdown];
 
       // Update paymentMethod field
-      if (transaction.paymentMethod === "credit" || transaction.paymentMethod === "debit") {
+      if (
+        transaction.paymentMethod === "credit" ||
+        transaction.paymentMethod === "debit"
+      ) {
         newPaymentMethod = "card";
         needsUpdate = true;
       }
 
       // Update paymentBreakdown array
-      newPaymentBreakdown = newPaymentBreakdown.map(payment => {
+      newPaymentBreakdown = newPaymentBreakdown.map((payment) => {
         if (payment.method === "credit" || payment.method === "debit") {
           needsUpdate = true;
           return { ...payment, method: "card" };
@@ -59,8 +66,8 @@ async function updateCreditToCard() {
           {
             $set: {
               paymentMethod: newPaymentMethod,
-              paymentBreakdown: newPaymentBreakdown
-            }
+              paymentBreakdown: newPaymentBreakdown,
+            },
           }
         );
 
@@ -73,49 +80,59 @@ async function updateCreditToCard() {
       }
     }
 
-    console.log(`\n✅ Successfully updated ${updateCount} July transactions (credit/debit → card)`);
-    
+    console.log(
+      `\n✅ Successfully updated ${updateCount} July transactions (credit/debit → card)`
+    );
+
     // Verify the update by checking payment method distribution
-    const paymentStats = await collection.aggregate([
-      {
-        $match: {
-          timestamp: {
-            $gte: new Date("2025-07-01T00:00:00.000Z"),
-            $lt: new Date("2025-08-01T00:00:00.000Z"),
-          }
-        }
-      },
-      {
-        $group: {
-          _id: "$paymentMethod",
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $sort: { count: -1 }
-      }
-    ]).toArray();
+    const paymentStats = await collection
+      .aggregate([
+        {
+          $match: {
+            timestamp: {
+              $gte: new Date("2025-07-01T00:00:00.000Z"),
+              $lt: new Date("2025-08-01T00:00:00.000Z"),
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$paymentMethod",
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $sort: { count: -1 },
+        },
+      ])
+      .toArray();
 
     console.log(`\n📊 Payment method distribution after update:`);
-    paymentStats.forEach(stat => {
+    paymentStats.forEach((stat) => {
       console.log(`${stat._id}: ${stat.count} transactions`);
     });
 
     // Check sample transactions
-    const sampleTransactions = await collection.find({
-      timestamp: {
-        $gte: new Date("2025-07-01T00:00:00.000Z"),
-        $lt: new Date("2025-08-01T00:00:00.000Z"),
-      },
-      paymentMethod: "card"
-    }).limit(3).toArray();
+    const sampleTransactions = await collection
+      .find({
+        timestamp: {
+          $gte: new Date("2025-07-01T00:00:00.000Z"),
+          $lt: new Date("2025-08-01T00:00:00.000Z"),
+        },
+        paymentMethod: "card",
+      })
+      .limit(3)
+      .toArray();
 
     console.log(`\n🔍 Sample card transactions:`);
     sampleTransactions.forEach((t, idx) => {
-      console.log(`${idx + 1}. ID: ${t.transactionId}, Method: ${t.paymentMethod}, Total: $${t.total}`);
+      console.log(
+        `${idx + 1}. ID: ${t.transactionId}, Method: ${
+          t.paymentMethod
+        }, Total: $${t.total}`
+      );
       console.log(`   PaymentBreakdown:`, t.paymentBreakdown);
     });
-
   } catch (error) {
     console.error("Error updating credit to card:", error);
   } finally {

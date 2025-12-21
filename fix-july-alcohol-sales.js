@@ -8,18 +8,68 @@ const dbName = process.env.MONGO_DB || "convenience_store";
 // Only beer and wine items (no hard liquor allowed)
 const allowedAlcoholItems = [
   // Beer items
-  { barcode: "7123456789012", name: "Budweiser 24-pack", price: 42.99, category: "Alcohol" },
-  { barcode: "7123456789013", name: "Coors Light 24-pack", price: 41.99, category: "Alcohol" },
-  { barcode: "7123456789014", name: "Corona 6-pack", price: 14.99, category: "Alcohol" },
-  { barcode: "7123456789015", name: "Heineken 6-pack", price: 16.99, category: "Alcohol" },
-  { barcode: "7123456789016", name: "Molson Canadian 12-pack", price: 22.99, category: "Alcohol" },
-  { barcode: "7123456789027", name: "Blue Light 12-pack", price: 21.99, category: "Alcohol" },
-  { barcode: "7123456789028", name: "Stella Artois 6-pack", price: 15.99, category: "Alcohol" },
-  
+  {
+    barcode: "7123456789012",
+    name: "Budweiser 24-pack",
+    price: 42.99,
+    category: "Alcohol",
+  },
+  {
+    barcode: "7123456789013",
+    name: "Coors Light 24-pack",
+    price: 41.99,
+    category: "Alcohol",
+  },
+  {
+    barcode: "7123456789014",
+    name: "Corona 6-pack",
+    price: 14.99,
+    category: "Alcohol",
+  },
+  {
+    barcode: "7123456789015",
+    name: "Heineken 6-pack",
+    price: 16.99,
+    category: "Alcohol",
+  },
+  {
+    barcode: "7123456789016",
+    name: "Molson Canadian 12-pack",
+    price: 22.99,
+    category: "Alcohol",
+  },
+  {
+    barcode: "7123456789027",
+    name: "Blue Light 12-pack",
+    price: 21.99,
+    category: "Alcohol",
+  },
+  {
+    barcode: "7123456789028",
+    name: "Stella Artois 6-pack",
+    price: 15.99,
+    category: "Alcohol",
+  },
+
   // Wine items
-  { barcode: "7123456789017", name: "Red Wine Bottle", price: 18.99, category: "Alcohol" },
-  { barcode: "7123456789018", name: "White Wine Bottle", price: 17.99, category: "Alcohol" },
-  { barcode: "7123456789029", name: "Rosé Wine Bottle", price: 19.99, category: "Alcohol" },
+  {
+    barcode: "7123456789017",
+    name: "Red Wine Bottle",
+    price: 18.99,
+    category: "Alcohol",
+  },
+  {
+    barcode: "7123456789018",
+    name: "White Wine Bottle",
+    price: 17.99,
+    category: "Alcohol",
+  },
+  {
+    barcode: "7123456789029",
+    name: "Rosé Wine Bottle",
+    price: 19.99,
+    category: "Alcohol",
+  },
 ];
 
 // Payment methods with correct distribution
@@ -56,16 +106,17 @@ function getSalesMultiplier(dayOfWeek, date) {
     5: 1.7, // Friday
     6: 1.8, // Saturday
   };
-  
+
   const day = date.getDate();
   let eventMultiplier = 1.0;
-  
-  if (day === 1) { // Canada Day
+
+  if (day === 1) {
+    // Canada Day
     eventMultiplier = 2.2;
   } else if (day >= 28 && day <= 31) {
     eventMultiplier = 1.4;
   }
-  
+
   return (baseMultipliers[dayOfWeek] || 1.0) * eventMultiplier;
 }
 
@@ -82,7 +133,14 @@ function generateTransactionTime(date) {
 
 function generateTransaction(date, transactionId) {
   const items = [];
-  const itemCount = Math.random() < 0.65 ? 1 : Math.random() < 0.85 ? 2 : Math.random() < 0.95 ? 3 : 4;
+  const itemCount =
+    Math.random() < 0.65
+      ? 1
+      : Math.random() < 0.85
+      ? 2
+      : Math.random() < 0.95
+      ? 3
+      : 4;
   let subtotal = 0;
 
   for (let i = 0; i < itemCount; i++) {
@@ -163,11 +221,14 @@ async function fixJulyAlcoholSales() {
     const target = 13650;
     if (totalSales < target - 500) {
       const additionalNeeded = Math.ceil((target - totalSales) / 40);
-      console.log(`Adding ${additionalNeeded} more transactions to reach target...`);
+      console.log(
+        `Adding ${additionalNeeded} more transactions to reach target...`
+      );
 
       for (let i = 0; i < additionalNeeded; i++) {
         const highSalesDays = [1, 4, 5, 6, 11, 12, 13, 18, 19, 20, 25, 26, 27];
-        const randomDay = highSalesDays[Math.floor(Math.random() * highSalesDays.length)];
+        const randomDay =
+          highSalesDays[Math.floor(Math.random() * highSalesDays.length)];
         const date = new Date(2025, 6, randomDay);
         const transaction = generateTransaction(date, transactionIdCounter++);
         transactions.push(transaction);
@@ -178,13 +239,16 @@ async function fixJulyAlcoholSales() {
     // Step 4: Insert new transactions
     if (transactions.length > 0) {
       await collection.insertMany(transactions);
-      console.log(`✅ Inserted ${transactions.length} new PURE ALCOHOL transactions`);
+      console.log(
+        `✅ Inserted ${transactions.length} new PURE ALCOHOL transactions`
+      );
       console.log(`💰 Total alcohol sales: $${totalSales.toFixed(2)}`);
 
       // Payment method breakdown
       const paymentBreakdown = {};
-      transactions.forEach(t => {
-        paymentBreakdown[t.paymentMethod] = (paymentBreakdown[t.paymentMethod] || 0) + 1;
+      transactions.forEach((t) => {
+        paymentBreakdown[t.paymentMethod] =
+          (paymentBreakdown[t.paymentMethod] || 0) + 1;
       });
 
       console.log(`\n💳 Payment method distribution:`);
@@ -195,22 +259,26 @@ async function fixJulyAlcoholSales() {
 
       // Item breakdown
       const itemBreakdown = {};
-      transactions.forEach(t => {
-        t.items.forEach(item => {
-          itemBreakdown[item.name] = (itemBreakdown[item.name] || 0) + item.quantity;
+      transactions.forEach((t) => {
+        t.items.forEach((item) => {
+          itemBreakdown[item.name] =
+            (itemBreakdown[item.name] || 0) + item.quantity;
         });
       });
 
       console.log(`\n🍺🍷 Items sold:`);
-      Object.entries(itemBreakdown).sort().forEach(([name, quantity]) => {
-        console.log(`${name}: ${quantity} units`);
-      });
+      Object.entries(itemBreakdown)
+        .sort()
+        .forEach(([name, quantity]) => {
+          console.log(`${name}: ${quantity} units`);
+        });
 
-      console.log(`\n✅ SUCCESS: July now contains ONLY alcohol transactions (beer & wine)`);
+      console.log(
+        `\n✅ SUCCESS: July now contains ONLY alcohol transactions (beer & wine)`
+      );
       console.log(`🚫 NO tobacco, hard liquor, or other categories`);
       console.log(`💰 Payment methods: ~70% cash, ~30% card`);
     }
-
   } catch (error) {
     console.error("Error fixing July alcohol sales:", error);
   } finally {

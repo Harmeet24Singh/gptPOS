@@ -523,30 +523,22 @@ async function getTransactions(
     } else if (dateFilter === "month" && monthFilter) {
       // monthFilter format: "2025-12" for December 2025
       const [year, month] = monthFilter.split("-");
-      const monthStart = `${year}-${month.padStart(2, "0")}-01T00:00:00.000Z`;
+      const monthStart = new Date(
+        `${year}-${month.padStart(2, "0")}-01T00:00:00.000Z`
+      );
       const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
       const nextYear =
         parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
-      const monthEnd = `${nextYear}-${nextMonth
-        .toString()
-        .padStart(2, "0")}-01T00:00:00.000Z`;
+      const monthEnd = new Date(
+        `${nextYear}-${nextMonth.toString().padStart(2, "0")}-01T00:00:00.000Z`
+      );
 
-      // Handle both string timestamps and Date objects
+      // Simplified query using only Date objects
       dateQuery = {
-        $or: [
-          {
-            timestamp: {
-              $gte: monthStart,
-              $lt: monthEnd,
-            },
-          },
-          {
-            timestamp: {
-              $gte: new Date(monthStart),
-              $lt: new Date(monthEnd),
-            },
-          },
-        ],
+        timestamp: {
+          $gte: monthStart,
+          $lt: monthEnd,
+        },
       };
     } else if (dateFilter === "week") {
       const weekAgo = new Date(today);

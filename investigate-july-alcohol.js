@@ -16,16 +16,20 @@ async function investigateJulyAlcoholSales() {
     const collection = db.collection("transactions");
 
     // Get July transactions with alcohol items
-    const julyTransactions = await collection.find({
-      timestamp: {
-        $gte: new Date("2025-07-01T00:00:00.000Z"),
-        $lt: new Date("2025-08-01T00:00:00.000Z"),
-      },
-      "items.category": "Alcohol",
-    }).toArray();
+    const julyTransactions = await collection
+      .find({
+        timestamp: {
+          $gte: new Date("2025-07-01T00:00:00.000Z"),
+          $lt: new Date("2025-08-01T00:00:00.000Z"),
+        },
+        "items.category": "Alcohol",
+      })
+      .toArray();
 
     console.log(`\n📊 July 2025 Transactions Analysis`);
-    console.log(`Total transactions with alcohol items: ${julyTransactions.length}`);
+    console.log(
+      `Total transactions with alcohol items: ${julyTransactions.length}`
+    );
 
     // Analyze each transaction to see what categories are present
     let pureAlcoholTransactions = 0;
@@ -42,13 +46,14 @@ async function investigateJulyAlcoholSales() {
 
       transaction.items.forEach((item) => {
         categoriesFound.add(item.category);
-        
+
         if (item.category === "Alcohol") {
           hasAlcohol = true;
-          transactionAlcoholValue += item.total || (item.price * item.quantity);
+          transactionAlcoholValue += item.total || item.price * item.quantity;
         } else {
           hasNonAlcohol = true;
-          transactionNonAlcoholValue += item.total || (item.price * item.quantity);
+          transactionNonAlcoholValue +=
+            item.total || item.price * item.quantity;
         }
       });
 
@@ -65,16 +70,22 @@ async function investigateJulyAlcoholSales() {
     console.log(`\n📋 Transaction Breakdown:`);
     console.log(`Pure alcohol transactions: ${pureAlcoholTransactions}`);
     console.log(`Mixed transactions (alcohol + other): ${mixedTransactions}`);
-    
+
     console.log(`\n💰 Sales Breakdown:`);
     console.log(`Total alcohol value: $${totalAlcoholValue.toFixed(2)}`);
     console.log(`Total non-alcohol value: $${totalNonAlcoholValue.toFixed(2)}`);
-    console.log(`Combined total: $${(totalAlcoholValue + totalNonAlcoholValue).toFixed(2)}`);
+    console.log(
+      `Combined total: $${(totalAlcoholValue + totalNonAlcoholValue).toFixed(
+        2
+      )}`
+    );
 
     console.log(`\n📦 Categories found in July transactions:`);
-    Array.from(categoriesFound).sort().forEach(category => {
-      console.log(`- ${category}`);
-    });
+    Array.from(categoriesFound)
+      .sort()
+      .forEach((category) => {
+        console.log(`- ${category}`);
+      });
 
     // Show some sample mixed transactions
     if (mixedTransactions > 0) {
@@ -82,20 +93,25 @@ async function investigateJulyAlcoholSales() {
       let count = 0;
       for (const transaction of julyTransactions) {
         if (count >= 3) break;
-        
-        const categories = [...new Set(transaction.items.map(item => item.category))];
+
+        const categories = [
+          ...new Set(transaction.items.map((item) => item.category)),
+        ];
         if (categories.length > 1) {
           console.log(`\nTransaction ID: ${transaction.transactionId}`);
           console.log(`Categories: ${categories.join(", ")}`);
           console.log(`Items:`);
-          transaction.items.forEach(item => {
-            console.log(`  - ${item.name} (${item.category}): $${(item.total || item.price * item.quantity).toFixed(2)}`);
+          transaction.items.forEach((item) => {
+            console.log(
+              `  - ${item.name} (${item.category}): $${(
+                item.total || item.price * item.quantity
+              ).toFixed(2)}`
+            );
           });
           count++;
         }
       }
     }
-
   } catch (error) {
     console.error("Error investigating July alcohol sales:", error);
   } finally {

@@ -83,7 +83,7 @@ export default function TransactionsPage() {
   const [monthFilter, setMonthFilter] = useState("");
   const [viewMode, setViewMode] = useState("list"); // "list" or "daily"
   const [expandedTransaction, setExpandedTransaction] = useState(null);
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState("all"); // "all", "cash", "card", "credit", "lotto", "unpaid"
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState("all"); // "all", "cash", "card", "credit", "lotto", "unpaid", "grocery-only"
 
   // Payment method editing state
   const [editingPaymentMethod, setEditingPaymentMethod] = useState(null);
@@ -183,7 +183,7 @@ export default function TransactionsPage() {
   const loadTransactions = async () => {
     try {
       // Build URL with date filter parameters
-      const params = new URLSearchParams({ limit: "5000" });
+      const params = new URLSearchParams({ limit: "50000" });
       if (dateFilter && dateFilter !== "all") {
         params.set("dateFilter", dateFilter);
         if (dateFilter === "specific" && selectedDate) {
@@ -453,7 +453,10 @@ export default function TransactionsPage() {
               // Check by exact category matches
               if (
                 item.category &&
-                (item.category === "Lotto" || item.category === "lotto")
+                (item.category === "Lotto" ||
+                  item.category === "lotto" ||
+                  item.category === "Lotto instant" ||
+                  item.category === "lotto instant")
               ) {
                 return true;
               }
@@ -485,6 +488,20 @@ export default function TransactionsPage() {
           }
           return false;
         });
+      } else if (transactionTypeFilter === "grocery-only") {
+        filtered = filtered.filter((t) => {
+          // Check if transaction contains ONLY grocery items (category = "Grocery")
+          if (t.items && Array.isArray(t.items)) {
+            const hasGrocery = t.items.some(
+              (item) => item.category === "Grocery"
+            );
+            const isGroceryOnly = t.items.every(
+              (item) => item.category === "Grocery" || !item.category
+            );
+            return hasGrocery && isGroceryOnly;
+          }
+          return false;
+        });
       } else {
         filtered = filtered.filter(
           (t) => t.transactionType === transactionTypeFilter
@@ -500,23 +517,29 @@ export default function TransactionsPage() {
     const { lottoWinnings } = getLottoWinningsFromItems();
 
     // Total sales = Cash earnings + Card earnings + Lotto winnings (69+190.25+133.89)
-    return cashTotal + cardTotal + lottoWinnings;
+    return (cashTotal || 0) + (cardTotal || 0) + (lottoWinnings || 0);
   };
 
   const getTotalTransactions = () => {
     return filteredTransactions.length;
   };
 
-  // Get lotto winnings from top selling items (only 'Lotto Winnings' item)
+  // Get lotto winnings from ALL transactions (not just top selling items)
   const getLottoWinningsFromItems = () => {
-    const topItems = getTopSellingItems();
     let lottoWinnings = 0;
     let lottoQuantity = 0;
 
-    topItems.forEach((item) => {
-      if (item.name === "Lotto Winnings") {
-        lottoWinnings += Math.abs(item.totalRevenue);
-        lottoQuantity += item.quantitySold;
+    filteredTransactions.forEach((transaction) => {
+      if (transaction.items && Array.isArray(transaction.items)) {
+        transaction.items.forEach((item) => {
+          if (item.name === "Lotto Winnings") {
+            // Fix NaN issue by adding null checks and fallback values
+            const itemTotal = item.total || 0;
+            const itemQuantity = item.quantity || 0;
+            lottoWinnings += Math.abs(itemTotal);
+            lottoQuantity += itemQuantity;
+          }
+        });
       }
     });
 
@@ -524,8 +547,10 @@ export default function TransactionsPage() {
   };
 
   const getAverageTransaction = () => {
-    if (filteredTransactions.length === 0) return 0;
-    return getTotalSales() / getTotalTransactions();
+    const totalTransactions = getTotalTransactions();
+    const totalSales = getTotalSales();
+    if (totalTransactions === 0 || !totalSales) return 0;
+    return totalSales / totalTransactions;
   };
 
   const getTransactionPaymentMethod = (transaction) => {
@@ -1191,10 +1216,10 @@ export default function TransactionsPage() {
               <div style="margin-bottom: 6px;">
                 <div style="font-weight: bold; font-size: 11px;">${new Date(
                   day.date
-                ).toLocaleDateString("en-US", { 
-                  weekday: "short", 
-                  month: "short", 
-                  day: "numeric" 
+                ).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
                 })}</div>
                 <div class="summary-item" style="font-size: 10px;">
                   <span>Sales:</span>
@@ -1640,7 +1665,8 @@ export default function TransactionsPage() {
         transaction.items.forEach((item, itemIndex) => {
           if (isAlcoholItem(item)) {
             hasAlcohol = true;
-            alcoholAmountInTransaction += item.total || (item.price * item.quantity);
+            alcoholAmountInTransaction +=
+              item.total || item.price * item.quantity;
             alcoholItemCount += item.quantity;
           }
         });
@@ -1691,7 +1717,8 @@ export default function TransactionsPage() {
         } else if (hasAlcohol) {
           transaction.items.forEach((item) => {
             if (item.category === "Alcohol") {
-              alcoholAmountInTransaction += item.total || (item.price * item.quantity);
+              alcoholAmountInTransaction +=
+                item.total || item.price * item.quantity;
             }
           });
         }
@@ -1704,6 +1731,63 @@ export default function TransactionsPage() {
     });
 
     return { alcoholTotal, alcoholTransactionCount, alcoholItemCount };
+  };
+
+  // Grocery-only breakdown function
+  const getGroceryOnlyBreakdown = () => {
+    let groceryTotal = 0;
+    let groceryTransactionCount = 0;
+    let groceryItemCount = 0;
+
+    if (filteredTransactions.length === 0) {
+      return {
+        groceryTotal: 0,
+        groceryTransactionCount: 0,
+        groceryItemCount: 0,
+      };
+    }
+
+    filteredTransactions.forEach((transaction) => {
+      let hasGrocery = false;
+      let groceryAmountInTransaction = 0;
+      let isGroceryOnly = true;
+
+      if (transaction.items && Array.isArray(transaction.items)) {
+        // First check if this is a pure grocery transaction
+        transaction.items.forEach((item) => {
+          if (item.category === "Grocery") {
+            hasGrocery = true;
+            groceryItemCount += item.quantity;
+          } else if (item.category && item.category !== "Grocery") {
+            isGroceryOnly = false;
+          }
+        });
+
+        // If this is a pure grocery transaction, use the full transaction total
+        // Otherwise, sum only the grocery items
+        if (hasGrocery && isGroceryOnly) {
+          groceryAmountInTransaction = transaction.total;
+        } else if (hasGrocery) {
+          transaction.items.forEach((item) => {
+            if (item.category === "Grocery") {
+              groceryAmountInTransaction +=
+                item.total || item.price * item.quantity;
+            }
+          });
+        }
+      }
+
+      if (hasGrocery) {
+        groceryTotal += groceryAmountInTransaction;
+        groceryTransactionCount++;
+      }
+    });
+
+    return {
+      groceryTotal,
+      groceryTransactionCount,
+      groceryItemCount,
+    };
   };
 
   const getAlcoholPaymentBreakdown = () => {
@@ -1726,9 +1810,15 @@ export default function TransactionsPage() {
 
     alcoholTransactions.forEach((transaction) => {
       // Check if transaction has only alcohol items for full transaction total
-      const isAlcoholOnly = transaction.items.every(item => item.category === "Alcohol");
-      
-      if (isAlcoholOnly && transaction.paymentBreakdown && Array.isArray(transaction.paymentBreakdown)) {
+      const isAlcoholOnly = transaction.items.every(
+        (item) => item.category === "Alcohol"
+      );
+
+      if (
+        isAlcoholOnly &&
+        transaction.paymentBreakdown &&
+        Array.isArray(transaction.paymentBreakdown)
+      ) {
         // Use paymentBreakdown array for pure alcohol transactions
         transaction.paymentBreakdown.forEach((payment) => {
           if (payment.method === "cash") {
@@ -1737,15 +1827,19 @@ export default function TransactionsPage() {
             cardTotal += payment.amount;
           }
         });
-        
+
         // Count transaction based on primary payment method
         if (transaction.paymentMethod === "cash") {
           cashCount++;
         } else if (transaction.paymentMethod === "mixed") {
           // For mixed payments, count as both but split proportionally
-          const cashPortion = transaction.paymentBreakdown.find(p => p.method === "cash");
-          const cardPortion = transaction.paymentBreakdown.find(p => p.method === "card");
-          
+          const cashPortion = transaction.paymentBreakdown.find(
+            (p) => p.method === "cash"
+          );
+          const cardPortion = transaction.paymentBreakdown.find(
+            (p) => p.method === "card"
+          );
+
           if (cashPortion && cashPortion.amount > 0) cashCount++;
           if (cardPortion && cardPortion.amount > 0) cardCount++;
         } else {
@@ -1765,25 +1859,32 @@ export default function TransactionsPage() {
         let alcoholAmount = 0;
         transaction.items.forEach((item) => {
           if (item.category === "Alcohol") {
-            alcoholAmount += item.total || (item.price * item.quantity);
+            alcoholAmount += item.total || item.price * item.quantity;
           }
         });
-        
+
         // Distribute alcohol amount across payment methods proportionally
-        if (transaction.paymentBreakdown && Array.isArray(transaction.paymentBreakdown) && alcoholAmount > 0) {
-          const totalPaid = transaction.paymentBreakdown.reduce((sum, p) => sum + p.amount, 0);
-          
+        if (
+          transaction.paymentBreakdown &&
+          Array.isArray(transaction.paymentBreakdown) &&
+          alcoholAmount > 0
+        ) {
+          const totalPaid = transaction.paymentBreakdown.reduce(
+            (sum, p) => sum + p.amount,
+            0
+          );
+
           transaction.paymentBreakdown.forEach((payment) => {
             const proportion = payment.amount / totalPaid;
             const alcoholPortionForMethod = alcoholAmount * proportion;
-            
+
             if (payment.method === "cash") {
               cashTotal += alcoholPortionForMethod;
             } else if (payment.method === "card") {
               cardTotal += alcoholPortionForMethod;
             }
           });
-          
+
           // Count transaction once based on primary payment method
           if (transaction.paymentMethod === "cash") {
             cashCount++;
@@ -1997,7 +2098,8 @@ export default function TransactionsPage() {
         transaction.items.forEach((item, itemIndex) => {
           if (isTobaccoItem(item)) {
             hasTobacco = true;
-            tobaccoAmountInTransaction += item.total || (item.price * item.quantity);
+            tobaccoAmountInTransaction +=
+              item.total || item.price * item.quantity;
             tobaccoItemCount += item.quantity;
           }
         });
@@ -2058,10 +2160,14 @@ export default function TransactionsPage() {
     ];
 
     const isLotteryItem = (item) => {
-      // First check if category exists and is exactly 'Lotto' or 'lotto'
+      // First check if category exists and is lottery-related
       if (
         item.category &&
-        (item.category === "Lotto" || item.category === "lotto")
+        (item.category === "Lotto" ||
+          item.category === "lotto" ||
+          item.category === "Lotto instant" ||
+          item.category === "Lotto Instant" ||
+          item.category === "lotto instant")
       ) {
         return true;
       }
@@ -2088,8 +2194,10 @@ export default function TransactionsPage() {
         transaction.items.forEach((item, itemIndex) => {
           if (isLotteryItem(item)) {
             hasLottery = true;
-            lotteryAmountInTransaction += item.price * item.quantity;
-            lotteryItemCount += item.quantity;
+            // Use item.total if available, otherwise calculate from price * quantity
+            const itemAmount = item.total || item.price * item.quantity;
+            lotteryAmountInTransaction += itemAmount;
+            lotteryItemCount += item.quantity || 1;
           }
         });
       }
@@ -2361,7 +2469,7 @@ export default function TransactionsPage() {
           <CompactCard>
             <h3>💰 Total Sales</h3>
             <p style={{ fontWeight: "bold", color: "#27ae60" }}>
-              ${getTotalSales().toFixed(2)}
+              ${(getTotalSales() || 0).toFixed(2)}
             </p>
             <p>
               {dateFilter === "today"
@@ -2397,10 +2505,11 @@ export default function TransactionsPage() {
           >
             <h3>💵 Cash Earnings</h3>
             <p style={{ fontWeight: "bold", color: "#27ae60" }}>
-              ${getPaymentMethodBreakdown().cashTotal.toFixed(2)}
+              ${(getPaymentMethodBreakdown().cashTotal || 0).toFixed(2)}
             </p>
             <p>
-              {getPaymentMethodBreakdown().cashTransactionCount} transactions
+              {getPaymentMethodBreakdown().cashTransactionCount || 0}{" "}
+              transactions
             </p>
             {transactionTypeFilter === "cash" && (
               <div
@@ -2425,10 +2534,11 @@ export default function TransactionsPage() {
           >
             <h3>💳 Card Earnings</h3>
             <p style={{ fontWeight: "bold", color: "#3498db" }}>
-              ${getPaymentMethodBreakdown().cardTotal.toFixed(2)}
+              ${(getPaymentMethodBreakdown().cardTotal || 0).toFixed(2)}
             </p>
             <p>
-              {getPaymentMethodBreakdown().cardTransactionCount} transactions
+              {getPaymentMethodBreakdown().cardTransactionCount || 0}{" "}
+              transactions
             </p>
             {transactionTypeFilter === "card" && (
               <div
@@ -2484,9 +2594,11 @@ export default function TransactionsPage() {
             >
               <h3>🎰 Lottery Redeem</h3>
               <p style={{ fontWeight: "bold", color: "#9b59b6" }}>
-                ${getLotteryBreakdown().lottoTotal.toFixed(2)}
+                ${(getLotteryBreakdown().lottoTotal || 0).toFixed(2)}
               </p>
-              <p>{getLotteryBreakdown().lottoTransactionCount} winnings paid</p>
+              <p>
+                {getLotteryBreakdown().lottoTransactionCount || 0} winnings paid
+              </p>
               {transactionTypeFilter === "lotto" && (
                 <div
                   style={{
@@ -2537,43 +2649,93 @@ export default function TransactionsPage() {
                   border: "1px solid #e9ecef",
                 }}
               >
-                <div style={{ fontWeight: "600", marginBottom: "0.3rem" }}>Payment Methods:</div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.2rem" }}>
-                  <span>💵 Cash:</span>
-                  <span>${getAlcoholPaymentBreakdown().cashTotal.toFixed(2)} ({getAlcoholPaymentBreakdown().cashCount})</span>
+                <div style={{ fontWeight: "600", marginBottom: "0.3rem" }}>
+                  Payment Methods:
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "0.2rem",
+                  }}
+                >
+                  <span>💵 Cash:</span>
+                  <span>
+                    ${getAlcoholPaymentBreakdown().cashTotal.toFixed(2)} (
+                    {getAlcoholPaymentBreakdown().cashCount})
+                  </span>
+                </div>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
                   <span>💳 Card:</span>
-                  <span>${getAlcoholPaymentBreakdown().cardTotal.toFixed(2)} ({getAlcoholPaymentBreakdown().cardCount})</span>
+                  <span>
+                    ${getAlcoholPaymentBreakdown().cardTotal.toFixed(2)} (
+                    {getAlcoholPaymentBreakdown().cardCount})
+                  </span>
                 </div>
               </div>
             </div>
           )}
         </ClickableCard>
 
-        {/* Grocery Sales */}
+        {/* New Grocery Card (Category-based) */}
         <ClickableCard
-          isActive={transactionTypeFilter === "grocery"}
-          onClick={() => handleCardFilter("grocery")}
+          isActive={transactionTypeFilter === "grocery-only"}
+          onClick={() => handleCardFilter("grocery-only")}
         >
-          <h3>🛒 Grocery Sales</h3>
-          <p style={{ fontWeight: "bold", color: "#27ae60" }}>
-            ${getGrocerySalesBreakdown().groceryTotal.toFixed(2)}
+          <h3>🥬 Grocery</h3>
+          <p style={{ fontWeight: "bold", color: "#2ecc71" }}>
+            ${getGroceryOnlyBreakdown().groceryTotal.toFixed(2)}
           </p>
           <p>
-            {getGrocerySalesBreakdown().groceryTransactionCount} transactions
+            {getGroceryOnlyBreakdown().groceryTransactionCount} transactions
           </p>
 
-          {transactionTypeFilter === "grocery" && (
-            <div
-              style={{
-                fontSize: "0.75rem",
-                color: "#3498db",
-                marginTop: "0.5rem",
-                fontWeight: "600",
-              }}
-            >
-              🔍 Filtered
+          {transactionTypeFilter === "grocery-only" && (
+            <div>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#3498db",
+                  marginTop: "0.5rem",
+                  fontWeight: "600",
+                }}
+              >
+                🔍 Category Only
+              </div>
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  marginTop: "0.5rem",
+                  padding: "0.5rem",
+                  backgroundColor: "#f8f9fa",
+                  borderRadius: "4px",
+                  border: "1px solid #e9ecef",
+                }}
+              >
+                <div style={{ fontWeight: "600", marginBottom: "0.3rem" }}>
+                  Items sold: {getGroceryOnlyBreakdown().groceryItemCount}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginBottom: "0.2rem",
+                  }}
+                >
+                  <span>Avg per transaction:</span>
+                  <span>
+                    $
+                    {getGroceryOnlyBreakdown().groceryTransactionCount > 0
+                      ? (
+                          getGroceryOnlyBreakdown().groceryTotal /
+                          getGroceryOnlyBreakdown().groceryTransactionCount
+                        ).toFixed(2)
+                      : "0.00"}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </ClickableCard>
@@ -2730,20 +2892,19 @@ export default function TransactionsPage() {
             style={{
               fontWeight: "bold",
               color:
-                getPaymentMethodBreakdown().cashTotal >= 0
+                (getPaymentMethodBreakdown().cashTotal || 0) >= 0
                   ? "#27ae60"
                   : "#e74c3c",
             }}
           >
-            ${getPaymentMethodBreakdown().cashTotal.toFixed(2)}
+            ${(getPaymentMethodBreakdown().cashTotal || 0).toFixed(2)}
           </p>
           <p>
-            {getPaymentMethodBreakdown().cashTotal >= 0
+            {(getPaymentMethodBreakdown().cashTotal || 0) >= 0
               ? "Cash gained"
               : "Cash reduced"}
           </p>
         </CompactCard>
-
       </CompactCardGrid>
 
       {/* Payment Method Breakdown - Now consolidated in CompactCardGrid above */}
@@ -3437,7 +3598,12 @@ export default function TransactionsPage() {
                       </span>
                     )}
                   </td>
-                  <td>${transaction.subtotal.toFixed(2)}</td>
+                  <td>
+                    $
+                    {transaction.subtotal
+                      ? transaction.subtotal.toFixed(2)
+                      : "0.00"}
+                  </td>
                   <td>
                     {transaction.includeTax !== false
                       ? `$${transaction.tax.toFixed(2)}`

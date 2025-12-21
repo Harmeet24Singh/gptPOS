@@ -16,13 +16,15 @@ async function checkJulyAlcoholSales() {
     const collection = db.collection("transactions");
 
     // Get July alcohol transactions
-    const julyAlcoholTransactions = await collection.find({
-      timestamp: {
-        $gte: new Date("2025-07-01T00:00:00.000Z"),
-        $lt: new Date("2025-08-01T00:00:00.000Z"),
-      },
-      "items.category": "Alcohol",
-    }).toArray();
+    const julyAlcoholTransactions = await collection
+      .find({
+        timestamp: {
+          $gte: new Date("2025-07-01T00:00:00.000Z"),
+          $lt: new Date("2025-08-01T00:00:00.000Z"),
+        },
+        "items.category": "Alcohol",
+      })
+      .toArray();
 
     console.log(`\n📊 July 2025 Alcohol Sales Analysis`);
     console.log(`Total transactions: ${julyAlcoholTransactions.length}`);
@@ -65,15 +67,20 @@ async function checkJulyAlcoholSales() {
     // If we need to add more sales
     if (totalSales < 13650) {
       const needed = 13650 - totalSales;
-      console.log(`\n⚠️  Need to add approximately $${needed.toFixed(2)} more in sales`);
-      console.log(`💡 Suggestion: Add ${Math.ceil(needed / 35)} more transactions (avg $35 each)`);
+      console.log(
+        `\n⚠️  Need to add approximately $${needed.toFixed(2)} more in sales`
+      );
+      console.log(
+        `💡 Suggestion: Add ${Math.ceil(
+          needed / 35
+        )} more transactions (avg $35 each)`
+      );
     } else if (totalSales > 13650) {
       const excess = totalSales - 13650;
       console.log(`\n✅ Target exceeded by $${excess.toFixed(2)}`);
     } else {
       console.log(`\n🎯 Perfect! Target reached exactly!`);
     }
-
   } catch (error) {
     console.error("Error checking July alcohol sales:", error);
   } finally {

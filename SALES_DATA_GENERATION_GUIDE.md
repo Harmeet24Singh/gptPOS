@@ -2,9 +2,102 @@
 
 This document provides step-by-step instructions for adding sales data for any month in the gptPOS system. Follow these procedures to ensure consistent data structure and payment method distribution.
 
+## Completed Months
+
+✅ **July 2025 Alcohol Sales**: $13,528.43 across 381 transactions  
+✅ **July 2025 Tobacco Sales**: $11,888.68 across 354 transactions  
+✅ **August 2025 Alcohol Sales**: $11,550.02 across 325 transactions  
+✅ **September 2025 Alcohol Sales**: $7,622.46 across 210 transactions  
+✅ **November 2025 Alcohol Sales**: $5,964.32 across 164 transactions
+
+**Grocery Sales (All Fixed with Payment Breakdown Arrays):**  
+✅ **July 2025**: ~$7,382 (99.4% accuracy)  
+✅ **August 2025**: $6,338.71 (164 transactions)  
+✅ **September 2025**: $4,366.50 (125 transactions)  
+✅ **November 2025**: $3,100.18 (120 transactions)
+
+All months include realistic business patterns, proper payment breakdowns, and comprehensive verification.
+
+**Combined Total**: $62,758.30 across 1,843 transactions
+
 ## Overview
 
 The system supports monthly sales data with proper payment method breakdowns and category-based filtering. Each transaction requires specific fields and structures to work correctly with the frontend transaction page.
+
+## ⚠️ CRITICAL: Payment Breakdown Array Requirement
+
+**ALL transactions MUST include a `paymentBreakdown` array** or they will incorrectly appear as "unpaid" on the transactions page.
+
+Example:
+```javascript
+paymentBreakdown: [
+  { method: "cash", amount: 45.50 },
+  { method: "card", amount: 12.25 }
+]
+// OR for single payment method:
+paymentBreakdown: [
+  { method: "cash", amount: 57.75 }
+]
+```
+
+**Common Issue**: Transactions generated without this array will show up in the "Unpaid Amounts" filter even though they have valid `paymentMethod` and `total` fields.
+
+**Resolution**: Always include the breakdown array matching the transaction's payment method and total.
+
+## Category-Specific Generation Guidelines
+
+### Tobacco Sales Implementation
+
+**Key Characteristics:**
+- **Non-taxable**: All tobacco items should remain tax-free as configured
+- **Stock Independence**: Generate sales regardless of inventory stock levels
+- **Multi-item Purchases**: Realistic buying patterns with 1-4 items per transaction
+- **Quantity Logic**: 
+  - Small items (cigars, individual): 1-5 units
+  - Regular packs: 1-3 units
+  - Cartons/bulk: 1-2 units
+- **Price Range Utilization**: Include all price points from individual cigars ($2.25) to cartons ($140+)
+
+**Example Tobacco Transaction:**
+```javascript
+{
+  transactionId: 71125,
+  items: [
+    { name: "Marlboro Original LKS", category: "Tobacco", price: 18.75, quantity: 2, total: 37.50, taxable: false },
+    { name: "Century Sam 1", category: "Tobacco", price: 2.99, quantity: 3, total: 8.97, taxable: false }
+  ],
+  subtotal: 46.47,
+  tax: 0,
+  total: 46.47,
+  taxableAmount: 0,
+  nonTaxableAmount: 46.47,
+  includeTax: false,
+  paymentMethod: "cash",
+  paymentBreakdown: [{ method: "cash", amount: 46.47 }]
+}
+```
+
+**July 2025 Tobacco Results:**
+- Target: $11,900 → Generated: $11,888.68 (99.9% accuracy)
+- 354 transactions with 627 total items
+- Payment distribution: 63.4% cash, 36.6% card
+- Average items per transaction: 1.8
+
+### Alcohol Sales Implementation
+
+**Key Characteristics:**
+- **Taxable**: Most alcohol items subject to 13% HST
+- **Age Verification**: Business hours implementation (7 AM - 9 PM)
+- **Mixed Transactions**: Can include multiple alcohol types
+- **Price Premiums**: Higher average transaction values
+
+### Grocery Sales Implementation
+
+**Key Characteristics:**  
+- **Mixed Taxability**: Some grocery items taxable, others not
+- **Category-Specific Filtering**: Frontend has dedicated grocery-only card
+- **Proportional Tax Calculation**: Uses transaction.total for accuracy
+- **Volume Sales**: High transaction frequency, moderate values
 
 ## Required Transaction Structure
 
@@ -27,6 +120,9 @@ Each transaction must have the following fields:
   cashAmount: Number,                   // Total cash amount
   cardAmount: Number,                   // Total card amount
   cashback: Number,                     // Cashback amount (default: 0)
+  
+  // CRITICAL: paymentBreakdown array is MANDATORY!
+  // Transactions without this array will appear as "unpaid" in frontend
   
   // Items Array
   items: [{
@@ -378,16 +474,104 @@ const hourStats = transactions.groupBy(t => t.timestamp.getHours());
 - Ensure `total` matches sum of payment breakdown
 - After shuffling, always verify payment amounts = transaction totals
 
+## Successfully Completed Examples
+
+### August 2025 Alcohol Sales ($11,550)
+Scripts created and executed:
+- `generate-alcohol-sales-august.js` - Initial data creation
+- `enhance-august-alcohol-sales.js` - Applied realistic patterns and payment fixes
+- `verify-august-alcohol-sales.js` - Comprehensive verification
+
+Results:
+- **Total Sales**: $11,550.02 (100.00% of target)
+- **Transactions**: 325 alcohol transactions
+- **Payment Distribution**: 69.8% cash, 28.0% card, 2.2% mixed
+- **Weekly Patterns**: Saturday highest (74 transactions), Sunday lowest (26 transactions)
+- **Unpaid Amounts**: $0.00 (perfect payment matching)
+
+### September 2025 Alcohol Sales ($7,622)
+Scripts created and executed:
+- `generate-alcohol-sales-september.js` - Initial data creation targeting ~$8,000
+- `enhance-september-alcohol-sales.js` - Applied realistic patterns and payment fixes  
+- `verify-september-alcohol-sales.js` - Comprehensive verification
+
+Results:
+- **Total Sales**: $7,622.46 (95.28% of $8,000 target)
+- **Transactions**: 210 alcohol transactions
+- **Payment Distribution**: 69.0% cash, 28.6% card, 2.4% mixed
+- **Weekly Patterns**: Saturday highest (37 transactions), Sunday lowest (20 transactions)
+- **Unpaid Amounts**: $0.00 (perfect payment matching)
+
+### November 2025 Alcohol Sales ($5,964)
+Scripts created and executed:
+- `generate-alcohol-sales-november.js` - Initial data creation targeting ~$6,000
+- `enhance-november-alcohol-sales.js` - Applied realistic patterns and payment fixes  
+- `verify-november-alcohol-sales.js` - Comprehensive verification
+
+Results:
+- **Total Sales**: $5,964.32 (99.41% of $6,000 target)
+- **Transactions**: 164 alcohol transactions
+- **Payment Distribution**: 69.5% cash, 28.0% card, 2.4% mixed
+- **Weekly Patterns**: Saturday highest (35 transactions), Sunday lowest (17 transactions)
+- **Unpaid Amounts**: $0.00 (perfect payment matching)
+
+## Best Practices for Data Generation
+
+### 1. Realistic Purchase Patterns
+- **Tobacco**: Focus on 1-2 item transactions, occasional bulk purchases
+- **Alcohol**: Mix single bottles with multi-item purchases  
+- **Grocery**: Higher item counts (2-8 items typical)
+
+### 2. Price Distribution Strategy
+- Include full price spectrum from each category
+- Weight toward mid-range prices for realism
+- Include occasional high-value transactions (cartons, premium items)
+
+### 3. Payment Method Considerations
+- **Cash preference**: 60-65% for most categories
+- **Card growth**: 35-40% reflecting modern trends
+- **Mixed payments**: Very rare (<1%) for complexity
+
+### 4. Temporal Distribution  
+- Spread transactions across all business days
+- Peak hours: 12-2 PM, 5-7 PM for higher frequency
+- Weekend patterns: Slightly different distribution
+
+### 5. Quantity Logic by Category
+```javascript
+// Tobacco
+if (price <= 5) quantity = 1-5;      // Individual cigars
+else if (price > 50) quantity = 1-2;  // Cartons  
+else quantity = 1-3;                  // Regular packs
+
+// Alcohol
+if (price > 30) quantity = 1-2;       // Premium bottles
+else quantity = 1-4;                  // Standard items
+
+// Grocery  
+quantity = 1-3 (most common), occasional bulk 4-8
+```
+
+### 6. Tobacco-Specific Guidelines
+- **Ignore Stock Levels**: Generate sales regardless of inventory  
+- **Non-taxable Treatment**: Keep tax: 0 for all tobacco items
+- **Multi-item Logic**: Combine different tobacco products realistically
+- **Price Range Usage**: Include singles ($2-5), packs ($15-25), cartons ($50-140)
+
 ## Monthly Checklist
 
 - [ ] Define sales target and transaction count
 - [ ] Create generation script using template
 - [ ] Implement proper payment distribution
 - [ ] Set correct category and item data
+- [ ] **For tobacco: Include all items regardless of stock levels**
+- [ ] **For tobacco: Ensure non-taxable configuration (tax: 0)**
+- [ ] **For tobacco: Implement realistic quantity logic based on price ranges**
 - [ ] Generate sequential transaction IDs
 - [ ] **Distribute transactions using realistic weekly patterns** (Mon/Thu slow, Tue/Wed/Fri/Sat busy, Sun slowest)
 - [ ] **Shuffle payment methods within each day for realistic order**
 - [ ] **Fix payment amounts to match transaction totals**
+- [ ] **Include mandatory paymentBreakdown arrays**
 - [ ] Run validation checks
 - [ ] Verify unpaid amount is $0.00 (no payment mismatches)
 - [ ] Verify realistic weekly distribution (Sat highest, Sun lowest)
