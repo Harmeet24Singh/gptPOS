@@ -1027,7 +1027,12 @@ export default function TransactionsPage() {
       const lotteryBreakdown = getLotteryBreakdown() || {};
       const { lottoTotal = 0, lottoTransactionCount = 0 } = lotteryBreakdown;
       const categoryBreakdown = getCategoryTotals() || {};
-      const { alcoholTotal = 0, groceryTotal = 0, tobaccoTotal = 0, lotteryTotal = 0 } = categoryBreakdown;
+      const {
+        alcoholTotal = 0,
+        groceryTotal = 0,
+        tobaccoTotal = 0,
+        lotteryTotal = 0,
+      } = categoryBreakdown;
       const unpaidAmounts = getUnpaidAmounts() || {
         unpaidTotal: 0,
         unpaidTransactionCount: 0,
@@ -1122,7 +1127,11 @@ export default function TransactionsPage() {
           </div>
           
           <div class="center" style="margin: 10px 0; font-weight: bold;">
-            ${dateFilter === "month" && monthFilter ? "MONTHLY SALES SUMMARY" : "DAILY SALES SUMMARY"}
+            ${
+              dateFilter === "month" && monthFilter
+                ? "MONTHLY SALES SUMMARY"
+                : "DAILY SALES SUMMARY"
+            }
           </div>
           <div class="center" style="margin-bottom: 10px; font-size: 10px;">
             ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
@@ -1141,9 +1150,21 @@ export default function TransactionsPage() {
                 ? `${startDate} to ${endDate}`
                 : dateFilter === "month" && monthFilter
                 ? (() => {
-                    const [year, month] = monthFilter.split('-');
-                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                                       'July', 'August', 'September', 'October', 'November', 'December'];
+                    const [year, month] = monthFilter.split("-");
+                    const monthNames = [
+                      "January",
+                      "February",
+                      "March",
+                      "April",
+                      "May",
+                      "June",
+                      "July",
+                      "August",
+                      "September",
+                      "October",
+                      "November",
+                      "December",
+                    ];
                     return `${monthNames[parseInt(month) - 1]} ${year}`;
                   })()
                 : "All Time"
@@ -1152,27 +1173,48 @@ export default function TransactionsPage() {
 
           <!-- Sales Breakdown by Category -->
           <div class="section-header">CATEGORY SALES</div>
-          ${alcoholTotal > 0 ? `<div class="summary-line">
+          ${
+            alcoholTotal > 0
+              ? `<div class="summary-line">
             <span>Alcohol Sales</span>
             <span>$${alcoholTotal.toFixed(2)}</span>
-          </div>` : ''}
-          ${groceryTotal > 0 ? `<div class="summary-line">
+          </div>`
+              : ""
+          }
+          ${
+            groceryTotal > 0
+              ? `<div class="summary-line">
             <span>Grocery Sales</span>
             <span>$${groceryTotal.toFixed(2)}</span>
-          </div>` : ''}
-          ${tobaccoTotal > 0 ? `<div class="summary-line">
+          </div>`
+              : ""
+          }
+          ${
+            tobaccoTotal > 0
+              ? `<div class="summary-line">
             <span>Tobacco Sales</span>
             <span>$${tobaccoTotal.toFixed(2)}</span>
-          </div>` : ''}
-          ${lotteryTotal > 0 ? `<div class="summary-line">
+          </div>`
+              : ""
+          }
+          ${
+            lotteryTotal > 0
+              ? `<div class="summary-line">
             <span>Lottery Sales</span>
             <span>$${lotteryTotal.toFixed(2)}</span>
-          </div>` : ''}
+          </div>`
+              : ""
+          }
           
           <div class="section-divider"></div>
           <div class="summary-line" style="font-weight: bold;">
             <span>Subtotal</span>
-            <span>$${(alcoholTotal + groceryTotal + tobaccoTotal + lotteryTotal).toFixed(2)}</span>
+            <span>$${(
+              alcoholTotal +
+              groceryTotal +
+              tobaccoTotal +
+              lotteryTotal
+            ).toFixed(2)}</span>
           </div>
           <div class="summary-line">
             <span>HST (13%)</span>
@@ -1228,7 +1270,12 @@ export default function TransactionsPage() {
           <div class="section-divider"></div>
           <div class="summary-line" style="font-weight: bold;">
             <span>Running Subtotal</span>
-            <span>$${(alcoholTotal + groceryTotal + tobaccoTotal + lotteryTotal).toFixed(2)}</span>
+            <span>$${(
+              alcoholTotal +
+              groceryTotal +
+              tobaccoTotal +
+              lotteryTotal
+            ).toFixed(2)}</span>
           </div>
           <div class="summary-line">
             <span>Service HST</span>
@@ -1301,7 +1348,12 @@ export default function TransactionsPage() {
           </div>
           <div class="summary-line">
             <span>Subtotal</span>
-            <span>$${(alcoholTotal + groceryTotal + tobaccoTotal + lotteryTotal).toFixed(2)}</span>
+            <span>$${(
+              alcoholTotal +
+              groceryTotal +
+              tobaccoTotal +
+              lotteryTotal
+            ).toFixed(2)}</span>
           </div>
           <div class="summary-line">
             <span>Total Amount</span>
@@ -1322,21 +1374,29 @@ export default function TransactionsPage() {
             <span>0000001</span>
           </div>
 
-          ${lottoTotal > 0 ? `
+          ${
+            lottoTotal > 0
+              ? `
           <div class="section-header">LOTTERY OPERATIONS</div>
           <div class="summary-line">
             <span>Lottery Payouts</span>
             <span>$${lottoTotal.toFixed(2)}</span>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
           
-          ${unpaidAmounts.unpaidTotal > 0 ? `
+          ${
+            unpaidAmounts.unpaidTotal > 0
+              ? `
           <div class="section-header">OUTSTANDING AMOUNTS</div>
           <div class="summary-line">
             <span>Unpaid Total</span>
             <span>$${unpaidAmounts.unpaidTotal.toFixed(2)}</span>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
 
           ${
             dailyBreakdown.length > 0
@@ -1375,7 +1435,12 @@ export default function TransactionsPage() {
           </div>
           <div class="summary-line">
             <span>Net Subtotal</span>
-            <span>$${(alcoholTotal + groceryTotal + tobaccoTotal + lotteryTotal).toFixed(2)}</span>
+            <span>$${(
+              alcoholTotal +
+              groceryTotal +
+              tobaccoTotal +
+              lotteryTotal
+            ).toFixed(2)}</span>
           </div>
           <div class="summary-line">
             <span>HST Amount</span>
@@ -1648,14 +1713,17 @@ export default function TransactionsPage() {
     filteredTransactions.forEach((transaction) => {
       transaction.items?.forEach((item) => {
         const itemTotal = (item.price || 0) * (item.quantity || 0);
-        
+
         if (item.category === "Alcohol") {
           alcoholTotal += itemTotal;
         } else if (item.category === "Grocery") {
           groceryTotal += itemTotal;
         } else if (item.category === "Tobacco") {
           tobaccoTotal += itemTotal;
-        } else if (item.category === "Lotto" || item.category === "Lotto instant") {
+        } else if (
+          item.category === "Lotto" ||
+          item.category === "Lotto instant"
+        ) {
           lotteryTotal += itemTotal;
         }
       });
