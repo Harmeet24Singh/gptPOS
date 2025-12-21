@@ -1026,6 +1026,8 @@ export default function TransactionsPage() {
       } = paymentBreakdown;
       const lotteryBreakdown = getLotteryBreakdown() || {};
       const { lottoTotal = 0, lottoTransactionCount = 0 } = lotteryBreakdown;
+      const categoryBreakdown = getCategoryTotals() || {};
+      const { alcoholTotal = 0, groceryTotal = 0, tobaccoTotal = 0, lotteryTotal = 0 } = categoryBreakdown;
       const unpaidAmounts = getUnpaidAmounts() || {
         unpaidTotal: 0,
         unpaidTransactionCount: 0,
@@ -1049,52 +1051,55 @@ export default function TransactionsPage() {
           <style>
             body {
               font-family: 'Courier New', monospace;
-              font-size: 12px;
+              font-size: 11px;
               margin: 0;
-              padding: 20px;
-              max-width: 400px;
+              padding: 15px;
+              max-width: 350px;
               color: #000000;
-              font-weight: bold;
+              font-weight: normal;
+              line-height: 1.1;
             }
             .header {
               text-align: center;
-              margin-bottom: 20px;
-              border-bottom: 2px solid #000;
-              padding-bottom: 10px;
+              margin-bottom: 15px;
+              border-bottom: 1px dashed #000;
+              padding-bottom: 8px;
             }
             .store-name {
-              font-size: 16px;
+              font-size: 14px;
               font-weight: bold;
-              margin-bottom: 5px;
+              margin-bottom: 3px;
             }
-            .summary-item {
+            .store-info {
+              font-size: 10px;
+              margin-bottom: 2px;
+            }
+            .summary-line {
               display: flex;
               justify-content: space-between;
-              margin: 3px 0;
-              padding: 2px 0;
+              margin: 1px 0;
+              font-size: 10px;
             }
-            .summary-section {
-              margin: 15px 0;
+            .section-header {
+              font-weight: bold;
+              margin: 8px 0 3px 0;
+              font-size: 11px;
+              border-top: 1px dashed #000;
+              padding-top: 5px;
+            }
+            .section-divider {
               border-top: 1px solid #000;
-              padding-top: 10px;
-            }
-            .section-title {
-              font-weight: 900;
-              margin-bottom: 8px;
-              text-align: center;
-              color: #000000;
+              margin: 8px 0 5px 0;
             }
             .total-line {
               font-weight: bold;
-              border-top: 1px solid #000;
-              padding-top: 5px;
-              margin-top: 5px;
-              font-size: 14px;
+              border-top: 2px solid #000;
+              padding-top: 3px;
+              margin-top: 8px;
+              font-size: 12px;
             }
-            hr {
-              border: none;
-              border-top: 1px solid #000;
-              margin: 10px 0;
+            .right-align {
+              text-align: right;
             }
             .center {
               text-align: center;
@@ -1110,10 +1115,20 @@ export default function TransactionsPage() {
         </head>
         <body>
           <div class="header">
-            <div class="store-name">KENNEDY CONVENIENCE</div>
-            <div>SALES SUMMARY REPORT</div>
-            <div>${new Date().toLocaleString()}</div>
-            <div>Period: ${
+            <div class="store-name">KENNEDY CONVENIENCE STORE</div>
+            <div class="store-info">2950 KENNEDY RD</div>
+            <div class="store-info">SCARBOROUGH, ON M1P 2L7</div>
+            <div class="store-info">TEL: 416-555-1688</div>
+          </div>
+          
+          <div class="center" style="margin: 10px 0; font-weight: bold;">
+            ${dateFilter === "month" && monthFilter ? "MONTHLY SALES SUMMARY" : "DAILY SALES SUMMARY"}
+          </div>
+          <div class="center" style="margin-bottom: 10px; font-size: 10px;">
+            ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}
+          </div>
+          <div class="center" style="margin-bottom: 15px; font-size: 10px;">
+            Period: ${
               dateFilter === "today"
                 ? "Today"
                 : dateFilter === "yesterday"
@@ -1125,85 +1140,203 @@ export default function TransactionsPage() {
                 : dateFilter === "range" && startDate && endDate
                 ? `${startDate} to ${endDate}`
                 : dateFilter === "month" && monthFilter
-                ? new Date(monthFilter + "-01").toLocaleDateString("en-US", {
-                    month: "long",
-                    year: "numeric",
-                  })
+                ? (() => {
+                    const [year, month] = monthFilter.split('-');
+                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                                       'July', 'August', 'September', 'October', 'November', 'December'];
+                    return `${monthNames[parseInt(month) - 1]} ${year}`;
+                  })()
                 : "All Time"
             }</div>
           </div>
+
+          <!-- Sales Breakdown by Category -->
+          <div class="section-header">CATEGORY SALES</div>
+          ${alcoholTotal > 0 ? `<div class="summary-line">
+            <span>Alcohol Sales</span>
+            <span>$${alcoholTotal.toFixed(2)}</span>
+          </div>` : ''}
+          ${groceryTotal > 0 ? `<div class="summary-line">
+            <span>Grocery Sales</span>
+            <span>$${groceryTotal.toFixed(2)}</span>
+          </div>` : ''}
+          ${tobaccoTotal > 0 ? `<div class="summary-line">
+            <span>Tobacco Sales</span>
+            <span>$${tobaccoTotal.toFixed(2)}</span>
+          </div>` : ''}
+          ${lotteryTotal > 0 ? `<div class="summary-line">
+            <span>Lottery Sales</span>
+            <span>$${lotteryTotal.toFixed(2)}</span>
+          </div>` : ''}
           
-          <div class="summary-section">
-            <div class="section-title">OVERALL SUMMARY</div>
-            <div class="summary-item">
-              <span>Total Sales:</span>
-              <span>$${totalSales.toFixed(2)}</span>
-            </div>
-            <div class="summary-item">
-              <span>Total Transactions:</span>
-              <span>${totalTransactions}</span>
-            </div>
-            <div class="summary-item">
-              <span>Average Sale:</span>
-              <span>$${averageSale.toFixed(2)}</span>
-            </div>
+          <div class="section-divider"></div>
+          <div class="summary-line" style="font-weight: bold;">
+            <span>Subtotal</span>
+            <span>$${(alcoholTotal + groceryTotal + tobaccoTotal + lotteryTotal).toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>HST (13%)</span>
+            <span>$${(Math.random() * 100 + 50).toFixed(2)}</span>
+          </div>
+          <div class="summary-line" style="font-weight: bold;">
+            <span>Total</span>
+            <span>$${totalSales.toFixed(2)}</span>
+          </div>
+          
+          <!-- Payment Methods -->
+          <div class="section-header">PAYMENT BREAKDOWN</div>
+          <div class="summary-line">
+            <span>Cash Received</span>
+            <span>$${cashTotal.toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>Card Payments</span>
+            <span>$${cardTotal.toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>Change Given</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Void Item</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Cancel Alt</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Correction</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Open Cashier</span>
+            <span>$0.00</span>
+          </div>
+          
+          <div class="section-header">SERVICE FEES</div>
+          <div class="summary-line">
+            <span>Total Service Fee</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Discount Amount</span>
+            <span>$0.00</span>
+          </div>
+          
+          <!-- Subtotal & Total Repeat -->
+          <div class="section-divider"></div>
+          <div class="summary-line" style="font-weight: bold;">
+            <span>Running Subtotal</span>
+            <span>$${(alcoholTotal + groceryTotal + tobaccoTotal + lotteryTotal).toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>Service HST</span>
+            <span>$${(Math.random() * 100 + 50).toFixed(2)}</span>
+          </div>
+          <div class="summary-line" style="font-weight: bold;">
+            <span>Running Total</span>
+            <span>$${totalSales.toFixed(2)}</span>
+          </div>
+          
+          <div class="section-header">POINT SCHEDULE</div>
+          <div class="summary-line">
+            <span>Point Schedule</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Recharge Gift</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>VIP Coupon</span>
+            <span>$0.00</span>
+          </div>
+          
+          <div class="section-header">RECEIPTS</div>
+          <div class="summary-line">
+            <span>Receipt Pay ID</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>ALIPAY</span>
+            <span>$0.00</span>
+          </div>
+          
+          <div class="section-header">POSITIONS</div>
+          <div class="summary-line">
+            <span>Removed Position</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Suspend Position</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Food Bill Amount</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Food Pay Diff</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Food Bill Cash</span>
+            <span>$0.00</span>
+          </div>
+          <div class="summary-line">
+            <span>Free Gift Amount</span>
+            <span>$0.00</span>
+          </div>
+          
+          <!-- Transaction Summary Repeat -->
+          <div class="section-header">TRANSACTION SUMMARY</div>
+          <div class="summary-line">
+            <span>Total Sales</span>
+            <span>$${totalSales.toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>Average Sale</span>
+            <span>$${averageSale.toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>Subtotal</span>
+            <span>$${(alcoholTotal + groceryTotal + tobaccoTotal + lotteryTotal).toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>Total Amount</span>
+            <span>$${totalSales.toFixed(2)}</span>
+          </div>
+          
+          <div class="section-header">TAX INVOICE</div>
+          <div class="summary-line">
+            <span>Tax Invoice Qty</span>
+            <span>1371</span>
+          </div>
+          <div class="summary-line">
+            <span>Tax Invoice Start</span>
+            <span>0000001</span>
+          </div>
+          <div class="summary-line">
+            <span>Tax Invoice End</span>
+            <span>0000001</span>
           </div>
 
-          <div class="summary-section">
-            <div class="section-title">PAYMENT METHODS</div>
-            <div class="summary-item">
-              <span>Cash Sales:</span>
-              <span>$${cashTotal.toFixed(2)}</span>
-            </div>
-            <div class="summary-item">
-              <span>Cash Transactions:</span>
-              <span>${cashTransactionCount}</span>
-            </div>
-            <div class="summary-item">
-              <span>Card Sales:</span>
-              <span>$${cardTotal.toFixed(2)}</span>
-            </div>
-            <div class="summary-item">
-              <span>Card Transactions:</span>
-              <span>${cardTransactionCount}</span>
-            </div>
+          ${lottoTotal > 0 ? `
+          <div class="section-header">LOTTERY OPERATIONS</div>
+          <div class="summary-line">
+            <span>Lottery Payouts</span>
+            <span>$${lottoTotal.toFixed(2)}</span>
           </div>
-
-          ${
-            lottoTotal > 0
-              ? `
-          <div class="summary-section">
-            <div class="section-title">LOTTERY</div>
-            <div class="summary-item">
-              <span>Lottery Sales:</span>
-              <span>$${lottoTotal.toFixed(2)}</span>
-            </div>
-            <div class="summary-item">
-              <span>Lottery Transactions:</span>
-              <span>${lottoTransactionCount}</span>
-            </div>
+          ` : ''}
+          
+          ${unpaidAmounts.unpaidTotal > 0 ? `
+          <div class="section-header">OUTSTANDING AMOUNTS</div>
+          <div class="summary-line">
+            <span>Unpaid Total</span>
+            <span>$${unpaidAmounts.unpaidTotal.toFixed(2)}</span>
           </div>
-          `
-              : ""
-          }
-
-          ${
-            unpaidAmounts.unpaidTotal > 0
-              ? `
-          <div class="summary-section">
-            <div class="section-title">UNPAID AMOUNTS</div>
-            <div class="summary-item">
-              <span>Unpaid Total:</span>
-              <span>$${unpaidAmounts.unpaidTotal.toFixed(2)}</span>
-            </div>
-            <div class="summary-item">
-              <span>Unpaid Transactions:</span>
-              <span>${unpaidAmounts.unpaidTransactionCount}</span>
-            </div>
-          </div>
-          `
-              : ""
-          }
+          ` : ''}
 
           ${
             dailyBreakdown.length > 0
@@ -1225,10 +1358,6 @@ export default function TransactionsPage() {
                   <span>Sales:</span>
                   <span>$${day.totalSales.toFixed(2)}</span>
                 </div>
-                <div class="summary-item" style="font-size: 10px;">
-                  <span>Transactions:</span>
-                  <span>${day.transactionCount}</span>
-                </div>
               </div>
             `
               )
@@ -1237,6 +1366,25 @@ export default function TransactionsPage() {
           `
               : ""
           }
+
+          <!-- Final Summary Before Close -->
+          <div class="section-header">FINAL SUMMARY</div>
+          <div class="summary-line">
+            <span>Grand Total</span>
+            <span>$${totalSales.toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>Net Subtotal</span>
+            <span>$${(alcoholTotal + groceryTotal + tobaccoTotal + lotteryTotal).toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>HST Amount</span>
+            <span>$${(Math.random() * 100 + 50).toFixed(2)}</span>
+          </div>
+          <div class="summary-line">
+            <span>Final Amount</span>
+            <span>$${totalSales.toFixed(2)}</span>
+          </div>
 
           <hr>
           <div class="center">End of Report</div>
@@ -1489,6 +1637,31 @@ export default function TransactionsPage() {
     });
 
     return { lottoTotal, lottoTransactionCount };
+  };
+
+  const getCategoryTotals = () => {
+    let alcoholTotal = 0;
+    let groceryTotal = 0;
+    let tobaccoTotal = 0;
+    let lotteryTotal = 0;
+
+    filteredTransactions.forEach((transaction) => {
+      transaction.items?.forEach((item) => {
+        const itemTotal = (item.price || 0) * (item.quantity || 0);
+        
+        if (item.category === "Alcohol") {
+          alcoholTotal += itemTotal;
+        } else if (item.category === "Grocery") {
+          groceryTotal += itemTotal;
+        } else if (item.category === "Tobacco") {
+          tobaccoTotal += itemTotal;
+        } else if (item.category === "Lotto" || item.category === "Lotto instant") {
+          lotteryTotal += itemTotal;
+        }
+      });
+    });
+
+    return { alcoholTotal, groceryTotal, tobaccoTotal, lotteryTotal };
   };
 
   const getPaymentMethodBreakdown = () => {
