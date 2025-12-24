@@ -1461,12 +1461,16 @@ function POSContent() {
               font-family: 'Courier New', monospace;
               font-size: 12px;
               margin: 0;
-              padding: 20px;
+              padding: 5px;
               max-width: 300px;
+              min-height: auto;
+              height: auto;
+              overflow: hidden;
+              box-sizing: border-box;
             }
             .header {
               text-align: center;
-              margin-bottom: 20px;
+              margin-bottom: 10px;
             }
             .store-name {
               font-size: 16px;
@@ -1479,24 +1483,67 @@ function POSContent() {
               margin: 2px 0;
             }
             .receipt-totals {
-              margin-top: 10px;
+              margin-top: 5px;
             }
             .total {
               font-weight: bold;
               border-top: 1px solid #000;
-              padding-top: 5px;
-              margin-top: 5px;
+              padding-top: 3px;
+              margin-top: 3px;
             }
             hr {
               border: none;
               border-top: 1px solid #000;
-              margin: 10px 0;
+              margin: 5px 0;
             }
             .center {
               text-align: center;
             }
+            /* Thermal printer paper cut control */
+            .paper-cut {
+              page-break-after: always !important;
+              break-after: always !important;
+              height: 0;
+              margin: 0;
+              padding: 0;
+              display: block;
+            }
             @media print {
-              body { margin: 0; padding: 10px; }
+              html, body { 
+                height: auto !important;
+                max-height: none !important;
+                margin: 0 !important; 
+                padding: 0 !important;
+                overflow: hidden !important;
+              }
+              body {
+                padding: 5px !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+              }
+              @page {
+                margin: 0 !important;
+                padding: 0 !important;
+                size: 80mm auto;
+              }
+              * {
+                page-break-inside: avoid !important;
+                box-sizing: border-box !important;
+              }
+              .paper-cut {
+                page-break-after: always !important;
+                break-after: always !important;
+                -webkit-break-after: always !important;
+                display: block !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              /* Force content to end and cut paper */
+              .center:last-child {
+                margin-bottom: 0 !important;
+                padding-bottom: 0 !important;
+              }
             }
           </style>
         </head>
@@ -1629,10 +1676,22 @@ function POSContent() {
           
           <hr>
           <div class="center">Thank you for your business!</div>
+          <div class="paper-cut"></div>
           
           <script>
             window.onload = function() {
-              window.print();
+              // Force content height calculation
+              document.body.style.height = 'auto';
+              document.documentElement.style.height = 'auto';
+              
+              // Add a small delay to ensure content is fully loaded
+              setTimeout(function() {
+                window.print();
+                // Close window after printing to prevent multiple feeds
+                setTimeout(function() {
+                  window.close();
+                }, 1000);
+              }, 100);
             }
           </script>
         </body>

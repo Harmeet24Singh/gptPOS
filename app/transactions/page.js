@@ -1056,52 +1056,61 @@ export default function TransactionsPage() {
           <style>
             body {
               font-family: 'Courier New', monospace;
-              font-size: 11px;
+              font-size: 12px;
               margin: 0;
               padding: 15px;
               max-width: 350px;
               color: #000000;
-              font-weight: normal;
-              line-height: 1.1;
+              font-weight: bold;
+              line-height: 1.2;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
             }
             .header {
               text-align: center;
               margin-bottom: 15px;
-              border-bottom: 1px dashed #000;
+              border-bottom: 2px solid #000;
               padding-bottom: 8px;
             }
             .store-name {
-              font-size: 14px;
+              font-size: 16px;
               font-weight: bold;
               margin-bottom: 3px;
+              color: #000000;
             }
             .store-info {
-              font-size: 10px;
+              font-size: 11px;
               margin-bottom: 2px;
+              font-weight: bold;
+              color: #000000;
             }
             .summary-line {
               display: flex;
               justify-content: space-between;
-              margin: 1px 0;
-              font-size: 10px;
+              margin: 2px 0;
+              font-size: 11px;
+              font-weight: bold;
+              color: #000000;
             }
             .section-header {
               font-weight: bold;
               margin: 8px 0 3px 0;
-              font-size: 11px;
-              border-top: 1px dashed #000;
+              font-size: 12px;
+              border-top: 2px solid #000;
               padding-top: 5px;
+              color: #000000;
             }
             .section-divider {
-              border-top: 1px solid #000;
+              border-top: 2px solid #000;
               margin: 8px 0 5px 0;
             }
             .total-line {
               font-weight: bold;
-              border-top: 2px solid #000;
+              border-top: 3px solid #000;
               padding-top: 3px;
               margin-top: 8px;
-              font-size: 12px;
+              font-size: 13px;
+              color: #000000;
             }
             .right-align {
               text-align: right;
@@ -1110,10 +1119,22 @@ export default function TransactionsPage() {
               text-align: center;
             }
             @media print {
+              * {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
               body { 
                 margin: 0; 
                 padding: 10px;
                 page-break-after: always;
+                font-weight: bold !important;
+                color: #000000 !important;
+                background: white !important;
+              }
+              .summary-line, .section-header, .total-line {
+                color: #000000 !important;
+                font-weight: bold !important;
               }
             }
           </style>

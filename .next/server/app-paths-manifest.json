@@ -1,4 +1,10 @@
 {
+  "/page": "app/page.js",
   "/transactions/page": "app/transactions/page.js",
+  "/inventory/page": "app/inventory/page.js",
+  "/inventory/add/page": "app/inventory/add/page.js",
+  "/api/transaction/route": "app/api/transaction/route.js",
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/inventory/route": "app/api/inventory/route.js",
   "/pos/page": "app/pos/page.js"
 }
