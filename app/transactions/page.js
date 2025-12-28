@@ -514,10 +514,24 @@ export default function TransactionsPage() {
 
   const getTotalSales = () => {
     const { cashTotal, cardTotal } = getPaymentMethodBreakdown();
-    const { lottoWinnings } = getLottoWinningsFromItems();
+    
+    // Calculate total sales including lottery redeem
+    // Note: getPaymentMethodBreakdown already handles lottery transactions by reducing cash
+    // So we don't need to add lottery winnings separately to avoid double counting
+    
+    // Get actual lottery redeem amounts (positive values as they represent sales)
+    let lotteryRedeemTotal = 0;
+    filteredTransactions.forEach((transaction) => {
+      if (
+        transaction.transactionType === "lotto" ||
+        transaction.transactionType === "lotto_mixed"
+      ) {
+        lotteryRedeemTotal += Math.abs(transaction.total);
+      }
+    });
 
-    // Total sales = Cash earnings + Card earnings + Lotto winnings (69+190.25+133.89)
-    return (cashTotal || 0) + (cardTotal || 0) + (lottoWinnings || 0);
+    // Total sales = Cash earnings + Card earnings + Lottery redeem
+    return (cashTotal || 0) + (cardTotal || 0) + lotteryRedeemTotal;
   };
 
   const getTotalTransactions = () => {

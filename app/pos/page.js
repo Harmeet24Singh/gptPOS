@@ -1461,12 +1461,14 @@ function POSContent() {
               font-family: 'Courier New', monospace;
               font-size: 12px;
               margin: 0;
-              padding: 20px;
+              padding: 5px;
               max-width: 300px;
+              height: auto;
+              box-sizing: border-box;
             }
             .header {
               text-align: center;
-              margin-bottom: 20px;
+              margin-bottom: 10px;
             }
             .store-name {
               font-size: 16px;
@@ -1476,27 +1478,62 @@ function POSContent() {
             .receipt-item {
               display: flex;
               justify-content: space-between;
-              margin: 2px 0;
+              margin: 1px 0;
             }
             .receipt-totals {
-              margin-top: 10px;
+              margin-top: 5px;
             }
             .total {
               font-weight: bold;
               border-top: 1px solid #000;
-              padding-top: 5px;
-              margin-top: 5px;
+              padding-top: 3px;
+              margin-top: 3px;
             }
             hr {
               border: none;
               border-top: 1px solid #000;
-              margin: 10px 0;
+              margin: 5px 0;
             }
             .center {
               text-align: center;
             }
+            /* Thermal printer specific */
+            .paper-cut {
+              page-break-after: always;
+              break-after: always;
+              height: 0;
+              margin: 0;
+              padding: 0;
+              display: block;
+            }
             @media print {
-              body { margin: 0; padding: 10px; }
+              html, body { 
+                height: auto !important;
+                margin: 0 !important; 
+                padding: 0 !important;
+                overflow: hidden !important;
+              }
+              body {
+                padding: 5px !important;
+                box-sizing: border-box !important;
+                height: auto !important;
+              }
+              @page {
+                margin: 0 !important;
+                size: 80mm auto;
+              }
+              .paper-cut {
+                page-break-after: always !important;
+                break-after: always !important;
+                height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+              }
+              /* This was the working CSS from before */
+              .center:last-child {
+                page-break-after: always !important;
+              }
             }
           </style>
         </head>
@@ -1632,7 +1669,12 @@ function POSContent() {
           
           <script>
             window.onload = function() {
-              window.print();
+              setTimeout(function() {
+                window.print();
+                setTimeout(function() {
+                  window.close();
+                }, 1000);
+              }, 200);
             }
           </script>
         </body>

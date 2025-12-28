@@ -1,4 +1,13 @@
 {
+  "/till-count/page": "app/till-count/page.js",
+  "/pos/page": "app/pos/page.js",
+  "/inventory/page": "app/inventory/page.js",
+  "/inventory/add/page": "app/inventory/add/page.js",
+  "/page": "app/page.js",
+  "/api/inventory/visited/route": "app/api/inventory/visited/route.js",
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/inventory/route": "app/api/inventory/route.js",
+  "/api/dashboard-preferences/route": "app/api/dashboard-preferences/route.js",
   "/transactions/page": "app/transactions/page.js",
-  "/pos/page": "app/pos/page.js"
+  "/api/transaction/route": "app/api/transaction/route.js"
 }
