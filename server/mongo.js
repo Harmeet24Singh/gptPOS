@@ -1123,6 +1123,178 @@ async function clearAllVisitedItems() {
   }
 }
 
+// Vendor Management Functions
+async function getVendors() {
+  try {
+    const db = await connect();
+    return db.collection("vendors").find({}).sort({ name: 1 }).toArray();
+  } catch (error) {
+    console.error("Error getting vendors:", error);
+    throw error;
+  }
+}
+
+async function addVendor(vendorData) {
+  try {
+    const db = await connect();
+    const vendor = {
+      id: Date.now(), // Simple ID generation
+      name: vendorData.name,
+      contactPerson: vendorData.contactPerson || "",
+      phone: vendorData.phone || "",
+      email: vendorData.email || "",
+      address: vendorData.address || "",
+      notes: vendorData.notes || "",
+      createdAt: new Date().toISOString()
+    };
+    
+    await db.collection("vendors").insertOne(vendor);
+    return vendor;
+  } catch (error) {
+    console.error("Error adding vendor:", error);
+    throw error;
+  }
+}
+
+async function getVendorPricing() {
+  try {
+    const db = await connect();
+    return db.collection("vendorPricing").find({}).toArray();
+  } catch (error) {
+    console.error("Error getting vendor pricing:", error);
+    throw error;
+  }
+}
+
+async function addVendorPricing(pricingData) {
+  try {
+    const db = await connect();
+    const pricing = {
+      id: Date.now(),
+      productId: pricingData.productId,
+      vendorId: pricingData.vendorId,
+      vendorPrice: pricingData.vendorPrice,
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Upsert to allow price updates
+    await db.collection("vendorPricing").replaceOne(
+      { 
+        productId: pricingData.productId, 
+        vendorId: pricingData.vendorId 
+      },
+      pricing,
+      { upsert: true }
+    );
+    
+    return pricing;
+  } catch (error) {
+    console.error("Error adding vendor pricing:", error);
+    throw error;
+  }
+}
+
+async function getInventoryReceived() {
+  try {
+    const db = await connect();
+    return db.collection("inventoryReceived").find({}).sort({ receivedDate: -1 }).toArray();
+  } catch (error) {
+    console.error("Error getting inventory received:", error);
+    throw error;
+  }
+}
+
+async function addInventoryReceived(receivedData) {
+  try {
+    const db = await connect();
+    const record = {
+      id: Date.now(),
+      productId: receivedData.productId,
+      vendorId: receivedData.vendorId,
+      quantity: receivedData.quantity,
+      receivedDate: receivedData.receivedDate || new Date().toISOString()
+    };
+    
+    await db.collection("inventoryReceived").insertOne(record);
+    return record;
+  } catch (error) {
+    console.error("Error adding inventory received:", error);
+    throw error;
+  }
+}
+
+async function getProfitAnalysis() {
+  try {
+    const db = await connect();
+    
+    // Get all necessary data for profit calculation
+    const vendors = await db.collection("vendors").find({}).toArray();
+    const vendorPricing = await db.collection("vendorPricing").find({}).toArray();
+    const inventoryReceived = await db.collection("inventoryReceived").find({}).toArray();
+    const transactions = await db.collection("transactions").find({}).toArray();
+    const inventory = await db.collection("inventory").find({}).toArray();
+    
+    // Calculate profit by product
+    const profitData = {};
+    
+    // Process each transaction to calculate profits
+    transactions.forEach(transaction => {
+      if (transaction.items && Array.isArray(transaction.items)) {
+        transaction.items.forEach(item => {
+          const productId = item.id;
+          const product = inventory.find(p => p.id === productId);
+          
+          if (product) {
+            if (!profitData[productId]) {
+              profitData[productId] = {
+                productName: product.name,
+                sellingPrice: product.price || 0,
+                totalSold: 0,
+                totalRevenue: 0,
+                costData: []
+              };
+            }
+            
+            profitData[productId].totalSold += item.quantity || 0;
+            profitData[productId].totalRevenue += (item.quantity || 0) * (item.price || 0);
+          }
+        });
+      }
+    });
+    
+    // Add cost information from vendor pricing and inventory received
+    inventoryReceived.forEach(received => {
+      const pricing = vendorPricing.find(p => 
+        p.productId === received.productId && p.vendorId === received.vendorId
+      );
+      
+      if (pricing && profitData[received.productId]) {
+        profitData[received.productId].costData.push({
+          quantity: received.quantity,
+          unitCost: pricing.vendorPrice,
+          totalCost: received.quantity * pricing.vendorPrice
+        });
+      }
+    });
+    
+    // Calculate final profit metrics
+    Object.keys(profitData).forEach(productId => {
+      const data = profitData[productId];
+      const totalCost = data.costData.reduce((sum, cost) => sum + cost.totalCost, 0);
+      const totalQuantityReceived = data.costData.reduce((sum, cost) => sum + cost.quantity, 0);
+      
+      data.averageCost = totalQuantityReceived > 0 ? totalCost / totalQuantityReceived : 0;
+      data.totalProfit = data.totalRevenue - (data.totalSold * data.averageCost);
+      data.profitPerUnit = data.sellingPrice - data.averageCost;
+    });
+    
+    return profitData;
+  } catch (error) {
+    console.error("Error getting profit analysis:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   connect,
   getAllInventory,
@@ -1154,4 +1326,12 @@ module.exports = {
   getVisitedItems,
   setVisitedItem,
   clearAllVisitedItems,
+  // Vendor Management Functions
+  getVendors,
+  addVendor,
+  getVendorPricing,
+  addVendorPricing,
+  getInventoryReceived,
+  addInventoryReceived,
+  getProfitAnalysis
 };

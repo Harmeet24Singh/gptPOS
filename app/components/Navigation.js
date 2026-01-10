@@ -100,6 +100,12 @@ export default function Navigation() {
               <NavLink>
                 <Link href="/credit-management">Credit Management</Link>
               </NavLink>
+              {/* Vendor Management - Hidden from Cashiers */}
+              {auth.user.role !== "Cashier" && (
+                <NavLink>
+                  <Link href="/vendor-management">Vendor Management</Link>
+                </NavLink>
+              )}
               {/* Printer Settings - Hidden from Cashiers */}
               {auth.user.role !== "Cashier" && (
                 <NavLink>
