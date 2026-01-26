@@ -1123,6 +1123,38 @@ async function clearAllVisitedItems() {
   }
 }
 
+// Detailed Cash Count functions
+async function getDetailedCashCount(date) {
+  try {
+    const db = await connect();
+    const detailedCashCountCollection = db.collection("detailedCashCounts");
+
+    const result = await detailedCashCountCollection.findOne({ date });
+    return result || null;
+  } catch (error) {
+    console.error("Error getting detailed cash count:", error);
+    throw error;
+  }
+}
+
+async function saveDetailedCashCount(data) {
+  try {
+    const db = await connect();
+    const detailedCashCountCollection = db.collection("detailedCashCounts");
+
+    const result = await detailedCashCountCollection.replaceOne(
+      { date: data.date },
+      data,
+      { upsert: true }
+    );
+
+    return result;
+  } catch (error) {
+    console.error("Error saving detailed cash count:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   connect,
   getAllInventory,
@@ -1151,6 +1183,8 @@ module.exports = {
   getTillHistory,
   startTill,
   endTill,
+  getDetailedCashCount,
+  saveDetailedCashCount,
   getVisitedItems,
   setVisitedItem,
   clearAllVisitedItems,

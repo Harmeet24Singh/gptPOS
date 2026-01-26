@@ -8,6 +8,18 @@ export async function GET(req) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const date = searchParams.get('date');
+    const type = searchParams.get('type'); // 'detailed' for detailed cash count
+
+    if (type === 'detailed' && date) {
+      // Get detailed cash count for specific date
+      const detailedCount = await mongo.getDetailedCashCount(date);
+      return NextResponse.json({
+        detailedCount
+      });
+    }
+
     // Get current open till and recent history
     const currentTill = await mongo.getCurrentTill();
     const history = await mongo.getTillHistory(20); // Get last 20 till records
@@ -32,7 +44,24 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { action, startAmount, endAmount, denominations, userName } = body;
+    const { action, startAmount, endAmount, denominations, userName, date, detailedDenominations, notes } = body;
+
+    if (action === 'save-detailed') {
+      // Save detailed cash count
+      const result = await mongo.saveDetailedCashCount({
+        date,
+        denominations: detailedDenominations,
+        notes,
+        userName,
+        timestamp: new Date().toISOString()
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        message: "Detailed cash count saved successfully",
+        result 
+      });
+    }
 
     if (action === 'start') {
       // Check if there's already an open till

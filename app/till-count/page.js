@@ -200,6 +200,103 @@ const TotalAmount = styled.span`
   color: #28a745;
 `;
 
+// Detailed Modal Styles
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+`;
+
+const DateInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 1rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+  }
+`;
+
+const NotesTextArea = styled.textarea`
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 80px;
+  
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+  }
+`;
+
+const DetailedDenominationInput = styled.input`
+  width: 80px;
+  padding: 6px 8px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+  
+  &:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
+  }
+`;
+
 
 
 export default function TillCountPage() {
@@ -231,6 +328,28 @@ export default function TillCountPage() {
     loonieRolls: 0,
     toonieRolls: 0
   });
+  
+  // Detailed Cash Count State
+  const [showDetailedModal, setShowDetailedModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [detailedDenominations, setDetailedDenominations] = useState({
+    hundreds: 0,
+    fifties: 0,
+    twenties: 0,
+    tens: 0,
+    fives: 0,
+    toonies: 0,
+    loonies: 0,
+    quarters: 0,
+    dimes: 0,
+    nickels: 0,
+    nickelRolls: 0,
+    dimeRolls: 0,
+    quarterRolls: 0,
+    loonieRolls: 0,
+    toonieRolls: 0
+  });
+  const [detailedNotes, setDetailedNotes] = useState('');
   
   const denominationValues = {
     // Bills
@@ -290,6 +409,271 @@ export default function TillCountPage() {
   useEffect(() => {
     loadTillData();
   }, []);
+
+  // Load detailed cash count data when modal opens or date changes
+  useEffect(() => {
+    if (showDetailedModal && selectedDate) {
+      loadDetailedCashCount();
+    }
+  }, [showDetailedModal, selectedDate]);
+
+  const loadDetailedCashCount = async () => {
+    try {
+      const response = await fetch(`/api/till-count?type=detailed&date=${selectedDate}`, {
+        headers: {
+          'x-api-key': 'dev-secret',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.detailedCount) {
+          setDetailedDenominations(data.detailedCount.denominations || {
+            hundreds: 0, fifties: 0, twenties: 0, tens: 0, fives: 0,
+            toonies: 0, loonies: 0, quarters: 0, dimes: 0, nickels: 0,
+            nickelRolls: 0, dimeRolls: 0, quarterRolls: 0, loonieRolls: 0, toonieRolls: 0
+          });
+          setDetailedNotes(data.detailedCount.notes || '');
+        } else {
+          // Reset to empty state if no data found
+          resetDetailedDenominations();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load detailed cash count:', error);
+      resetDetailedDenominations();
+    }
+  };
+
+  const saveDetailedCashCount = async () => {
+    try {
+      const response = await fetch('/api/till-count', {
+        method: 'POST',
+        headers: {
+          'x-api-key': 'dev-secret',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'save-detailed',
+          date: selectedDate,
+          detailedDenominations,
+          notes: detailedNotes,
+          userName: user?.name || 'Unknown'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert('✅ Detailed cash count saved successfully!');
+        setShowDetailedModal(false);
+      } else {
+        const error = await response.json();
+        alert(`❌ Failed to save: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Failed to save detailed cash count:', error);
+      alert('❌ Failed to save detailed cash count');
+    }
+  };
+
+  // Detailed Cash Count Functions
+  const calculateDetailedTotal = () => {
+    return Object.keys(detailedDenominations).reduce((total, key) => {
+      return total + (detailedDenominations[key] * denominationValues[key]);
+    }, 0);
+  };
+
+  const handleDetailedDenominationChange = (key, value) => {
+    const numValue = parseFloat(value) || 0;
+    setDetailedDenominations(prev => ({
+      ...prev,
+      [key]: numValue
+    }));
+  };
+
+  const resetDetailedDenominations = () => {
+    setDetailedDenominations({
+      hundreds: 0,
+      fifties: 0,
+      twenties: 0,
+      tens: 0,
+      fives: 0,
+      toonies: 0,
+      loonies: 0,
+      quarters: 0,
+      dimes: 0,
+      nickels: 0,
+      nickelRolls: 0,
+      dimeRolls: 0,
+      quarterRolls: 0,
+      loonieRolls: 0,
+      toonieRolls: 0
+    });
+    setDetailedNotes('');
+  };
+
+  const printDetailedSummary = () => {
+    const printWindow = window.open('', '_blank');
+    
+    if (!printWindow) {
+      alert('❌ Popup blocked! Please allow popups for this site and try again.');
+      return;
+    }
+
+    const detailedTotal = calculateDetailedTotal();
+    const formatCurrency = (amount) => '$' + amount.toFixed(2);
+    
+    // Build denomination sections
+    let billsHTML = '';
+    denominationCategories.bills.forEach(key => {
+      if (detailedDenominations[key] > 0) {
+        billsHTML += '<div class="denom-line">';
+        billsHTML += '<span>' + denominationLabels[key] + ': ' + detailedDenominations[key] + ' x ' + formatCurrency(denominationValues[key]) + '</span>';
+        billsHTML += '<span>' + formatCurrency(detailedDenominations[key] * denominationValues[key]) + '</span>';
+        billsHTML += '</div>';
+      }
+    });
+
+    let coinsHTML = '';
+    denominationCategories.coins.forEach(key => {
+      if (detailedDenominations[key] > 0) {
+        coinsHTML += '<div class="denom-line">';
+        coinsHTML += '<span>' + denominationLabels[key] + ': ' + detailedDenominations[key] + ' x ' + formatCurrency(denominationValues[key]) + '</span>';
+        coinsHTML += '<span>' + formatCurrency(detailedDenominations[key] * denominationValues[key]) + '</span>';
+        coinsHTML += '</div>';
+      }
+    });
+
+    let rollsHTML = '';
+    denominationCategories.rolls.forEach(key => {
+      if (detailedDenominations[key] > 0) {
+        rollsHTML += '<div class="denom-line">';
+        rollsHTML += '<span>' + denominationLabels[key] + ': ' + detailedDenominations[key] + ' x ' + formatCurrency(denominationValues[key]) + '</span>';
+        rollsHTML += '<span>' + formatCurrency(detailedDenominations[key] * denominationValues[key]) + '</span>';
+        rollsHTML += '</div>';
+      }
+    });
+
+    // Build notes section
+    let notesHTML = '';
+    if (detailedNotes) {
+      notesHTML = '<div class="notes-section">';
+      notesHTML += '<div style="font-weight: bold; margin-bottom: 5px;">NOTES:</div>';
+      notesHTML += '<div>' + detailedNotes.replace(/\n/g, '<br/>') + '</div>';
+      notesHTML += '</div>';
+    }
+
+    const printContent = '<!DOCTYPE html>' +
+      '<html>' +
+      '<head>' +
+      '<title>Detailed Cash Count - ' + selectedDate + '</title>' +
+      '<style>' +
+      'body {' +
+      '  font-family: \'Courier New\', monospace;' +
+      '  max-width: 400px;' +
+      '  margin: 0 auto;' +
+      '  padding: 20px;' +
+      '  color: #000000;' +
+      '  line-height: 1.3;' +
+      '}' +
+      '.header {' +
+      '  text-align: center;' +
+      '  margin-bottom: 20px;' +
+      '  border-bottom: 2px solid #000;' +
+      '  padding-bottom: 10px;' +
+      '}' +
+      '.store-name {' +
+      '  font-size: 16px;' +
+      '  font-weight: bold;' +
+      '  margin-bottom: 5px;' +
+      '}' +
+      '.store-info {' +
+      '  font-size: 11px;' +
+      '  margin-bottom: 2px;' +
+      '}' +
+      '.section-header {' +
+      '  font-weight: bold;' +
+      '  margin: 15px 0 5px 0;' +
+      '  font-size: 12px;' +
+      '  border-top: 1px dashed #000;' +
+      '  padding-top: 5px;' +
+      '}' +
+      '.denom-line {' +
+      '  display: flex;' +
+      '  justify-content: space-between;' +
+      '  margin: 2px 0;' +
+      '  font-size: 10px;' +
+      '}' +
+      '.total-line {' +
+      '  display: flex;' +
+      '  justify-content: space-between;' +
+      '  margin: 5px 0;' +
+      '  font-size: 12px;' +
+      '  font-weight: bold;' +
+      '  border-top: 1px solid #000;' +
+      '  padding-top: 5px;' +
+      '}' +
+      '.notes-section {' +
+      '  margin-top: 15px;' +
+      '  font-size: 10px;' +
+      '  border-top: 1px dashed #000;' +
+      '  padding-top: 10px;' +
+      '}' +
+      '.center {' +
+      '  text-align: center;' +
+      '}' +
+      '@media print {' +
+      '  body { margin: 0; padding: 10px; }' +
+      '}' +
+      '</style>' +
+      '</head>' +
+      '<body>' +
+      '<div class="header">' +
+      '<div class="store-name">KENNEDY CONVENIENCE STORE</div>' +
+      '<div class="store-info">2950 KENNEDY RD</div>' +
+      '<div class="store-info">SCARBOROUGH, ON M1P 2L7</div>' +
+      '<div class="store-info">TEL: 416-555-1688</div>' +
+      '</div>' +
+      '<div class="center" style="margin: 15px 0; font-weight: bold; font-size: 14px;">' +
+      'DETAILED CASH COUNT SUMMARY' +
+      '</div>' +
+      '<div class="center" style="margin-bottom: 15px; font-size: 11px;">' +
+      'Date: ' + selectedDate.split('-').reverse().join('/') +
+      '<br/>Time: ' + new Date().toLocaleTimeString() +
+      '<br/>Cashier: ' + (user?.name || 'Unknown') +
+      '</div>' +
+      '<div class="section-header">💷 BILLS</div>' +
+      billsHTML +
+      '<div class="section-header">🪙 COINS</div>' +
+      coinsHTML +
+      '<div class="section-header">📦 COIN ROLLS</div>' +
+      rollsHTML +
+      '<div class="total-line">' +
+      '<span>TOTAL CASH COUNT:</span>' +
+      '<span>' + formatCurrency(detailedTotal) + '</span>' +
+      '</div>' +
+      notesHTML +
+      '<div class="center" style="margin-top: 20px; font-size: 10px;">' +
+      'Generated on ' + new Date().toLocaleString() +
+      '</div>' +
+      '<script>' +
+      'window.onload = function() {' +
+      '  window.print();' +
+      '  setTimeout(() => { window.close(); }, 1000);' +
+      '}' +
+      '</script>' +
+      '</body>' +
+      '</html>';
+
+    try {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    } catch (writeError) {
+      printWindow.close();
+      alert('Failed to generate print preview: ' + writeError.message);
+    }
+  };
 
   const loadTillData = async () => {
     try {
@@ -660,7 +1044,20 @@ export default function TillCountPage() {
         {/* Till History */}
         {tillHistory.length > 0 && (
           <TillCard>
-            <h2 style={{ marginBottom: '1rem' }}>📊 Till History</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0 }}>📊 Till History</h2>
+              <Button
+                onClick={() => setShowDetailedModal(true)}
+                style={{ 
+                  backgroundColor: '#28a745', 
+                  color: 'white',
+                  maxWidth: '200px',
+                  fontSize: '0.9rem'
+                }}
+              >
+                📝 Detailed Cash Count
+              </Button>
+            </div>
             <TillHistory>
               {tillHistory.slice(0, 10).map((till, index) => {
                 const difference = till.endAmount - till.startAmount;
@@ -693,6 +1090,186 @@ export default function TillCountPage() {
               })}
             </TillHistory>
           </TillCard>
+        )}
+
+        {/* Detailed Cash Count Button when no history */}
+        {tillHistory.length === 0 && (
+          <TillCard>
+            <div style={{ textAlign: 'center' }}>
+              <h2 style={{ marginBottom: '1rem' }}>💵 Cash Count Tools</h2>
+              <Button
+                onClick={() => setShowDetailedModal(true)}
+                style={{ 
+                  backgroundColor: '#28a745', 
+                  color: 'white',
+                  maxWidth: '250px'
+                }}
+              >
+                📝 Detailed Cash Count Summary
+              </Button>
+            </div>
+          </TillCard>
+        )}
+
+        {/* Detailed Cash Count Modal */}
+        {showDetailedModal && (
+          <Modal>
+            <ModalContent>
+              <ModalHeader>
+                <h2 style={{ margin: 0, color: 'white' }}>📊 Detailed Cash Count Summary</h2>
+                <CloseButton onClick={() => setShowDetailedModal(false)}>×</CloseButton>
+              </ModalHeader>
+              
+              <div style={{ padding: '20px' }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <Label>Select Date:</Label>
+                  <DateInput
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                  />
+                </div>
+                
+                <DenominationSection>
+                  <DenominationTitle>
+                    <span>💵 Cash Count for {selectedDate.split('-').reverse().join('/')}</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 'normal' }}>
+                      Cashier: {user?.name || 'Unknown'}
+                    </span>
+                  </DenominationTitle>
+                  <DenominationTable>
+                    <thead>
+                      <tr>
+                        <TableHeader style={{ textAlign: 'left', width: '40%' }}>Denomination</TableHeader>
+                        <TableHeader style={{ width: '20%' }}>Qty</TableHeader>
+                        <TableHeader style={{ width: '20%' }}>@ Value</TableHeader>
+                        <TableHeader style={{ width: '20%' }}>Amount</TableHeader>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Bills Section */}
+                      <CategoryHeader>
+                        <CategoryTitle colSpan={4} style={{ background: '#e2e8f0', fontWeight: 'bold' }}>
+                          💷 Bills
+                        </CategoryTitle>
+                      </CategoryHeader>
+                      {denominationCategories.bills.map((key) => (
+                        <TableRow key={key}>
+                          <DenominationLabel>{denominationLabels[key]}</DenominationLabel>
+                          <TableCell>
+                            <DetailedDenominationInput
+                              type="number"
+                              min="0"
+                              value={detailedDenominations[key]}
+                              onChange={(e) => handleDetailedDenominationChange(key, e.target.value)}
+                              placeholder="0"
+                            />
+                          </TableCell>
+                          <TableCell>{(denominationValues[key]).toFixed(2)}</TableCell>
+                          <DenominationValue>
+                            ${(detailedDenominations[key] * denominationValues[key]).toFixed(2)}
+                          </DenominationValue>
+                        </TableRow>
+                      ))}
+                      {/* Individual Coins Section */}
+                      <CategoryHeader>
+                        <CategoryTitle colSpan={4} style={{ background: '#fef5e7', fontWeight: 'bold' }}>
+                          🪙 Individual Coins
+                        </CategoryTitle>
+                      </CategoryHeader>
+                      {denominationCategories.coins.map((key) => (
+                        <TableRow key={key}>
+                          <DenominationLabel>{denominationLabels[key]}</DenominationLabel>
+                          <TableCell>
+                            <DetailedDenominationInput
+                              type="number"
+                              min="0"
+                              value={detailedDenominations[key]}
+                              onChange={(e) => handleDetailedDenominationChange(key, e.target.value)}
+                              placeholder="0"
+                            />
+                          </TableCell>
+                          <TableCell>${denominationValues[key].toFixed(2)}</TableCell>
+                          <DenominationValue>
+                            ${(detailedDenominations[key] * denominationValues[key]).toFixed(2)}
+                          </DenominationValue>
+                        </TableRow>
+                      ))}
+                      {/* Coin Rolls Section */}
+                      <CategoryHeader>
+                        <CategoryTitle colSpan={4} style={{ background: '#e6fffa', fontWeight: 'bold' }}>
+                          📦 Coin Rolls
+                        </CategoryTitle>
+                      </CategoryHeader>
+                      {denominationCategories.rolls.map((key) => (
+                        <TableRow key={key}>
+                          <DenominationLabel>{denominationLabels[key]}</DenominationLabel>
+                          <TableCell>
+                            <DetailedDenominationInput
+                              type="number"
+                              min="0"
+                              value={detailedDenominations[key]}
+                              onChange={(e) => handleDetailedDenominationChange(key, e.target.value)}
+                              placeholder="0"
+                            />
+                          </TableCell>
+                          <TableCell>${denominationValues[key].toFixed(2)}</TableCell>
+                          <DenominationValue>
+                            ${(detailedDenominations[key] * denominationValues[key]).toFixed(2)}
+                          </DenominationValue>
+                        </TableRow>
+                      ))}
+                    </tbody>
+                  </DenominationTable>
+                  <TotalSection>
+                    <TotalLabel>💰 Total Cash Count:</TotalLabel>
+                    <TotalAmount>${calculateDetailedTotal().toFixed(2)}</TotalAmount>
+                  </TotalSection>
+                </DenominationSection>
+                
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <Label>Notes (Optional):</Label>
+                  <NotesTextArea
+                    value={detailedNotes}
+                    onChange={(e) => setDetailedNotes(e.target.value)}
+                    placeholder="Add any additional notes about this cash count..."
+                  />
+                </div>
+                
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                  <Button
+                    onClick={resetDetailedDenominations}
+                    style={{ backgroundColor: '#6c757d', color: 'white', maxWidth: '150px' }}
+                  >
+                    🔄 Clear All
+                  </Button>
+                  <Button
+                    onClick={printDetailedSummary}
+                    disabled={calculateDetailedTotal() === 0}
+                    style={{ 
+                      backgroundColor: calculateDetailedTotal() > 0 ? '#28a745' : '#6c757d',
+                      color: 'white',
+                      maxWidth: '200px'
+                    }}
+                  >
+                    🖨️ Print Summary
+                  </Button>
+                  <Button
+                    onClick={saveDetailedCashCount}
+                    style={{ backgroundColor: '#007bff', color: 'white', maxWidth: '150px' }}
+                  >
+                    💾 Save & Close
+                  </Button>
+                  <Button
+                    onClick={() => setShowDetailedModal(false)}
+                    style={{ backgroundColor: '#6c757d', color: 'white', maxWidth: '100px' }}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </ModalContent>
+          </Modal>
         )}
       </TillContainer>
     </Container>
