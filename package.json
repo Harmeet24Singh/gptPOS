@@ -6,7 +6,9 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "backup": "node backup-mongodb.js",
+    "restore": "node restore-mongodb.js"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.10.1",
