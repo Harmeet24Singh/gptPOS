@@ -513,15 +513,34 @@ export default function TransactionsPage() {
   };
 
   const getTotalSales = () => {
-    const { cashTotal, cardTotal } = getPaymentMethodBreakdown();
-    const { lottoWinnings } = getLottoWinningsFromItems();
-
-    // Total sales = Cash earnings + Card earnings + Lotto winnings (69+190.25+133.89)
-    return (cashTotal || 0) + (cardTotal || 0) + (lottoWinnings || 0);
+    // Total Sales = Lottery Redeem + Cash Earnings + Card Earnings
+    const paymentBreakdown = getPaymentMethodBreakdown();
+    const cashEarnings = paymentBreakdown.cashTotal || 0;
+    const cardEarnings = paymentBreakdown.cardTotal || 0;
+    const lotteryRedeem = getLotteryBreakdown().lottoTotal || 0;
+    
+    return lotteryRedeem + cashEarnings + cardEarnings;
   };
 
   const getTotalTransactions = () => {
     return filteredTransactions.length;
+  };
+
+  // Get lottery winnings as positive sales (from negative transactions)
+  const getLotteryPayouts = () => {
+    return filteredTransactions
+      .filter(t => t.total < 0) // Negative transactions are payouts
+      .reduce((total, transaction) => total + Math.abs(transaction.total || 0), 0);
+  };
+
+  // Get net cash flow (lottery redeem + cash earnings + card earnings)
+  const getNetCashFlow = () => {
+    const paymentBreakdown = getPaymentMethodBreakdown();
+    const cashEarnings = paymentBreakdown.cashTotal || 0;
+    const cardEarnings = paymentBreakdown.cardTotal || 0;
+    const lotteryPayouts = getLotteryBreakdown().lottoTotal || 0;
+    
+    return lotteryPayouts + cashEarnings + cardEarnings;
   };
 
   // Get lotto winnings from ALL transactions (not just top selling items)
@@ -533,8 +552,8 @@ export default function TransactionsPage() {
       if (transaction.items && Array.isArray(transaction.items)) {
         transaction.items.forEach((item) => {
           if (item.name === "Lotto Winnings") {
-            // Fix NaN issue by adding null checks and fallback values
-            const itemTotal = item.total || 0;
+            // Use item.price instead of item.total
+            const itemTotal = item.price || 0;
             const itemQuantity = item.quantity || 0;
             lottoWinnings += Math.abs(itemTotal);
             lottoQuantity += itemQuantity;
@@ -1691,13 +1710,18 @@ export default function TransactionsPage() {
     let lottoTotal = 0;
     let lottoTransactionCount = 0;
 
+    // Only get lottery winnings from items within transactions (like "Lotto Winnings" items)
+    // Don't double-count by also processing transaction types
+    const lottoWinningsFromItems = getLottoWinningsFromItems();
+    lottoTotal += lottoWinningsFromItems.lottoWinnings;
+
+    // Count transactions that contain lottery winnings items
     filteredTransactions.forEach((transaction) => {
-      if (
-        transaction.transactionType === "lotto" ||
-        transaction.transactionType === "lotto_mixed"
-      ) {
-        lottoTotal += Math.abs(transaction.total); // Take absolute value since lotto winnings are positive sales
-        lottoTransactionCount++;
+      if (transaction.items && Array.isArray(transaction.items)) {
+        const hasLotteryWinnings = transaction.items.some(item => item.name === "Lotto Winnings");
+        if (hasLotteryWinnings) {
+          lottoTransactionCount++;
+        }
       }
     });
 
@@ -2706,11 +2730,12 @@ export default function TransactionsPage() {
       {/* Main Statistics Cards - Compact auto-fit layout */}
       <CompactCardGrid>
         {/* First priority: Total Sales */}
+        {/* 1. Total Sales */}
         {visibleSections.totalSales && (
           <CompactCard>
             <h3>💰 Total Sales</h3>
             <p style={{ fontWeight: "bold", color: "#27ae60" }}>
-              ${(getTotalSales() || 0).toFixed(2)}
+              ${getTotalSales().toFixed(2)}
             </p>
             <p>
               {dateFilter === "today"
@@ -2724,21 +2749,7 @@ export default function TransactionsPage() {
           </CompactCard>
         )}
 
-        {/* Lotto Winnings from Top Selling Items */}
-        {(() => {
-          const lottoData = getLottoWinningsFromItems();
-          return lottoData.lottoWinnings > 0 ? (
-            <CompactCard>
-              <h3>🎰 Lotto Winnings</h3>
-              <p style={{ fontWeight: "bold", color: "#9b59b6" }}>
-                ${lottoData.lottoWinnings.toFixed(2)}
-              </p>
-              <p>{lottoData.lottoQuantity} winnings paid</p>
-            </CompactCard>
-          ) : null;
-        })()}
-
-        {/* Second priority: Cash Earnings */}
+        {/* 2. Cash Earnings */}
         {visibleSections.cashEarnings && (
           <ClickableCard
             isActive={transactionTypeFilter === "cash"}
@@ -2767,7 +2778,7 @@ export default function TransactionsPage() {
           </ClickableCard>
         )}
 
-        {/* Third priority: Card Earnings */}
+        {/* 3. Card Earnings */}
         {visibleSections.cardEarnings && (
           <ClickableCard
             isActive={transactionTypeFilter === "card"}
@@ -2795,6 +2806,47 @@ export default function TransactionsPage() {
             )}
           </ClickableCard>
         )}
+
+        {/* 4. Lottery Redeem */}
+        {visibleSections.lotteryEarnings &&
+          getLotteryBreakdown().lottoTransactionCount > 0 && (
+            <ClickableCard
+              isActive={transactionTypeFilter === "lotto"}
+              onClick={() => handleCardFilter("lotto")}
+            >
+              <h3>🎰 Lottery Redeem</h3>
+              <p style={{ fontWeight: "bold", color: "#9b59b6" }}>
+                ${(getLotteryBreakdown().lottoTotal || 0).toFixed(2)}
+              </p>
+              <p>
+                {getLotteryBreakdown().lottoTransactionCount || 0} winnings paid
+              </p>
+              {transactionTypeFilter === "lotto" && (
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "#3498db",
+                    marginTop: "0.5rem",
+                    fontWeight: "600",
+                  }}
+                >
+                  🔍 Filtered
+                </div>
+              )}
+            </ClickableCard>
+          )}
+
+        {/* 5. Net Cash Flow */}
+        <CompactCard>
+          <h3>🏦 Net Cash Flow</h3>
+          <p style={{ 
+            fontWeight: "bold", 
+            color: getNetCashFlow() >= 0 ? "#27ae60" : "#e74c3c" 
+          }}>
+            ${getNetCashFlow().toFixed(2)}
+          </p>
+          <p>Sales minus payouts</p>
+        </CompactCard>
 
         {/* Credit Sales */}
         {visibleSections.creditEarnings &&
@@ -2826,34 +2878,6 @@ export default function TransactionsPage() {
             </ClickableCard>
           )}
 
-        {/* Lottery Earnings */}
-        {visibleSections.lotteryEarnings &&
-          getLotteryBreakdown().lottoTransactionCount > 0 && (
-            <ClickableCard
-              isActive={transactionTypeFilter === "lotto"}
-              onClick={() => handleCardFilter("lotto")}
-            >
-              <h3>🎰 Lottery Redeem</h3>
-              <p style={{ fontWeight: "bold", color: "#9b59b6" }}>
-                ${(getLotteryBreakdown().lottoTotal || 0).toFixed(2)}
-              </p>
-              <p>
-                {getLotteryBreakdown().lottoTransactionCount || 0} winnings paid
-              </p>
-              {transactionTypeFilter === "lotto" && (
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "#3498db",
-                    marginTop: "0.5rem",
-                    fontWeight: "600",
-                  }}
-                >
-                  🔍 Filtered
-                </div>
-              )}
-            </ClickableCard>
-          )}
 
         {/* Alcohol Category Only */}
         <ClickableCard
@@ -3125,27 +3149,6 @@ export default function TransactionsPage() {
             <p>Busiest time</p>
           </CompactCard>
         )}
-
-        {/* Ninth priority: Net Cash Flow */}
-        <CompactCard>
-          <h3>🏦 Net Cash Flow</h3>
-          <p
-            style={{
-              fontWeight: "bold",
-              color:
-                (getPaymentMethodBreakdown().cashTotal || 0) >= 0
-                  ? "#27ae60"
-                  : "#e74c3c",
-            }}
-          >
-            ${(getPaymentMethodBreakdown().cashTotal || 0).toFixed(2)}
-          </p>
-          <p>
-            {(getPaymentMethodBreakdown().cashTotal || 0) >= 0
-              ? "Cash gained"
-              : "Cash reduced"}
-          </p>
-        </CompactCard>
       </CompactCardGrid>
 
       {/* Payment Method Breakdown - Now consolidated in CompactCardGrid above */}

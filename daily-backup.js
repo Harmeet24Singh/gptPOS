@@ -1,23 +1,23 @@
 #!/usr/bin/env node
 
-const { exec } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
+const { exec } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+require("dotenv").config();
 
 // Configuration
 const MAX_BACKUPS = 30; // Keep 30 days of backups
 const BACKUP_RETENTION_DAYS = 30;
 
 // Create backup directory
-const backupDir = path.join(__dirname, 'daily-backups');
+const backupDir = path.join(__dirname, "daily-backups");
 if (!fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir);
 }
 
 // Generate backup filename with date
 const today = new Date();
-const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+const dateString = today.toISOString().split("T")[0]; // YYYY-MM-DD format
 const backupFilename = `daily-backup-${dateString}`;
 const backupPath = path.join(backupDir, backupFilename);
 
@@ -30,10 +30,10 @@ if (fs.existsSync(backupPath)) {
 console.log(`🔄 Starting daily backup for ${dateString}...`);
 
 const mongoUri = process.env.MONGO_URI;
-const dbName = process.env.MONGO_DB || 'convenience_store';
+const dbName = process.env.MONGO_DB || "convenience_store";
 
 if (!mongoUri) {
-  console.error('❌ MONGO_URI not found in environment variables');
+  console.error("❌ MONGO_URI not found in environment variables");
   process.exit(1);
 }
 
@@ -47,10 +47,10 @@ exec(dumpCommand, (error, stdout, stderr) => {
   }
 
   console.log(`✅ Daily backup completed: ${backupFilename}`);
-  
+
   // Cleanup old backups
   cleanupOldBackups();
-  
+
   // Optional: Add to git for version control
   addToGitIfRequested();
 });
@@ -59,21 +59,22 @@ function cleanupOldBackups() {
   try {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - BACKUP_RETENTION_DAYS);
-    
-    const backups = fs.readdirSync(backupDir)
-      .filter(name => name.startsWith('daily-backup-'))
-      .filter(name => {
+
+    const backups = fs
+      .readdirSync(backupDir)
+      .filter((name) => name.startsWith("daily-backup-"))
+      .filter((name) => {
         const backupPath = path.join(backupDir, name);
         const stats = fs.statSync(backupPath);
         return stats.mtime < cutoffDate;
       });
 
-    backups.forEach(backup => {
+    backups.forEach((backup) => {
       const backupPath = path.join(backupDir, backup);
       fs.rmSync(backupPath, { recursive: true, force: true });
       console.log(`🗑️  Removed old backup: ${backup}`);
     });
-    
+
     if (backups.length > 0) {
       console.log(`🧹 Cleaned up ${backups.length} old backup(s)`);
     }
@@ -85,7 +86,6 @@ function cleanupOldBackups() {
 function addToGitIfRequested() {
   // Uncomment the lines below if you want to commit backups to git
   // WARNING: Only do this for small databases, as git isn't ideal for large binary files
-  
   /*
   exec('git add daily-backups/ && git commit -m "Daily database backup"', (error) => {
     if (!error) {
