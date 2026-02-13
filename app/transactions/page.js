@@ -3236,29 +3236,43 @@ export default function TransactionsPage() {
                 const months = [];
                 const currentDate = new Date();
                 const monthNames = [
-                  "January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"
+                  "January",
+                  "February",
+                  "March",
+                  "April",
+                  "May",
+                  "June",
+                  "July",
+                  "August",
+                  "September",
+                  "October",
+                  "November",
+                  "December",
                 ];
-                
+
                 // Generate last 12 months starting from current month
                 for (let i = 0; i < 12; i++) {
-                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                  const date = new Date(
+                    currentDate.getFullYear(),
+                    currentDate.getMonth() - i,
+                    1,
+                  );
                   const year = date.getFullYear();
                   const month = date.getMonth();
-                  const monthValue = `${year}-${String(month + 1).padStart(2, '0')}`;
+                  const monthValue = `${year}-${String(month + 1).padStart(2, "0")}`;
                   const monthName = `${monthNames[month]} ${year}`;
-                  
+
                   let label = monthName;
                   if (i === 0) {
                     label += " (This Month)";
                   } else if (i === 1) {
                     label += " (Last Month)";
                   }
-                  
+
                   months.push(
                     <option key={monthValue} value={monthValue}>
                       {label}
-                    </option>
+                    </option>,
                   );
                 }
                 return months;
