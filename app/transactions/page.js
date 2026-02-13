@@ -76,7 +76,7 @@ export default function TransactionsPage() {
   }, [user, router]);
   const [dateFilter, setDateFilter] = useState("today");
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -208,7 +208,7 @@ export default function TransactionsPage() {
     } catch (err) {
       console.error("Failed to load transactions from server", err);
       const savedTransactions = JSON.parse(
-        localStorage.getItem("transactions") || "[]"
+        localStorage.getItem("transactions") || "[]",
       );
 
       console.log("Loaded from localStorage:", savedTransactions.length);
@@ -241,7 +241,7 @@ export default function TransactionsPage() {
   const handleDeleteTransaction = async (transactionId) => {
     if (
       !window.confirm(
-        "Are you sure you want to delete this transaction? This action cannot be undone."
+        "Are you sure you want to delete this transaction? This action cannot be undone.",
       )
     ) {
       return;
@@ -263,7 +263,7 @@ export default function TransactionsPage() {
       } else {
         const error = await response.json();
         alert(
-          `Failed to delete transaction: ${error.message || "Unknown error"}`
+          `Failed to delete transaction: ${error.message || "Unknown error"}`,
         );
       }
     } catch (error) {
@@ -281,7 +281,7 @@ export default function TransactionsPage() {
         filtered = filtered.filter(
           (t) =>
             (t.isCreditSale && t.creditStatus === "unpaid") ||
-            (t.isPartialPayment && t.creditBalance > 0)
+            (t.isPartialPayment && t.creditBalance > 0),
         );
       } else if (transactionTypeFilter === "alcohol") {
         filtered = filtered.filter((t) => {
@@ -312,7 +312,7 @@ export default function TransactionsPage() {
                   "maibock",
                 ];
                 return alcoholKeywords.some((keyword) =>
-                  itemNameLower.includes(keyword)
+                  itemNameLower.includes(keyword),
                 );
               }
               return false;
@@ -380,7 +380,7 @@ export default function TransactionsPage() {
               if (
                 item.category &&
                 excludedCategories.some((cat) =>
-                  item.category.toLowerCase().includes(cat.toLowerCase())
+                  item.category.toLowerCase().includes(cat.toLowerCase()),
                 )
               ) {
                 return false;
@@ -390,7 +390,7 @@ export default function TransactionsPage() {
               if (item.name) {
                 const itemNameLower = item.name.toLowerCase();
                 const hasExcludedKeyword = excludedKeywords.some((keyword) =>
-                  itemNameLower.includes(keyword.toLowerCase())
+                  itemNameLower.includes(keyword.toLowerCase()),
                 );
                 if (hasExcludedKeyword) {
                   return false;
@@ -437,7 +437,7 @@ export default function TransactionsPage() {
                   "dip",
                 ];
                 return tobaccoKeywords.some((keyword) =>
-                  itemNameLower.includes(keyword)
+                  itemNameLower.includes(keyword),
                 );
               }
               return false;
@@ -480,7 +480,7 @@ export default function TransactionsPage() {
                   "encore",
                 ];
                 return lotteryKeywords.some((keyword) =>
-                  itemNameLower.includes(keyword)
+                  itemNameLower.includes(keyword),
                 );
               }
               return false;
@@ -493,10 +493,10 @@ export default function TransactionsPage() {
           // Check if transaction contains ONLY grocery items (category = "Grocery")
           if (t.items && Array.isArray(t.items)) {
             const hasGrocery = t.items.some(
-              (item) => item.category === "Grocery"
+              (item) => item.category === "Grocery",
             );
             const isGroceryOnly = t.items.every(
-              (item) => item.category === "Grocery" || !item.category
+              (item) => item.category === "Grocery" || !item.category,
             );
             return hasGrocery && isGroceryOnly;
           }
@@ -504,7 +504,7 @@ export default function TransactionsPage() {
         });
       } else {
         filtered = filtered.filter(
-          (t) => t.transactionType === transactionTypeFilter
+          (t) => t.transactionType === transactionTypeFilter,
         );
       }
     }
@@ -518,7 +518,7 @@ export default function TransactionsPage() {
     const cashEarnings = paymentBreakdown.cashTotal || 0;
     const cardEarnings = paymentBreakdown.cardTotal || 0;
     const lotteryRedeem = getLotteryBreakdown().lottoTotal || 0;
-    
+
     return lotteryRedeem + cashEarnings + cardEarnings;
   };
 
@@ -529,8 +529,11 @@ export default function TransactionsPage() {
   // Get lottery winnings as positive sales (from negative transactions)
   const getLotteryPayouts = () => {
     return filteredTransactions
-      .filter(t => t.total < 0) // Negative transactions are payouts
-      .reduce((total, transaction) => total + Math.abs(transaction.total || 0), 0);
+      .filter((t) => t.total < 0) // Negative transactions are payouts
+      .reduce(
+        (total, transaction) => total + Math.abs(transaction.total || 0),
+        0,
+      );
   };
 
   // Get net cash flow (lottery redeem + cash earnings + card earnings)
@@ -539,7 +542,7 @@ export default function TransactionsPage() {
     const cashEarnings = paymentBreakdown.cashTotal || 0;
     const cardEarnings = paymentBreakdown.cardTotal || 0;
     const lotteryPayouts = getLotteryBreakdown().lottoTotal || 0;
-    
+
     return lotteryPayouts + cashEarnings + cardEarnings;
   };
 
@@ -644,7 +647,7 @@ export default function TransactionsPage() {
         transaction.items && Array.isArray(transaction.items)
           ? transaction.items.reduce(
               (sum, item) => sum + (item.quantity || 0),
-              0
+              0,
             )
           : 0;
       breakdown[date].transactionCount++;
@@ -706,7 +709,7 @@ export default function TransactionsPage() {
     });
 
     return Object.values(breakdown).sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
+      (a, b) => new Date(b.date) - new Date(a.date),
     );
   };
 
@@ -832,8 +835,8 @@ export default function TransactionsPage() {
           transaction.items &&
           Array.isArray(transaction.items) &&
           transaction.items.some(
-            (item) => (item.category || "Uncategorized") === category
-          )
+            (item) => (item.category || "Uncategorized") === category,
+          ),
       ).length;
 
       categoryStats[category].transactionCount = transactionCount;
@@ -880,7 +883,7 @@ export default function TransactionsPage() {
 
   const toggleTransactionDetails = (transactionId) => {
     setExpandedTransaction(
-      expandedTransaction === transactionId ? null : transactionId
+      expandedTransaction === transactionId ? null : transactionId,
     );
   };
 
@@ -971,7 +974,7 @@ export default function TransactionsPage() {
 
       console.log(
         "Sending PUT request to:",
-        `/api/transaction/${transactionId}`
+        `/api/transaction/${transactionId}`,
       );
       console.log("Update data:", updateData);
 
@@ -993,10 +996,10 @@ export default function TransactionsPage() {
       if (response.ok && result.success) {
         // Update local state
         const updatedTransactions = transactions.map((t) =>
-          (t.id || t._id) === transactionId ? { ...t, ...updateData } : t
+          (t.id || t._id) === transactionId ? { ...t, ...updateData } : t,
         );
         const updatedFilteredTransactions = filteredTransactions.map((t) =>
-          (t.id || t._id) === transactionId ? { ...t, ...updateData } : t
+          (t.id || t._id) === transactionId ? { ...t, ...updateData } : t,
         );
 
         setTransactions(updatedTransactions);
@@ -1007,7 +1010,7 @@ export default function TransactionsPage() {
         setNewPaymentMethod("");
 
         alert(
-          `Payment method updated successfully to ${newPaymentMethod.toUpperCase()}`
+          `Payment method updated successfully to ${newPaymentMethod.toUpperCase()}`,
         );
       } else {
         throw new Error(result.message || "Failed to update payment method");
@@ -1062,7 +1065,7 @@ export default function TransactionsPage() {
 
       if (!printWindow) {
         alert(
-          "❌ Popup blocked! Please allow popups for this site and try again."
+          "❌ Popup blocked! Please allow popups for this site and try again.",
         );
         return;
       }
@@ -1160,33 +1163,33 @@ export default function TransactionsPage() {
               dateFilter === "today"
                 ? "Today"
                 : dateFilter === "yesterday"
-                ? "Yesterday"
-                : dateFilter === "week"
-                ? "Last 7 Days"
-                : dateFilter === "specific"
-                ? selectedDate
-                : dateFilter === "range" && startDate && endDate
-                ? `${startDate} to ${endDate}`
-                : dateFilter === "month" && monthFilter
-                ? (() => {
-                    const [year, month] = monthFilter.split("-");
-                    const monthNames = [
-                      "January",
-                      "February",
-                      "March",
-                      "April",
-                      "May",
-                      "June",
-                      "July",
-                      "August",
-                      "September",
-                      "October",
-                      "November",
-                      "December",
-                    ];
-                    return `${monthNames[parseInt(month) - 1]} ${year}`;
-                  })()
-                : "All Time"
+                  ? "Yesterday"
+                  : dateFilter === "week"
+                    ? "Last 7 Days"
+                    : dateFilter === "specific"
+                      ? selectedDate
+                      : dateFilter === "range" && startDate && endDate
+                        ? `${startDate} to ${endDate}`
+                        : dateFilter === "month" && monthFilter
+                          ? (() => {
+                              const [year, month] = monthFilter.split("-");
+                              const monthNames = [
+                                "January",
+                                "February",
+                                "March",
+                                "April",
+                                "May",
+                                "June",
+                                "July",
+                                "August",
+                                "September",
+                                "October",
+                                "November",
+                                "December",
+                              ];
+                              return `${monthNames[parseInt(month) - 1]} ${year}`;
+                            })()
+                          : "All Time"
             }</div>
           </div>
 
@@ -1427,7 +1430,7 @@ export default function TransactionsPage() {
                 (day) => `
               <div style="margin-bottom: 6px;">
                 <div style="font-weight: bold; font-size: 11px;">${new Date(
-                  day.date
+                  day.date,
                 ).toLocaleDateString("en-US", {
                   weekday: "short",
                   month: "short",
@@ -1438,7 +1441,7 @@ export default function TransactionsPage() {
                   <span>$${day.totalSales.toFixed(2)}</span>
                 </div>
               </div>
-            `
+            `,
               )
               .join("")}
           </div>
@@ -1491,7 +1494,7 @@ export default function TransactionsPage() {
       } catch (writeError) {
         printWindow.close();
         throw new Error(
-          "Failed to write to print window: " + writeError.message
+          "Failed to write to print window: " + writeError.message,
         );
       }
     } catch (error) {
@@ -1508,7 +1511,7 @@ export default function TransactionsPage() {
 
     if (!printWindow) {
       alert(
-        "❌ Popup blocked! Please allow popups for this site and try again."
+        "❌ Popup blocked! Please allow popups for this site and try again.",
       );
       return;
     }
@@ -1597,7 +1600,7 @@ export default function TransactionsPage() {
               <div>${item.quantity} x $${item.price.toFixed(2)}</div>
               <div>$${(item.quantity * item.price).toFixed(2)}</div>
             </div>
-          `
+          `,
             )
             .join("")}
           
@@ -1664,7 +1667,7 @@ export default function TransactionsPage() {
                   <span>${p.method.toUpperCase()}:</span>
                   <span>$${p.amount.toFixed(2)}</span>
                 </div>
-              `
+              `,
                 )
                 .join("")}
               ${
@@ -1701,7 +1704,7 @@ export default function TransactionsPage() {
       console.error("❌ Failed to write receipt to print window:", error);
       printWindow.close();
       alert(
-        "❌ Failed to generate receipt print preview. Error: " + error.message
+        "❌ Failed to generate receipt print preview. Error: " + error.message,
       );
     }
   };
@@ -1718,7 +1721,9 @@ export default function TransactionsPage() {
     // Count transactions that contain lottery winnings items
     filteredTransactions.forEach((transaction) => {
       if (transaction.items && Array.isArray(transaction.items)) {
-        const hasLotteryWinnings = transaction.items.some(item => item.name === "Lotto Winnings");
+        const hasLotteryWinnings = transaction.items.some(
+          (item) => item.name === "Lotto Winnings",
+        );
         if (hasLotteryWinnings) {
           lottoTransactionCount++;
         }
@@ -1797,10 +1802,10 @@ export default function TransactionsPage() {
 
         // Count transactions by primary payment method
         const hasCash = transaction.paymentBreakdown.some(
-          (p) => p.method === "cash" && p.amount > 0
+          (p) => p.method === "cash" && p.amount > 0,
         );
         const hasCard = transaction.paymentBreakdown.some(
-          (p) => p.method === "card" && p.amount > 0
+          (p) => p.method === "card" && p.amount > 0,
         );
 
         if (hasCash && !hasCard) cashTransactionCount++;
@@ -1912,7 +1917,7 @@ export default function TransactionsPage() {
       if (item.name) {
         const itemNameLower = item.name.toLowerCase();
         const foundKeyword = alcoholKeywords.find((keyword) =>
-          itemNameLower.includes(keyword)
+          itemNameLower.includes(keyword),
         );
         if (foundKeyword) {
           return true;
@@ -2076,7 +2081,7 @@ export default function TransactionsPage() {
     alcoholTransactions.forEach((transaction) => {
       // Check if transaction has only alcohol items for full transaction total
       const isAlcoholOnly = transaction.items.every(
-        (item) => item.category === "Alcohol"
+        (item) => item.category === "Alcohol",
       );
 
       if (
@@ -2099,10 +2104,10 @@ export default function TransactionsPage() {
         } else if (transaction.paymentMethod === "mixed") {
           // For mixed payments, count as both but split proportionally
           const cashPortion = transaction.paymentBreakdown.find(
-            (p) => p.method === "cash"
+            (p) => p.method === "cash",
           );
           const cardPortion = transaction.paymentBreakdown.find(
-            (p) => p.method === "card"
+            (p) => p.method === "card",
           );
 
           if (cashPortion && cashPortion.amount > 0) cashCount++;
@@ -2136,7 +2141,7 @@ export default function TransactionsPage() {
         ) {
           const totalPaid = transaction.paymentBreakdown.reduce(
             (sum, p) => sum + p.amount,
-            0
+            0,
           );
 
           transaction.paymentBreakdown.forEach((payment) => {
@@ -2246,7 +2251,7 @@ export default function TransactionsPage() {
       if (
         item.category &&
         excludedCategories.some((cat) =>
-          item.category.toLowerCase().includes(cat.toLowerCase())
+          item.category.toLowerCase().includes(cat.toLowerCase()),
         )
       ) {
         return false;
@@ -2256,7 +2261,7 @@ export default function TransactionsPage() {
       if (item.name) {
         const itemNameLower = item.name.toLowerCase();
         const hasExcludedKeyword = excludedKeywords.some((keyword) =>
-          itemNameLower.includes(keyword.toLowerCase())
+          itemNameLower.includes(keyword.toLowerCase()),
         );
         if (hasExcludedKeyword) {
           return false;
@@ -2345,7 +2350,7 @@ export default function TransactionsPage() {
       if (item.name) {
         const itemNameLower = item.name.toLowerCase();
         const foundKeyword = tobaccoKeywords.find((keyword) =>
-          itemNameLower.includes(keyword)
+          itemNameLower.includes(keyword),
         );
         if (foundKeyword) {
           return true;
@@ -2441,7 +2446,7 @@ export default function TransactionsPage() {
       if (item.name) {
         const itemNameLower = item.name.toLowerCase();
         const foundKeyword = lotteryKeywords.find((keyword) =>
-          itemNameLower.includes(keyword)
+          itemNameLower.includes(keyword),
         );
         if (foundKeyword) {
           return true;
@@ -2537,7 +2542,7 @@ export default function TransactionsPage() {
           // Regular transactions: Sum all payment amounts
           totalPaid = transaction.paymentBreakdown.reduce(
             (sum, payment) => sum + payment.amount,
-            0
+            0,
           );
         }
 
@@ -2556,11 +2561,11 @@ export default function TransactionsPage() {
             amount: unpaidAmount,
             timestamp: transaction.timestamp,
             reason: `Total: $${transactionTotal.toFixed(
-              2
+              2,
             )}, Paid: $${totalPaid.toFixed(2)}${
               transaction.cashback > 0
                 ? ` (Cashback: $${transaction.cashback.toFixed(
-                    2
+                    2,
                   )}, FinalTotal: $${transaction.finalTotal.toFixed(2)})`
                 : ""
             }`,
@@ -2741,10 +2746,10 @@ export default function TransactionsPage() {
               {dateFilter === "today"
                 ? "Today"
                 : dateFilter === "yesterday"
-                ? "Yesterday"
-                : dateFilter === "specific"
-                ? new Date(selectedDate).toLocaleDateString()
-                : "For selected period"}
+                  ? "Yesterday"
+                  : dateFilter === "specific"
+                    ? new Date(selectedDate).toLocaleDateString()
+                    : "For selected period"}
             </p>
           </CompactCard>
         )}
@@ -2839,10 +2844,12 @@ export default function TransactionsPage() {
         {/* 5. Net Cash Flow */}
         <CompactCard>
           <h3>🏦 Net Cash Flow</h3>
-          <p style={{ 
-            fontWeight: "bold", 
-            color: getNetCashFlow() >= 0 ? "#27ae60" : "#e74c3c" 
-          }}>
+          <p
+            style={{
+              fontWeight: "bold",
+              color: getNetCashFlow() >= 0 ? "#27ae60" : "#e74c3c",
+            }}
+          >
             ${getNetCashFlow().toFixed(2)}
           </p>
           <p>Sales minus payouts</p>
@@ -2877,7 +2884,6 @@ export default function TransactionsPage() {
               )}
             </ClickableCard>
           )}
-
 
         {/* Alcohol Category Only */}
         <ClickableCard
@@ -3141,7 +3147,7 @@ export default function TransactionsPage() {
                 const peak = Object.entries(hourly).reduce(
                   (max, [hour, data]) =>
                     data.count > (max.data?.count || 0) ? { hour, data } : max,
-                  {}
+                  {},
                 );
                 return peak.hour ? `${peak.hour}:00` : "N/A";
               })()}
@@ -3226,12 +3232,37 @@ export default function TransactionsPage() {
               style={{ minWidth: "160px" }}
             >
               <option value="">Select Month</option>
-              <option value="2025-12">December 2025 (This Month)</option>
-              <option value="2025-11">November 2025 (Last Month)</option>
-              <option value="2025-10">October 2025</option>
-              <option value="2025-09">September 2025</option>
-              <option value="2025-08">August 2025</option>
-              <option value="2025-07">July 2025</option>
+              {(() => {
+                const months = [];
+                const currentDate = new Date();
+                const monthNames = [
+                  "January", "February", "March", "April", "May", "June",
+                  "July", "August", "September", "October", "November", "December"
+                ];
+                
+                // Generate last 12 months starting from current month
+                for (let i = 0; i < 12; i++) {
+                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                  const year = date.getFullYear();
+                  const month = date.getMonth();
+                  const monthValue = `${year}-${String(month + 1).padStart(2, '0')}`;
+                  const monthName = `${monthNames[month]} ${year}`;
+                  
+                  let label = monthName;
+                  if (i === 0) {
+                    label += " (This Month)";
+                  } else if (i === 1) {
+                    label += " (Last Month)";
+                  }
+                  
+                  months.push(
+                    <option key={monthValue} value={monthValue}>
+                      {label}
+                    </option>
+                  );
+                }
+                return months;
+              })()}
             </Select>
           )}
 
@@ -3264,14 +3295,14 @@ export default function TransactionsPage() {
                 {transactionTypeFilter === "cash"
                   ? "Cash Earnings"
                   : transactionTypeFilter === "card"
-                  ? "Card Earnings"
-                  : transactionTypeFilter === "credit"
-                  ? "Credit Sales"
-                  : transactionTypeFilter === "lotto"
-                  ? "Lottery"
-                  : transactionTypeFilter === "unpaid"
-                  ? "Unpaid Amounts"
-                  : transactionTypeFilter}
+                    ? "Card Earnings"
+                    : transactionTypeFilter === "credit"
+                      ? "Credit Sales"
+                      : transactionTypeFilter === "lotto"
+                        ? "Lottery"
+                        : transactionTypeFilter === "unpaid"
+                          ? "Unpaid Amounts"
+                          : transactionTypeFilter}
               </span>
               <button
                 onClick={() => setTransactionTypeFilter("all")}
@@ -3506,43 +3537,43 @@ export default function TransactionsPage() {
               {dateFilter === "today"
                 ? "Today"
                 : dateFilter === "yesterday"
-                ? "Yesterday"
-                : new Date(selectedDate).toLocaleDateString()}
+                  ? "Yesterday"
+                  : new Date(selectedDate).toLocaleDateString()}
             </h3>
 
             {/* Payment Method Summary */}
             {(() => {
               const totalCashTransactions = filteredTransactions.filter(
-                (tx) => tx.transactionType === "cash"
+                (tx) => tx.transactionType === "cash",
               ).length;
               const totalCardTransactions = filteredTransactions.filter(
-                (tx) => tx.transactionType === "card"
+                (tx) => tx.transactionType === "card",
               ).length;
               const totalMixedTransactions = filteredTransactions.filter(
-                (tx) => tx.transactionType === "mixed"
+                (tx) => tx.transactionType === "mixed",
               ).length;
               const totalCreditTransactions = filteredTransactions.filter(
                 (tx) =>
                   tx.transactionType === "credit" ||
-                  tx.transactionType === "partial_credit"
+                  tx.transactionType === "partial_credit",
               ).length;
               const totalLottoTransactions = filteredTransactions.filter(
                 (tx) =>
                   tx.transactionType === "lotto" ||
-                  tx.transactionType === "lotto_mixed"
+                  tx.transactionType === "lotto_mixed",
               ).length;
 
               const totalCashAmount = filteredTransactions.reduce(
                 (sum, tx) => sum + (tx.cashAmount || 0),
-                0
+                0,
               );
               const totalCardAmount = filteredTransactions.reduce(
                 (sum, tx) => sum + (tx.cardAmount || 0),
-                0
+                0,
               );
               const totalCreditAmount = filteredTransactions.reduce(
                 (sum, tx) => sum + (tx.creditAmount || 0),
-                0
+                0,
               );
 
               return (
@@ -3824,7 +3855,7 @@ export default function TransactionsPage() {
                     {transaction.items && Array.isArray(transaction.items)
                       ? transaction.items.reduce(
                           (sum, item) => sum + (item.quantity || 0),
-                          0
+                          0,
                         )
                       : 0}{" "}
                     items
@@ -3891,7 +3922,7 @@ export default function TransactionsPage() {
                       <Button
                         onClick={() =>
                           toggleTransactionDetails(
-                            transaction.id || transaction._id
+                            transaction.id || transaction._id,
                           )
                         }
                         style={{
@@ -3937,7 +3968,7 @@ export default function TransactionsPage() {
                         <Button
                           onClick={() =>
                             handleDeleteTransaction(
-                              transaction.id || transaction._id
+                              transaction.id || transaction._id,
                             )
                           }
                           style={{
@@ -4084,10 +4115,10 @@ export default function TransactionsPage() {
             {dateFilter === "today"
               ? "Today"
               : dateFilter === "yesterday"
-              ? "Yesterday"
-              : dateFilter === "specific"
-              ? new Date(selectedDate).toLocaleDateString()
-              : "Selected Period"}
+                ? "Yesterday"
+                : dateFilter === "specific"
+                  ? new Date(selectedDate).toLocaleDateString()
+                  : "Selected Period"}
           </h2>
 
           <div
@@ -4216,10 +4247,10 @@ export default function TransactionsPage() {
                           index === 0
                             ? "#f1c40f"
                             : index === 1
-                            ? "#95a5a6"
-                            : index === 2
-                            ? "#e67e22"
-                            : "#2c3e50",
+                              ? "#95a5a6"
+                              : index === 2
+                                ? "#e67e22"
+                                : "#2c3e50",
                       }}
                     >
                       #{index + 1}
