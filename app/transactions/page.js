@@ -1083,8 +1083,10 @@ export default function TransactionsPage() {
               padding: 15px;
               max-width: 350px;
               color: #000000;
-              font-weight: normal;
+              font-weight: bold;
               line-height: 1.1;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
             }
             .header {
               text-align: center;
@@ -1106,24 +1108,34 @@ export default function TransactionsPage() {
               justify-content: space-between;
               margin: 1px 0;
               font-size: 10px;
+              font-weight: bold;
+            }
+            .summary-line span:last-child {
+              font-weight: 900;
+              color: #000000;
             }
             .section-header {
-              font-weight: bold;
+              font-weight: 900;
               margin: 8px 0 3px 0;
               font-size: 11px;
               border-top: 1px dashed #000;
               padding-top: 5px;
+              color: #000000;
             }
             .section-divider {
               border-top: 1px solid #000;
               margin: 8px 0 5px 0;
             }
             .total-line {
-              font-weight: bold;
+              font-weight: 900;
               border-top: 2px solid #000;
               padding-top: 3px;
               margin-top: 8px;
               font-size: 12px;
+              color: #000000;
+            }
+            .total-line span {
+              font-weight: 900;
             }
             .right-align {
               text-align: right;
@@ -1136,6 +1148,19 @@ export default function TransactionsPage() {
                 margin: 0; 
                 padding: 10px;
                 page-break-after: always;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+                font-weight: bold;
+              }
+              .summary-line span:last-child,
+              .total-line,
+              .total-line span {
+                font-weight: 900 !important;
+                color: #000000 !important;
+              }
+              .section-header {
+                font-weight: 900 !important;
+                color: #000000 !important;
               }
             }
           </style>
@@ -1436,9 +1461,9 @@ export default function TransactionsPage() {
                   month: "short",
                   day: "numeric",
                 })}</div>
-                <div class="summary-item" style="font-size: 10px;">
-                  <span>Sales:</span>
-                  <span>$${day.totalSales.toFixed(2)}</span>
+                <div class="summary-item" style="font-size: 10px; font-weight: 900;">
+                  <span style="font-weight: 900;">Sales:</span>
+                  <span style="font-weight: 900; color: #000000;">$${day.totalSales.toFixed(2)}</span>
                 </div>
               </div>
             `,
