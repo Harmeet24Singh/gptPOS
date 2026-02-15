@@ -523,22 +523,34 @@ async function getTransactions(
     } else if (dateFilter === "month" && monthFilter) {
       // monthFilter format: "2025-12" for December 2025
       const [year, month] = monthFilter.split("-");
-      const monthStart = new Date(
-        `${year}-${month.padStart(2, "0")}-01T00:00:00.000Z`
-      );
+      const monthStartString = `${year}-${month.padStart(2, "0")}-01T00:00:00.000Z`;
       const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
       const nextYear =
         parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
-      const monthEnd = new Date(
-        `${nextYear}-${nextMonth.toString().padStart(2, "0")}-01T00:00:00.000Z`
-      );
+      const monthEndString = `${nextYear}-${nextMonth.toString().padStart(2, "0")}-01T00:00:00.000Z`;
 
-      // Simplified query using only Date objects
+      // Create Date objects for comparison with Date timestamps
+      const monthStartDate = new Date(monthStartString);
+      const monthEndDate = new Date(monthEndString);
+
+      // Query both string and Date object timestamps to handle all data formats
       dateQuery = {
-        timestamp: {
-          $gte: monthStart,
-          $lt: monthEnd,
-        },
+        $or: [
+          // String timestamps (legacy December data)
+          {
+            timestamp: {
+              $gte: monthStartString,
+              $lt: monthEndString,
+            },
+          },
+          // Date object timestamps (October, November, fixed December)
+          {
+            timestamp: {
+              $gte: monthStartDate,
+              $lt: monthEndDate,
+            },
+          }
+        ]
       };
     } else if (dateFilter === "week") {
       const weekAgo = new Date(today);
@@ -549,10 +561,13 @@ async function getTransactions(
     }
   }
 
+  // Use timestamp sorting when filtering by date, _id sorting otherwise
+  const sortField = dateFilter && dateFilter !== "all" ? { timestamp: -1 } : { _id: -1 };
+
   const cursor = db
     .collection("transactions")
     .find(dateQuery)
-    .sort({ _id: -1 })
+    .sort(sortField)
     .limit(Number(limit));
   const rows = await cursor.toArray();
   return rows.map((r) => ({
