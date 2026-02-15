@@ -47,7 +47,7 @@ async function upsertInventoryItems(items) {
   const ops = items.map((it, index) => {
     console.log(
       `Processing item ${index} for upsert:`,
-      JSON.stringify(it, null, 2)
+      JSON.stringify(it, null, 2),
     );
 
     // Validate and convert ID
@@ -126,7 +126,7 @@ async function upsertInventoryItems(items) {
     // If it's a duplicate key error on productId, try to handle it gracefully
     if (error.code === 11000 && error.message.includes("productId")) {
       console.log(
-        "Detected productId duplicate key error, attempting individual upserts..."
+        "Detected productId duplicate key error, attempting individual upserts...",
       );
 
       // Try each item individually with unique productId generation
@@ -144,13 +144,13 @@ async function upsertInventoryItems(items) {
             .updateOne(
               filter,
               { $set: itemWithUniqueProductId },
-              { upsert: true }
+              { upsert: true },
             );
           console.log(`Successfully upserted item ${i} with unique productId`);
         } catch (individualError) {
           console.error(
             `Failed to upsert individual item ${i}:`,
-            individualError
+            individualError,
           );
           throw individualError;
         }
@@ -283,7 +283,7 @@ async function upsertUser(body) {
         permissions_json: JSON.stringify(body.permissions || {}),
       },
     },
-    { upsert: true }
+    { upsert: true },
   );
 }
 
@@ -321,7 +321,7 @@ async function deleteUserById(id) {
       user.id === "admin")
   ) {
     throw new Error(
-      "Admin users cannot be deleted - this is a protected super role"
+      "Admin users cannot be deleted - this is a protected super role",
     );
   }
 
@@ -425,13 +425,13 @@ async function saveTransaction(txObj) {
 
       // Log stock change for debugging
       console.log(
-        `Stock update for ${cur.name} (ID: ${cur.id}): ${currentStock} - ${quantityToDeduct} = ${newStock}`
+        `Stock update for ${cur.name} (ID: ${cur.id}): ${currentStock} - ${quantityToDeduct} = ${newStock}`,
       );
 
       // Always update stock, but warn if going negative
       if (newStock < 0) {
         console.warn(
-          `WARNING: Item "${cur.name}" stock went negative: ${newStock}. Current: ${currentStock}, Sold: ${quantityToDeduct}`
+          `WARNING: Item "${cur.name}" stock went negative: ${newStock}. Current: ${currentStock}, Sold: ${quantityToDeduct}`,
         );
       }
 
@@ -439,7 +439,7 @@ async function saveTransaction(txObj) {
         .collection("inventory")
         .updateOne(
           { id: Number(it.product_id) },
-          { $set: { stock: newStock } }
+          { $set: { stock: newStock } },
         );
     }
   }
@@ -453,7 +453,7 @@ async function getTransactions(
   selectedDate = null,
   startDate = null,
   endDate = null,
-  monthFilter = null
+  monthFilter = null,
 ) {
   const db = await connect();
 
@@ -549,8 +549,8 @@ async function getTransactions(
               $gte: monthStartDate,
               $lt: monthEndDate,
             },
-          }
-        ]
+          },
+        ],
       };
     } else if (dateFilter === "week") {
       const weekAgo = new Date(today);
@@ -562,7 +562,8 @@ async function getTransactions(
   }
 
   // Use timestamp sorting when filtering by date, _id sorting otherwise
-  const sortField = dateFilter && dateFilter !== "all" ? { timestamp: -1 } : { _id: -1 };
+  const sortField =
+    dateFilter && dateFilter !== "all" ? { timestamp: -1 } : { _id: -1 };
 
   const cursor = db
     .collection("transactions")
@@ -680,7 +681,7 @@ async function saveCategory(category) {
           updatedAt: new Date(),
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
     return { id: category.id, ...category };
   } else {
@@ -743,7 +744,7 @@ async function getCreditAccountByName(customerName) {
     customerName: {
       $regex: new RegExp(
         "^" + customerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$",
-        "i"
+        "i",
       ),
     },
   });
@@ -784,7 +785,7 @@ async function upsertCreditAccount(accountData) {
     customerName: {
       $regex: new RegExp(
         "^" + customerName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$",
-        "i"
+        "i",
       ),
     },
   });
@@ -997,7 +998,7 @@ async function getCurrentTill() {
     // Find the most recent open till (no endTime)
     const currentTill = await tillCollection.findOne(
       { endTime: null },
-      { sort: { startTime: -1 } }
+      { sort: { startTime: -1 } },
     );
 
     return currentTill;
@@ -1070,7 +1071,7 @@ async function endTill(tillId, endData) {
           endDenominations: endData.endDenominations || {},
           updatedAt: new Date().toISOString(),
         },
-      }
+      },
     );
 
     if (updateResult.matchedCount === 0) {
@@ -1114,7 +1115,7 @@ async function setVisitedItem(itemId, visited) {
             visitedAt: new Date(),
           },
         },
-        { upsert: true }
+        { upsert: true },
       );
     } else {
       // Remove from visited items
@@ -1160,7 +1161,7 @@ async function saveDetailedCashCount(data) {
     const result = await detailedCashCountCollection.replaceOne(
       { date: data.date },
       data,
-      { upsert: true }
+      { upsert: true },
     );
 
     return result;

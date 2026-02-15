@@ -20,28 +20,40 @@ async function generateDecemberGrocerySales() {
     const MONTH_START = new Date("2025-12-01T00:00:00.000Z");
     const MONTH_END = new Date("2026-01-01T00:00:00.000Z");
 
-    console.log(`\n🎯 Target: $${TARGET_AMOUNT} for December 2025 grocery sales`);
+    console.log(
+      `\n🎯 Target: $${TARGET_AMOUNT} for December 2025 grocery sales`,
+    );
 
     // Check existing December grocery sales
     const existingDecember = await collection
       .find({
-        timestamp: { $gte: MONTH_START.toISOString(), $lt: MONTH_END.toISOString() },
-        "items.category": "Grocery"
+        timestamp: {
+          $gte: MONTH_START.toISOString(),
+          $lt: MONTH_END.toISOString(),
+        },
+        "items.category": "Grocery",
       })
       .toArray();
 
     if (existingDecember.length > 0) {
-      console.log(`⚠️  Found ${existingDecember.length} existing December grocery transactions. Removing grocery items only...`);
-      
+      console.log(
+        `⚠️  Found ${existingDecember.length} existing December grocery transactions. Removing grocery items only...`,
+      );
+
       // Remove only grocery items from existing transactions, don't delete entire transactions
       for (let transaction of existingDecember) {
-        const nonGroceryItems = transaction.items.filter(item => item.category !== "Grocery");
+        const nonGroceryItems = transaction.items.filter(
+          (item) => item.category !== "Grocery",
+        );
         if (nonGroceryItems.length > 0) {
           // Update transaction with only non-grocery items and recalculate totals
-          const newSubtotal = nonGroceryItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          const newSubtotal = nonGroceryItems.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0,
+          );
           const newTax = newSubtotal * 0.13;
           const newTotal = newSubtotal + newTax;
-          
+
           await collection.updateOne(
             { _id: transaction._id },
             {
@@ -49,9 +61,9 @@ async function generateDecemberGrocerySales() {
                 items: nonGroceryItems,
                 subtotal: Math.round(newSubtotal * 100) / 100,
                 tax: Math.round(newTax * 100) / 100,
-                total: Math.round(newTotal * 100) / 100
-              }
-            }
+                total: Math.round(newTotal * 100) / 100,
+              },
+            },
           );
         } else {
           // Delete transaction if it only had grocery items
@@ -72,7 +84,7 @@ async function generateDecemberGrocerySales() {
       { name: "Cranberry Juice 1L", price: 3.99, category: "Grocery" },
       { name: "Apple Cider Sparkling 750ml", price: 5.99, category: "Grocery" },
 
-      // Christmas/Holiday seasonal items  
+      // Christmas/Holiday seasonal items
       { name: "Christmas Ham Glaze", price: 4.99, category: "Grocery" },
       { name: "Turkey Stuffing Mix", price: 3.49, category: "Grocery" },
       { name: "Cranberry Sauce 400ml", price: 3.99, category: "Grocery" },
@@ -164,14 +176,18 @@ async function generateDecemberGrocerySales() {
     decemberDays.slice(0, 7).forEach((day) => {
       const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const expectedAmount = averagePerDay * day.multiplier;
-      console.log(`  ${dayNames[day.dayOfWeek]} Dec ${day.date}: ~$${expectedAmount.toFixed(2)} (${day.multiplier}x)`);
+      console.log(
+        `  ${dayNames[day.dayOfWeek]} Dec ${day.date}: ~$${expectedAmount.toFixed(2)} (${day.multiplier}x)`,
+      );
     });
 
     // Calculate transactions needed (similar to November pattern)
     const totalTransactionsNeeded = Math.round(31 * 3.5); // ~108 transactions (slightly higher for December)
     const averageTransactionValue = TARGET_AMOUNT / totalTransactionsNeeded;
 
-    console.log(`\n📊 Planning ${totalTransactionsNeeded} transactions at ~$${averageTransactionValue.toFixed(2)} average`);
+    console.log(
+      `\n📊 Planning ${totalTransactionsNeeded} transactions at ~$${averageTransactionValue.toFixed(2)} average`,
+    );
 
     let runningTotal = 0;
     const transactions = [];
@@ -190,7 +206,10 @@ async function generateDecemberGrocerySales() {
 
         // Add some randomness (±25%, same as November)
         targetTransactionAmount *= 0.75 + Math.random() * 0.5;
-        targetTransactionAmount = Math.max(10, Math.min(65, targetTransactionAmount)); // $10-$65 range (same as November)
+        targetTransactionAmount = Math.max(
+          10,
+          Math.min(65, targetTransactionAmount),
+        ); // $10-$65 range (same as November)
 
         // Generate items for this transaction
         const items = [];
@@ -198,7 +217,8 @@ async function generateDecemberGrocerySales() {
         const itemCount = Math.floor(Math.random() * 4) + 1; // 1-4 items (same as November)
 
         for (let j = 0; j < itemCount; j++) {
-          const item = groceryItems[Math.floor(Math.random() * groceryItems.length)];
+          const item =
+            groceryItems[Math.floor(Math.random() * groceryItems.length)];
           const quantity = Math.floor(Math.random() * 2) + 1; // 1-2 quantity (same as November)
           const itemTotal = item.price * quantity;
 
@@ -222,11 +242,18 @@ async function generateDecemberGrocerySales() {
         // Random time during business hours (7 AM - 9 PM, same as November)
         const hour = Math.floor(Math.random() * 14) + 7; // 7-20 (7 AM - 8 PM)
         const minute = Math.floor(Math.random() * 60);
-        const timestamp = new Date(2025, 11, day.date, hour, minute).toISOString();
+        const timestamp = new Date(
+          2025,
+          11,
+          day.date,
+          hour,
+          minute,
+        ).toISOString();
 
         // Payment methods (same 50/50 split as November)
         const paymentMethods = ["cash", "cash", "card", "card"]; // 50/50 split
-        const paymentMethod = paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
+        const paymentMethod =
+          paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
 
         const transaction = {
           timestamp: timestamp,
@@ -236,8 +263,10 @@ async function generateDecemberGrocerySales() {
           total: Math.round(total * 100) / 100,
           paymentMethod: paymentMethod,
           transactionType: paymentMethod,
-          cashAmount: paymentMethod === "cash" ? Math.round(total * 100) / 100 : 0,
-          cardAmount: paymentMethod === "card" ? Math.round(total * 100) / 100 : 0,
+          cashAmount:
+            paymentMethod === "cash" ? Math.round(total * 100) / 100 : 0,
+          cardAmount:
+            paymentMethod === "card" ? Math.round(total * 100) / 100 : 0,
           creditAmount: 0,
           paymentBreakdown: [
             {
@@ -254,31 +283,48 @@ async function generateDecemberGrocerySales() {
       }
     }
 
-    console.log(`\n📈 Generated ${transactions.length} grocery transactions totaling $${runningTotal.toFixed(2)}`);
-    console.log(`🎯 Target was $${TARGET_AMOUNT}, variance: ${(((runningTotal - TARGET_AMOUNT) / TARGET_AMOUNT) * 100).toFixed(1)}%`);
+    console.log(
+      `\n📈 Generated ${transactions.length} grocery transactions totaling $${runningTotal.toFixed(2)}`,
+    );
+    console.log(
+      `🎯 Target was $${TARGET_AMOUNT}, variance: ${(((runningTotal - TARGET_AMOUNT) / TARGET_AMOUNT) * 100).toFixed(1)}%`,
+    );
 
     // Insert all transactions
     if (transactions.length > 0) {
       const insertResult = await collection.insertMany(transactions);
-      console.log(`✅ Successfully inserted ${insertResult.insertedCount} December 2025 grocery transactions`);
+      console.log(
+        `✅ Successfully inserted ${insertResult.insertedCount} December 2025 grocery transactions`,
+      );
 
       // Verification summary
       console.log(`\n📋 Summary:`);
       console.log(`   💰 Total grocery sales: $${runningTotal.toFixed(2)}`);
       console.log(`   📦 Total transactions: ${transactions.length}`);
       console.log(`   💳 Payment breakdown:`);
-      
-      const cashTransactions = transactions.filter(t => t.paymentMethod === "cash").length;
-      const cardTransactions = transactions.filter(t => t.paymentMethod === "card").length;
-      const cashTotal = transactions.filter(t => t.paymentMethod === "cash").reduce((sum, t) => sum + t.total, 0);
-      const cardTotal = transactions.filter(t => t.paymentMethod === "card").reduce((sum, t) => sum + t.total, 0);
-      
-      console.log(`       Cash: ${cashTransactions} transactions ($${cashTotal.toFixed(2)})`);
-      console.log(`       Card: ${cardTransactions} transactions ($${cardTotal.toFixed(2)})`);
+
+      const cashTransactions = transactions.filter(
+        (t) => t.paymentMethod === "cash",
+      ).length;
+      const cardTransactions = transactions.filter(
+        (t) => t.paymentMethod === "card",
+      ).length;
+      const cashTotal = transactions
+        .filter((t) => t.paymentMethod === "cash")
+        .reduce((sum, t) => sum + t.total, 0);
+      const cardTotal = transactions
+        .filter((t) => t.paymentMethod === "card")
+        .reduce((sum, t) => sum + t.total, 0);
+
+      console.log(
+        `       Cash: ${cashTransactions} transactions ($${cashTotal.toFixed(2)})`,
+      );
+      console.log(
+        `       Card: ${cardTransactions} transactions ($${cardTotal.toFixed(2)})`,
+      );
       console.log(`   📅 Date range: December 1-31, 2025`);
       console.log(`   👤 Cashier: December-Sales`);
     }
-
   } catch (error) {
     console.error("❌ Error generating December grocery sales:", error);
   } finally {
