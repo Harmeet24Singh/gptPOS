@@ -2837,80 +2837,7 @@ export default function TransactionsPage() {
           </ClickableCard>
         )}
 
-        {/* 4. Lottery Redeem */}
-        {visibleSections.lotteryEarnings &&
-          getLotteryBreakdown().lottoTransactionCount > 0 && (
-            <ClickableCard
-              isActive={transactionTypeFilter === "lotto"}
-              onClick={() => handleCardFilter("lotto")}
-            >
-              <h3>🎰 Lottery Redeem</h3>
-              <p style={{ fontWeight: "bold", color: "#9b59b6" }}>
-                ${(getLotteryBreakdown().lottoTotal || 0).toFixed(2)}
-              </p>
-              <p>
-                {getLotteryBreakdown().lottoTransactionCount || 0} winnings paid
-              </p>
-              {transactionTypeFilter === "lotto" && (
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "#3498db",
-                    marginTop: "0.5rem",
-                    fontWeight: "600",
-                  }}
-                >
-                  🔍 Filtered
-                </div>
-              )}
-            </ClickableCard>
-          )}
-
-        {/* 5. Net Cash Flow */}
-        <CompactCard>
-          <h3>🏦 Net Cash Flow</h3>
-          <p
-            style={{
-              fontWeight: "bold",
-              color: getNetCashFlow() >= 0 ? "#27ae60" : "#e74c3c",
-            }}
-          >
-            ${getNetCashFlow().toFixed(2)}
-          </p>
-          <p>Sales minus payouts</p>
-        </CompactCard>
-
-        {/* Credit Sales */}
-        {visibleSections.creditEarnings &&
-          getCreditEarningsBreakdown().creditTransactionCount > 0 && (
-            <ClickableCard
-              isActive={transactionTypeFilter === "credit"}
-              onClick={() => handleCardFilter("credit")}
-            >
-              <h3>📝 Credit Sales</h3>
-              <p style={{ fontWeight: "bold", color: "#e74c3c" }}>
-                ${getCreditEarningsBreakdown().creditTotal.toFixed(2)}
-              </p>
-              <p>
-                {getCreditEarningsBreakdown().creditTransactionCount} credit
-                sales
-              </p>
-              {transactionTypeFilter === "credit" && (
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "#3498db",
-                    marginTop: "0.5rem",
-                    fontWeight: "600",
-                  }}
-                >
-                  🔍 Filtered
-                </div>
-              )}
-            </ClickableCard>
-          )}
-
-        {/* Alcohol Category Only */}
+        {/* 4. Alcohol */}
         <ClickableCard
           isActive={transactionTypeFilter === "alcohol-category"}
           onClick={() => handleCardFilter("alcohol-category")}
@@ -2975,7 +2902,7 @@ export default function TransactionsPage() {
           )}
         </ClickableCard>
 
-        {/* New Grocery Card (Category-based) */}
+        {/* 5. Grocery */}
         <ClickableCard
           isActive={transactionTypeFilter === "grocery-only"}
           onClick={() => handleCardFilter("grocery-only")}
@@ -3036,12 +2963,46 @@ export default function TransactionsPage() {
           )}
         </ClickableCard>
 
+        {/* Credit Sales */}
+        {visibleSections.creditEarnings &&
+          getCreditEarningsBreakdown().creditTransactionCount > 0 && (
+            <ClickableCard
+              isActive={transactionTypeFilter === "credit"}
+              onClick={() => handleCardFilter("credit")}
+            >
+              <h3>📝 Credit Sales</h3>
+              <p style={{ fontWeight: "bold", color: "#e74c3c" }}>
+                ${getCreditEarningsBreakdown().creditTotal.toFixed(2)}
+              </p>
+              <p>
+                {getCreditEarningsBreakdown().creditTransactionCount} credit
+                sales
+              </p>
+              {transactionTypeFilter === "credit" && (
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "#3498db",
+                    marginTop: "0.5rem",
+                    fontWeight: "600",
+                  }}
+                >
+                  🔍 Filtered
+                </div>
+              )}
+            </ClickableCard>
+          )}
+
+
+
+
+
         {/* Tobacco Sales */}
         <ClickableCard
           isActive={transactionTypeFilter === "tobacco"}
           onClick={() => handleCardFilter("tobacco")}
         >
-          <h3>🚬 Tobacco Sales</h3>
+          <h3>🚬 Tobacco</h3>
           <p style={{ fontWeight: "bold", color: "#8b4513" }}>
             ${getTobaccoSalesBreakdown().tobaccoTotal.toFixed(2)}
           </p>

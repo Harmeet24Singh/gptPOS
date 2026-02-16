@@ -1,4 +1,4 @@
-// File: C:\Users\shop\Desktop\gptPos\gptPOS\app\api\dashboard-preferences\route.js
+// File: /Users/harmeetsingh/Documents/harmeet24singhGIT/gptPOS/app/api/dashboard-preferences/route.js
 import * as entry from '../../../../../app/api/dashboard-preferences/route.js'
 import type { NextRequest } from 'next/server.js'
 
