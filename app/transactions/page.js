@@ -2993,10 +2993,6 @@ export default function TransactionsPage() {
             </ClickableCard>
           )}
 
-
-
-
-
         {/* Tobacco Sales */}
         <ClickableCard
           isActive={transactionTypeFilter === "tobacco"}

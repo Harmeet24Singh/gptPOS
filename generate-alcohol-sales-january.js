@@ -20,19 +20,23 @@ async function generateJanuaryAlcoholSales() {
     const MONTH_START = new Date("2026-01-01T00:00:00.000Z");
     const MONTH_END = new Date("2026-02-01T00:00:00.000Z");
 
-    console.log(`\n🎯 Target: $${TARGET_AMOUNT} for January 2026 alcohol sales`);
+    console.log(
+      `\n🎯 Target: $${TARGET_AMOUNT} for January 2026 alcohol sales`,
+    );
 
     // Check existing January transactions with alcohol
     const existingAlcohol = await collection
       .find({
         timestamp: { $gte: MONTH_START, $lt: MONTH_END },
-        "items.category": "Alcohol"
+        "items.category": "Alcohol",
       })
       .toArray();
 
     if (existingAlcohol.length > 0) {
-      console.log(`⚠️  Found ${existingAlcohol.length} existing January alcohol transactions. Deleting first...`);
-      
+      console.log(
+        `⚠️  Found ${existingAlcohol.length} existing January alcohol transactions. Deleting first...`,
+      );
+
       for (const transaction of existingAlcohol) {
         await collection.deleteOne({ _id: transaction._id });
       }
@@ -42,17 +46,21 @@ async function generateJanuaryAlcoholSales() {
     // Get highest transaction ID to continue sequence
     const lastTransaction = await collection.findOne(
       { transactionId: { $exists: true } },
-      { sort: { transactionId: -1 } }
+      { sort: { transactionId: -1 } },
     );
-    
-    let nextTransactionId = lastTransaction ? lastTransaction.transactionId + 1 : 210000;
+
+    let nextTransactionId = lastTransaction
+      ? lastTransaction.transactionId + 1
+      : 210000;
     console.log(`🔢 Starting from transaction ID: ${nextTransactionId}`);
 
     // Calculate number of transactions needed (targeting ~$30-32 per transaction average)
     const avgTransactionAmount = 30.5; // Winter alcohol sales slightly higher per transaction
     const NUM_TRANSACTIONS = Math.round(TARGET_AMOUNT / avgTransactionAmount);
 
-    console.log(`📊 Generating ${NUM_TRANSACTIONS} transactions with avg $${avgTransactionAmount.toFixed(2)}`);
+    console.log(
+      `📊 Generating ${NUM_TRANSACTIONS} transactions with avg $${avgTransactionAmount.toFixed(2)}`,
+    );
 
     // Winter/New Year alcohol patterns - January typically slower than December
     const dayPatterns = {
@@ -61,7 +69,7 @@ async function generateJanuaryAlcoholSales() {
       3: 0.14, // Wednesday - moderate (14%)
       4: 0.16, // Thursday - building up (16%)
       5: 0.22, // Friday - high (22%)
-      6: 0.20, // Saturday - high (20%)
+      6: 0.2, // Saturday - high (20%)
       0: 0.08, // Sunday - slow (8%)
     };
 
@@ -72,106 +80,106 @@ async function generateJanuaryAlcoholSales() {
         basePrice: 12.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456789"
+        barcode: "5060123456789",
       },
       {
         name: "Coors Light 12-pack",
         basePrice: 24.99,
-        category: "Alcohol", 
+        category: "Alcohol",
         taxable: true,
-        barcode: "5060123456790"
+        barcode: "5060123456790",
       },
       {
         name: "Corona 6-pack",
         basePrice: 15.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456791"
+        barcode: "5060123456791",
       },
       {
         name: "Heineken 6-pack",
         basePrice: 16.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456792"
+        barcode: "5060123456792",
       },
       {
         name: "Molson Canadian 12-pack",
         basePrice: 26.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456793"
+        barcode: "5060123456793",
       },
       {
         name: "Stella Artois 6-pack",
         basePrice: 17.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456794"
+        barcode: "5060123456794",
       },
       {
         name: "Blue Moon 6-pack",
         basePrice: 16.49,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456795"
+        barcode: "5060123456795",
       },
       {
         name: "Guinness 4-pack",
         basePrice: 18.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456796"
+        barcode: "5060123456796",
       },
       {
         name: "Red Wine Bottle",
         basePrice: 19.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456797"
+        barcode: "5060123456797",
       },
       {
         name: "White Wine Bottle",
         basePrice: 18.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456798"
+        barcode: "5060123456798",
       },
       {
         name: "Cabernet Sauvignon",
         basePrice: 22.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456799"
+        barcode: "5060123456799",
       },
       {
         name: "Chardonnay",
         basePrice: 19.49,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456800"
+        barcode: "5060123456800",
       },
       {
         name: "Vodka 750ml",
         basePrice: 24.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456801"
+        barcode: "5060123456801",
       },
       {
         name: "Whiskey 750ml",
         basePrice: 32.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456802"
+        barcode: "5060123456802",
       },
       {
         name: "Rum 750ml",
         basePrice: 28.99,
         category: "Alcohol",
         taxable: true,
-        barcode: "5060123456803"
-      }
+        barcode: "5060123456803",
+      },
     ];
 
     // Generate transactions
@@ -206,27 +214,33 @@ async function generateJanuaryAlcoholSales() {
         do {
           randomIndex = Math.floor(Math.random() * alcoholItems.length);
         } while (usedIndexes.has(randomIndex));
-        
+
         usedIndexes.add(randomIndex);
         const item = { ...alcoholItems[randomIndex] };
-        
+
         // Small price variations (±$1)
         const priceVariation = (Math.random() - 0.5) * 2;
-        item.price = Math.max(item.basePrice + priceVariation, item.basePrice * 0.9);
+        item.price = Math.max(
+          item.basePrice + priceVariation,
+          item.basePrice * 0.9,
+        );
         item.price = Math.round(item.price * 100) / 100;
-        
+
         selectedItems.push({
           name: item.name,
           price: item.price,
           category: item.category,
           taxable: item.taxable,
           barcode: item.barcode,
-          tax: Math.round(item.price * 0.13 * 100) / 100 // 13% tax
+          tax: Math.round(item.price * 0.13 * 100) / 100, // 13% tax
         });
       }
 
       const subtotal = selectedItems.reduce((sum, item) => sum + item.price, 0);
-      const totalTax = selectedItems.reduce((sum, item) => sum + (item.tax || 0), 0);
+      const totalTax = selectedItems.reduce(
+        (sum, item) => sum + (item.tax || 0),
+        0,
+      );
       const total = Math.round((subtotal + totalTax) * 100) / 100;
 
       // Payment method (60% card, 40% cash for alcohol - typical pattern)
@@ -241,7 +255,7 @@ async function generateJanuaryAlcoholSales() {
         total: total,
         paymentMethod: paymentMethod,
         cashier: Math.random() < 0.7 ? "system" : "Admin User",
-        transactionType: "sale"
+        transactionType: "sale",
       };
 
       // Add payment breakdown
@@ -265,38 +279,51 @@ async function generateJanuaryAlcoholSales() {
     console.log(`\n📝 Generated ${transactions.length} alcohol transactions`);
     console.log(`💰 Total amount: $${totalGenerated.toFixed(2)}`);
     console.log(`🎯 Target was: $${TARGET_AMOUNT}`);
-    console.log(`📊 Accuracy: ${((totalGenerated / TARGET_AMOUNT) * 100).toFixed(1)}%`);
+    console.log(
+      `📊 Accuracy: ${((totalGenerated / TARGET_AMOUNT) * 100).toFixed(1)}%`,
+    );
 
     // Insert transactions
     if (transactions.length > 0) {
       await collection.insertMany(transactions);
-      console.log(`✅ Inserted ${transactions.length} January alcohol transactions`);
+      console.log(
+        `✅ Inserted ${transactions.length} January alcohol transactions`,
+      );
     }
 
     // Final verification
     const verification = await collection
       .find({
         timestamp: { $gte: MONTH_START, $lt: MONTH_END },
-        "items.category": "Alcohol"
+        "items.category": "Alcohol",
       })
       .toArray();
 
     const verificationTotal = verification.reduce(
       (sum, transaction) => sum + transaction.total,
-      0
+      0,
     );
 
     console.log(`\n🔍 Verification:`);
     console.log(`   January alcohol transactions: ${verification.length}`);
-    console.log(`   January alcohol sales total: $${verificationTotal.toFixed(2)}`);
+    console.log(
+      `   January alcohol sales total: $${verificationTotal.toFixed(2)}`,
+    );
 
     // Payment method breakdown
-    const cashTransactions = verification.filter(t => t.paymentMethod === "cash");
-    const cardTransactions = verification.filter(t => t.paymentMethod === "card");
-    
-    console.log(`   Cash transactions: ${cashTransactions.length} (${((cashTransactions.length/verification.length)*100).toFixed(1)}%)`);
-    console.log(`   Card transactions: ${cardTransactions.length} (${((cardTransactions.length/verification.length)*100).toFixed(1)}%)`);
+    const cashTransactions = verification.filter(
+      (t) => t.paymentMethod === "cash",
+    );
+    const cardTransactions = verification.filter(
+      (t) => t.paymentMethod === "card",
+    );
 
+    console.log(
+      `   Cash transactions: ${cashTransactions.length} (${((cashTransactions.length / verification.length) * 100).toFixed(1)}%)`,
+    );
+    console.log(
+      `   Card transactions: ${cardTransactions.length} (${((cardTransactions.length / verification.length) * 100).toFixed(1)}%)`,
+    );
   } catch (error) {
     console.error("Error generating January alcohol sales:", error);
   } finally {
